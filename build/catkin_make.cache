@@ -1,0 +1,2 @@
+Utils/cmake_utils:Utils/multi_map_server:Utils/odom_visualization:Utils/pose_utils:Utils/quadrotor_msgs:Utils/rviz_plugins:Utils/uav_utils:Utils/waypoint_generator:planner/bspline_race:planner/dynamic_env_generator:planner/grid_path_searcher:planner/mapping:planner/uav_simulator/local_sensing:planner/uav_simulator/map_generator:planner/uav_simulator/mockamap:planner/uav_simulator/so3_control:planner/uav_simulator/so3_quadrotor_simulator
+-DCATKIN_DEVEL_PREFIX=/home/uav/water_swarm/devel -DCMAKE_INSTALL_PREFIX=/home/uav/water_swarm/install -G Unix Makefiles

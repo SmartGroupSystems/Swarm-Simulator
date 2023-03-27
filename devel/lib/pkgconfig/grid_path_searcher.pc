@@ -1,0 +1,8 @@
+prefix=/home/uav/water_swarm/devel
+
+Name: grid_path_searcher
+Description: Description of grid_path_searcher
+Version: 0.0.1
+Cflags: -I/home/uav/water_swarm/src/planner/grid_path_searcher/include
+Libs: -L${prefix}/lib 
+Requires: roscpp std_msgs tf

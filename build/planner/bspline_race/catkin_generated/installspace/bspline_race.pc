@@ -1,0 +1,8 @@
+prefix=/home/uav/water_swarm/install
+
+Name: bspline_race
+Description: Description of bspline_race
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -lbspline_race
+Requires: roscpp rospy std_msgs visualization_msgs message_runtime
