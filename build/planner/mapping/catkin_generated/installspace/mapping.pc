@@ -1,8 +1,0 @@
-prefix=/home/uav/water_swarm/install
-
-Name: mapping
-Description: Description of mapping
-Version: 0.0.0
-Cflags: -I${prefix}/include
-Libs: -L${prefix}/lib -lmapping
-Requires: roscpp std_msgs

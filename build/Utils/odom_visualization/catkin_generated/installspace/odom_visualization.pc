@@ -1,8 +1,0 @@
-prefix=/home/uav/water_swarm/install
-
-Name: odom_visualization
-Description: Description of odom_visualization
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

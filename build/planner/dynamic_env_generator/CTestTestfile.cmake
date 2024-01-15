@@ -1,6 +1,0 @@
-# CMake generated Testfile for 
-# Source directory: /home/uav/water_swarm/src/planner/dynamic_env_generator
-# Build directory: /home/uav/water_swarm/build/planner/dynamic_env_generator
-# 
-# This file includes the relevant testing commands required for 
-# testing this directory and lists subdirectories to be tested as well.
