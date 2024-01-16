@@ -1,0 +1,28 @@
+<launch>
+    <!-- UAV 1 -->
+    <group ns="uav1">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="0"/>
+            <arg name="init_y" value="0"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav1"/>
+        </include>
+    </group>
+
+    <!-- UAV 2 -->
+    <group ns="uav2">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="2"/>
+            <arg name="init_y" value="2"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+    <!-- 更多的无人机可以按照以上格式添加 -->
+
+
+    <!-- RVIZ -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find so3_quadrotor_simulator)/config/rviz.rviz"/>
+
+</launch>
