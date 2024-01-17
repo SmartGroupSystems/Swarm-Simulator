@@ -32,20 +32,20 @@ cd src/water_swarm/sh
 ./multi_quadrotor_simulator.sh 16
 ```
 
-Then you can see a uav like this:
+Then you can see a uav swarm like this:
 ![simulator16](fig/simulator16.png)
 
 Every uav has it's own control loop, you can use ```rqt_graph``` to see the framework.
 ![rqt_map](fig/rqt_map.gif)
 
 
-If you want to change the number of the swarm, just change like this:
+If you want to change the number of the uav, just change like this:
 ```
 ./multi_quadrotor_simulator.sh 25
 ./multi_quadrotor_simulator.sh 34
 ./multi_quadrotor_simulator.sh 100
 ```
-Then you can see a uav like this:
+Then you can see a swarm like this:
 ![simulator25](fig/simulator25.png)
 ![simulator34](fig/simulator34.png)
 ![simulator100](fig/simulator100.png)
