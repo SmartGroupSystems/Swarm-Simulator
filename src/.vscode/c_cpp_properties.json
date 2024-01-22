@@ -16,6 +16,7 @@
         "/home/uav/water_swarm/src/uav_simulator/so3_quadrotor_simulator/include/**",
         "/home/uav/water_swarm/src/uav_simulator/Utils/uav_utils/include/**",
         "/home/uav/water_swarm/src/water_swarm/include/**",
+        "/home/uav/water_swarm/src/water_swarm/include/water_swarm/**",
         "/usr/include/**"
       ],
       "name": "ROS",

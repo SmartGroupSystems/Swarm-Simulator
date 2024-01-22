@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
-  SwarmData.msg
 )
 
 generate_messages(
@@ -24,11 +23,11 @@ catkin_package(
 )
 
 include_directories(
-# include
+  include/water_swarm
   ${catkin_INCLUDE_DIRS}
 )
 
-
-
+add_executable(neighbors src/neighbors.cpp)
+target_link_libraries(neighbors ${catkin_LIBRARIES})
 
 
