@@ -40,7 +40,7 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& ua
         double dist = sqrt(pow(neighbor_odom.position.x - current_odom.position.x, 2) +
                            pow(neighbor_odom.position.y - current_odom.position.y, 2) +
                            pow(neighbor_odom.position.z - current_odom.position.z, 2));
-        if (dist < neighbor_dist_ && dist != 0) {  // dist != 0 确保不将当前odom作为其自己的邻居
+        if (dist <= neighbor_dist_ && dist != 0) {  // dist != 0 确保不将当前odom作为其自己的邻居
             neighbors.push_back(neighbor_odom);
         }
     }
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "neighbors_node");
     ros::NodeHandle nh("~");
 
-    nh.param("neighbor_dist",   neighbor_dist_, 1.0);
+    nh.param("neighbor_dist",   neighbor_dist_, 1.05);
     nh.param("threshold_dist",  threshold_dist_,0.1);
 
     ROS_INFO("Neighbors node has started.");
