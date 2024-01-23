@@ -11,6 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
+  OdomWithNeighbors.msg
+  Odom.msg
+  Position.msg
+  Velocity.msg
+  OdomBroadcast.msg
 )
 
 generate_messages(
@@ -19,6 +24,7 @@ generate_messages(
 )
 
 catkin_package(
+  INCLUDE_DIRS include
   CATKIN_DEPENDS message_runtime std_msgs roscpp rospy
 )
 
