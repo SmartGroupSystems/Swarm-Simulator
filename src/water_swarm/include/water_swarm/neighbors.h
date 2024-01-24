@@ -23,6 +23,4 @@ double threshold_dist_;
 
 std::vector<water_swarm::Odom> broadcast_odom;
 
-
-
 #endif

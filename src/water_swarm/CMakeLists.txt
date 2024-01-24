@@ -36,4 +36,5 @@ include_directories(
 add_executable(neighbors src/neighbors.cpp)
 target_link_libraries(neighbors ${catkin_LIBRARIES})
 
-
+add_executable(sph_planner src/sph.cpp)
+target_link_libraries(sph_planner ${catkin_LIBRARIES})
