@@ -1,6 +1,8 @@
 #ifndef __SPH_H__
 #define __SPH_H__
 
+#define PI 3.14159265f
+
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/topic_manager.h>
@@ -34,10 +36,43 @@ void subscribeOdomWithNeighbors(const std::string &topic_name, ros::NodeHandle &
 void odomWithNeighborsCallback(const water_swarm::OdomWithNeighborsConstPtr& msg, const std::string& uav_name); 
 
 struct SPHSettings
-{
+{   
+    // 添加的默认构造函数
+    SPHSettings()
+    : mass(1.0f),            // 默认质量
+      restDensity(1000.0f),  // 默认静止密度，水的密度大约是1000kg/m^3
+      gasConstant(2000.0f),     // 气体常数，这个值取决于模拟的流体类型和效果
+      viscosity(3.5f),       // 粘度，决定流体的粘滞特性
+      h(1.0f),               // 影响半径，决定粒子影响的范围
+      g(-9.81f),             // 重力加速度，向下是负值
+      tension(0.0728f)      // 表面张力，水的表面张力
+    {
+        poly6 = 315.0f / (64.0f * PI * pow(h, 9));
+        spikyGrad = -45.0f / (PI * pow(h, 6));
+        spikyLap = 45.0f / (PI * pow(h, 6));
+        h2 = h * h;
+        selfDens = mass * poly6 * pow(h, 6);
+        massPoly6Product = mass * poly6;
+    };
+
     SPHSettings(
         float mass, float restDensity, float gasConst, float viscosity,
-        float h, float g, float tension);
+        float h, float g, float tension)
+    : mass(mass)
+    , restDensity(restDensity)
+    , gasConstant(gasConst)
+    , viscosity(viscosity)
+    , h(h)
+    , g(g)
+    , tension(tension)
+    {
+    poly6 = 315.0f / (64.0f * PI * pow(h, 9));
+    spikyGrad = -45.0f / (PI * pow(h, 6));
+    spikyLap = 45.0f / (PI * pow(h, 6));
+    h2 = h * h;
+    selfDens = mass * poly6 * pow(h, 6);
+    massPoly6Product = mass * poly6;
+    }
 
     float poly6, spikyGrad, spikyLap, gasConstant, mass, h2, selfDens,
         restDensity, viscosity, h, g, tension, massPoly6Product;
@@ -95,7 +130,7 @@ public:
     /// Update attrs of particles in place.
     void updateParticlesGPU(
         Particle *particles, const size_t particleCount, const SPHSettings &settings,
-        float deltaTime);
+        float deltaTime){};
 
     void updateParticlesCPU(
         Particle *particles, const size_t particleCount, const SPHSettings &settings,

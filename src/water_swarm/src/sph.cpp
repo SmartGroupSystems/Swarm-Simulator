@@ -1,6 +1,5 @@
 #include "sph.h"
 
-#define PI 3.14159265f
 SPHSystem sph_planner;
 
 int main(int argc, char **argv) {
@@ -78,25 +77,6 @@ void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg) {
     }
 }
 
-SPHSettings::SPHSettings(
-    float mass, float restDensity, float gasConst, float viscosity, float h,
-    float g, float tension)
-    : mass(mass)
-    , restDensity(restDensity)
-    , gasConstant(gasConst)
-    , viscosity(viscosity)
-    , h(h)
-    , g(g)
-    , tension(tension)
-{
-    poly6 = 315.0f / (64.0f * PI * pow(h, 9));
-    spikyGrad = -45.0f / (PI * pow(h, 6));
-    spikyLap = 45.0f / (PI * pow(h, 6));
-    h2 = h * h;
-    selfDens = mass * poly6 * pow(h, 6);
-    massPoly6Product = mass * poly6;
-}
-
 SPHSystem::SPHSystem(
     size_t particleCubeWidth, const SPHSettings &settings,
     const bool &runOnGPU)
@@ -113,6 +93,12 @@ SPHSystem::SPHSystem(
 	//start init
 	started = false;
 }
+
+SPHSystem::SPHSystem()
+    : particleCubeWidth(0.0),
+      settings(),
+      started(false),
+      runOnGPU(false){}
 
 SPHSystem::~SPHSystem() {
     delete[](particles);
