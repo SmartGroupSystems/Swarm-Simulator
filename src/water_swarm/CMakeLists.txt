@@ -15,6 +15,8 @@ add_message_files(
   Odom.msg
   Position.msg
   Velocity.msg
+  Acceleration.msg
+  Force.msg
   OdomBroadcast.msg
 )
 
