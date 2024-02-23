@@ -20,10 +20,13 @@
 #include "water_swarm/OdomWithNeighbors.h"
 #include "water_swarm/OdomBroadcast.h"
 
-ros::Subscriber                         odomBroadcast_sub;
-ros::Timer                              timer;
-ros::Subscriber                         nav_goal_sub;
-std::map<std::string, ros::Subscriber>  odomSubscribers;
+ros::Subscriber                                         odomBroadcast_sub;
+ros::Timer                                              timer;
+ros::Subscriber                                         nav_goal_sub;
+
+
+std::map<std::string, ros::Subscriber>                  odomSubscribers;
+std::map<std::string, water_swarm::OdomWithNeighbors>   odomWithNeighbors;
 
 bool isInitialReceived = false;  // 用于检查是否已经接收到第一个odomBroadcast
 water_swarm::OdomBroadcast  initial_odomBroadcast_;
@@ -87,6 +90,7 @@ struct Particle
     float                       density;
     float                       pressure;
     uint16_t                    hash;
+    std_msgs::String            name;
 };
 
 class SPHSystem
@@ -136,7 +140,9 @@ public:
         Particle *particles, const size_t particleCount, const SPHSettings &settings,
         float deltaTime);
     
-
+    void parallelDensityAndPressures();
+    void parallelForces();
+    void parallelUpdateParticlePositions();
 };
 
 #endif

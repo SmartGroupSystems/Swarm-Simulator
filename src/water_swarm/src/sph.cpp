@@ -16,12 +16,11 @@ int main(int argc, char **argv) {
     //create parallel sub
     for (const auto &info : master_topics) {
             // Check if topic name matches the pattern /uav(i)/sim/odom
-            std::regex topic_pattern("/uav\\d+/sim/odom_odomWithNeighbors");
+            std::regex topic_pattern("/uav\\d+_odomWithNeighbors");
             if (std::regex_match(info.name, topic_pattern)) {
+                // every uav has a buffer to store the odom_withNeighbors.   
                 subscribeOdomWithNeighbors(info.name, nh);
-            }
-            // every uav has a buffer to store the odom_withNeighbors.
-            
+            }  
     }
 
     sph_planner.initPlanner();
@@ -33,7 +32,7 @@ int main(int argc, char **argv) {
 }
 
 void odomWithNeighborsCallback(const water_swarm::OdomWithNeighborsConstPtr& msg, const std::string& uav_name) {
-
+    odomWithNeighbors[uav_name] = *msg;
 }
 
 void subscribeOdomWithNeighbors(const std::string &topic_name, ros::NodeHandle &nh) {
@@ -121,6 +120,7 @@ void SPHSystem::initParticles()
     for (size_t i = 0; i < particleCount; i++)
     {
         Particle* particle = &particles[i];
+        particle->name     = initial_odomBroadcast_.drone_names[i];
         particle->position = initial_odomBroadcast_.OdomBroadcast[i].position;
         particle->velocity = initial_odomBroadcast_.OdomBroadcast[i].velocity;
     }
@@ -163,6 +163,32 @@ void SPHSystem::updateParticlesCPU(
     Particle *particles, const size_t particleCount, const SPHSettings &settings,
     float deltaTime)
 {
+    // Calculate densities and pressures
+    parallelDensityAndPressures();
 
+    // Calculate forces
+    parallelForces();
+
+    // Update particle positions
+    parallelUpdateParticlePositions();
+
+    //rospub control commands
+
+}
+
+void SPHSystem::parallelDensityAndPressures()
+{   
+    float massPoly6Product = settings.mass * settings.poly6;
+    // use chatgpt rebuild...
+    
+}
+
+void SPHSystem::parallelForces()
+{
+
+}
+
+void SPHSystem::parallelUpdateParticlePositions()
+{
 
 }

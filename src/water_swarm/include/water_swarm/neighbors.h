@@ -13,7 +13,7 @@
 #include "water_swarm/OdomBroadcast.h"
 
 void subscribeOdom(const std::string &topic_name, ros::NodeHandle &nh);
-void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& uav_name);
+void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& name);
 std::map<std::string, ros::Subscriber> subscribers;
 std::map<std::string, ros::Publisher>  odom_neighbors_publishers;
 ros::Publisher odomBroadcast_pub;
@@ -22,5 +22,18 @@ double neighbor_dist_;
 double threshold_dist_;
 
 std::vector<water_swarm::Odom> broadcast_odom;
+std::vector<std_msgs::String> uav_names;
+
+// Function to extract the UAV number from the input string
+inline std::string extractUavName(const std::string& uav_name) {
+    std::regex pattern("/uav\\d+"); // Regular expression to match /uav followed by one or more digits
+    std::smatch match;
+
+    // Search for the pattern in the input string
+    if (std::regex_search(uav_name, match, pattern)) {
+        return match.str(0); // Return the matched string
+    }
+    return ""; // Return empty string if no match is found
+}
 
 #endif
