@@ -19,12 +19,13 @@
 #include "water_swarm/Odom.h"
 #include "water_swarm/OdomWithNeighbors.h"
 #include "water_swarm/OdomBroadcast.h"
+#include "quadrotor_msgs/PositionCommand.h"
 
 ros::Subscriber                                         odomBroadcast_sub;
 ros::Timer                                              timer;
 ros::Subscriber                                         nav_goal_sub;
 
-
+std::map<std::string, ros::Publisher>                   uav_publishers;
 std::map<std::string, ros::Subscriber>                  odomSubscribers;
 std::map<std::string, water_swarm::OdomWithNeighbors>   odomWithNeighbors;
 
@@ -32,11 +33,19 @@ bool isInitialReceived = false;  // 用于检查是否已经接收到第一个od
 water_swarm::OdomBroadcast  initial_odomBroadcast_;
 water_swarm::OdomBroadcast  current_odomBroadcast_;
 
+ros::Time last_time;
+ros::Time current_time;
+
+bool use_pctrl = true;//使用位置控制
+bool use_vctrl = false;//使用速度控制
+bool use_actrl = false;//使用加速度控制
+
 void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
 void timerCallback(const ros::TimerEvent&);
 void subscribeOdomWithNeighbors(const std::string &topic_name, ros::NodeHandle &nh);
 void odomWithNeighborsCallback(const water_swarm::OdomWithNeighborsConstPtr& msg, const std::string& uav_name); 
+void publishPositionCommand(const std::string& uav_name, ros::NodeHandle& nh);
 
 struct SPHSettings
 {   
@@ -132,6 +141,7 @@ public:
         float deltaTime, const bool onGPU);
 
     /// Update attrs of particles in place.
+    // Here I didn't write the GPU part now...
     void updateParticlesGPU(
         Particle *particles, const size_t particleCount, const SPHSettings &settings,
         float deltaTime){};
@@ -142,7 +152,20 @@ public:
     
     void parallelDensityAndPressures();
     void parallelForces();
-    void parallelUpdateParticlePositions();
+    void parallelUpdateParticlePositions(const float deltaTime);
+    void pubroscmd();
 };
+
+// Function to extract the UAV number from the input string
+inline std::string extractUavName(const std::string& uav_name) {
+    std::regex pattern("/uav\\d+"); // Regular expression to match /uav followed by one or more digits
+    std::smatch match;
+
+    // Search for the pattern in the input string
+    if (std::regex_search(uav_name, match, pattern)) {
+        return match.str(0); // Return the matched string
+    }
+    return ""; // Return empty string if no match is found
+}
 
 #endif
