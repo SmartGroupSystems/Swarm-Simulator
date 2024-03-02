@@ -341,7 +341,7 @@ void SPHSystem::pubroscmd()
 {   
     // 初始化visualization消息
     visualization_msgs::Marker points;
-    points.header.frame_id = "/world";  // 修改为适当的frame ID
+    points.header.frame_id = "world";  // 修改为适当的frame ID
     points.header.stamp = ros::Time::now();
     points.ns = "sph_system";
     points.action = visualization_msgs::Marker::ADD;
