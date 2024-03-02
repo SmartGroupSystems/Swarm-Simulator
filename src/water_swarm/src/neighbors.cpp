@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "neighbors_node");
     ros::NodeHandle nh("~");
 
-    nh.param("neighbor_dist",   neighbor_dist_, 1.05);
+    nh.param("neighbor_dist",   neighbor_dist_, 10.05);
     nh.param("threshold_dist",  threshold_dist_,0.1);
 
     ROS_INFO("Neighbors node has started.");

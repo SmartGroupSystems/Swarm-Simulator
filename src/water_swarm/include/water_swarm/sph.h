@@ -7,6 +7,7 @@
 #include <nav_msgs/Odometry.h>
 #include <ros/topic_manager.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <visualization_msgs/Marker.h>
 #include <std_msgs/String.h>
 #include <regex>
 #include <map>
@@ -24,6 +25,7 @@
 ros::Subscriber                                         odomBroadcast_sub;
 ros::Timer                                              timer;
 ros::Subscriber                                         nav_goal_sub;
+ros::Publisher                                          particles_publisher;
 
 std::map<std::string, ros::Publisher>                   uav_publishers;
 std::map<std::string, ros::Subscriber>                  odomSubscribers;
@@ -33,10 +35,13 @@ bool isInitialReceived = false;  // 用于检查是否已经接收到第一个od
 water_swarm::OdomBroadcast  initial_odomBroadcast_;
 water_swarm::OdomBroadcast  current_odomBroadcast_;
 
-ros::Time last_time;
+ros::Time last_time;//控制时间loop
+ros::Time last_print_time;//打印时间loop
 ros::Time current_time;
 
-bool use_pctrl = true;//使用位置控制
+float mass, restDensity, gasConstant, viscosity, h, g, tension;
+
+bool use_pctrl = false;//使用位置控制
 bool use_vctrl = false;//使用速度控制
 bool use_actrl = false;//使用加速度控制
 
@@ -50,6 +55,7 @@ void publishPositionCommand(const std::string& uav_name, ros::NodeHandle& nh);
 struct SPHSettings
 {   
     // 添加的默认构造函数
+    // 0.02f, 1000, 1, 1.04f, 0.15f, -9.8f, 0.2f
     SPHSettings()
     : mass(1.0f),            // 默认质量
       restDensity(1000.0f),  // 默认静止密度，水的密度大约是1000kg/m^3

@@ -1,10 +1,20 @@
 #include "sph.h"
 
-SPHSystem sph_planner;
+SPHSystem* sph_planner;
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "sph_planner");
     ros::NodeHandle nh("~");
+
+    nh.param("mass", mass, 1.00f);
+    nh.param("restDensity", restDensity, 1000.0f);
+    nh.param("gasConstant", gasConstant, 1.0f);
+    nh.param("viscosity", viscosity, 1.04f);
+    nh.param("h", h, 0.15f);
+    nh.param("g", g, -9.8f);
+    nh.param("tension", tension, 0.2f);
+    nh.param("use_pctrl", use_pctrl, true);
+    
     ros::master::V_TopicInfo master_topics;
     ros::master::getTopics(master_topics);
 
@@ -12,7 +22,8 @@ int main(int argc, char **argv) {
     odomBroadcast_sub   = nh.subscribe("/odomBroadcast", 1000,  odomBroadcastCallback);
     timer               = nh.createTimer(ros::Duration(0.05),   timerCallback);
     nav_goal_sub        = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
-    
+    particles_publisher = nh.advertise<visualization_msgs::Marker>("particles_vis", 10);
+
     //create parallel sub
     for (const auto &info : master_topics) {
             // Check if topic name matches the pattern /uav(i)_odomWithNeighbors
@@ -29,7 +40,14 @@ int main(int argc, char **argv) {
         }    
     }
 
-    sph_planner.initPlanner();
+    // wait 2 seconds
+    ros::Duration(2.0).sleep();
+
+    //start sph planner
+    SPHSettings sphSettings(mass, restDensity, gasConstant, viscosity, h, g, tension);
+	
+    sph_planner = new SPHSystem(15, sphSettings, false);
+    // sph_planner ->initPlanner();
 
     ROS_INFO("sph_planner node has started.");
 
@@ -44,7 +62,7 @@ void publishPositionCommand(const std::string& uav_name, ros::NodeHandle& nh) {
 
 
 void odomWithNeighborsCallback(const water_swarm::OdomWithNeighborsConstPtr& msg, const std::string& uav_name) {
-    odomWithNeighbors[uav_name] = *msg;
+    odomWithNeighbors[extractUavName(uav_name)] = *msg;
 }
 
 void subscribeOdomWithNeighbors(const std::string &topic_name, ros::NodeHandle &nh) {
@@ -56,7 +74,7 @@ void subscribeOdomWithNeighbors(const std::string &topic_name, ros::NodeHandle &
 }
 
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
-    sph_planner.started = true;
+    sph_planner->started = true;
     ROS_INFO("Received 2D Nav Goal at position: (%.2f, %.2f, %.2f), orientation: (%.2f, %.2f, %.2f, %.2f)",
              msg->pose.position.x, msg->pose.position.y, msg->pose.position.z,
              msg->pose.orientation.x, msg->pose.orientation.y, msg->pose.orientation.z, msg->pose.orientation.w);
@@ -65,22 +83,26 @@ void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
 
 void timerCallback(const ros::TimerEvent&) {
     // ROS_INFO("Timer triggered");
-    if (!sph_planner.started) 
+    current_time = ros::Time::now();
+
+    if (!sph_planner->started) 
     {
-        ROS_INFO("Do not receive the start command, return.");
+        // 检查自上次打印后是否已经过去了1秒
+        if ((current_time - last_print_time).toSec() >= 1.0) {
+            ROS_INFO("Do not receive the start command, return.");
+            last_print_time = current_time;  // 更新上次打印时间
+        }
         return;
     }
     else
     {   
-        current_time = ros::Time::now();
-
         // 计算 deltaTime，如果是第一次进入，则将其设置为0
         float deltaTime = last_time.isZero() ? 0.0 : (current_time - last_time).toSec();
 
         // 更新last_time为当前时间
         last_time = current_time;
 
-        sph_planner.update(deltaTime);
+        sph_planner->update(deltaTime);
     }
 }
 
@@ -88,8 +110,13 @@ void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg) {
     if (!isInitialReceived) {
         initial_odomBroadcast_ = *msg;
         isInitialReceived = true;
+
+        //init planner 
+        sph_planner->initPlanner();
+        
         // ROS_INFO("Initial OdomBroadcast received.");
-    } else {
+    } 
+    else {
         current_odomBroadcast_ = *msg;
         // ROS_INFO("Current OdomBroadcast updated.");
     }
@@ -102,14 +129,15 @@ SPHSystem::SPHSystem(
     , settings(settings)
     , runOnGPU(runOnGPU)
 {
-    // particleCount = particleCubeWidth * particleCubeWidth * particleCubeWidth;
-    particleCount = initial_odomBroadcast_.OdomBroadcast.size();
-    particles = (Particle*)malloc(sizeof(Particle) * particleCount);
+    // // particleCount = particleCubeWidth * particleCubeWidth * particleCubeWidth;
+    // particleCount = initial_odomBroadcast_.OdomBroadcast.size();
+    // // std::cout<< particleCount <<std::endl;
+    // particles = (Particle*)malloc(sizeof(Particle) * particleCount);
 
-    initParticles();
+    // initParticles();
 
-	//start init
-	started = false;
+	//if start init
+	// started = false;
 }
 
 SPHSystem::SPHSystem()
@@ -126,6 +154,7 @@ void SPHSystem::initPlanner()
 {
     // particleCount = particleCubeWidth * particleCubeWidth * particleCubeWidth;
     particleCount = initial_odomBroadcast_.OdomBroadcast.size();
+    std::cout<< particleCount <<std::endl;
     particles = (Particle*)malloc(sizeof(Particle) * particleCount);
 
     initParticles();
@@ -193,6 +222,8 @@ void SPHSystem::updateParticlesCPU(
 
     //rospub control commands
     pubroscmd();
+
+    // ROS_INFO("UPDATE!!!");
 }
 
 void SPHSystem::parallelDensityAndPressures()
@@ -206,6 +237,7 @@ void SPHSystem::parallelDensityAndPressures()
             const auto& odomNeighbors = odomWithNeighbors.at(pi.name.data);
 
             float pDensity = 0;
+
             for (const auto& neighborOdom : odomNeighbors.neighborsOdom) {
                 water_swarm::Position diff;
                 diff.x = neighborOdom.position.x - odomNeighbors.myOdom.position.x;
@@ -291,7 +323,8 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         water_swarm::Acceleration acceleration;
         acceleration.x = p->force.x / p->density;
         acceleration.y = p->force.y / p->density; 
-        acceleration.z = p->force.z / p->density + settings.g; // 假设settings.g是重力加速度在z方向的分量;
+        // acceleration.z = p->force.z / p->density + settings.g; // 假设settings.g是重力加速度在z方向的分量;
+        acceleration.z = p->force.z / p->density + settings.g;
 
         p->velocity.x += acceleration.x * deltaTime;
         p->velocity.y += acceleration.y * deltaTime;
@@ -305,10 +338,34 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 }
 
 void SPHSystem::pubroscmd()
-{
+{   
+    // 初始化visualization消息
+    visualization_msgs::Marker points;
+    points.header.frame_id = "/world";  // 修改为适当的frame ID
+    points.header.stamp = ros::Time::now();
+    points.ns = "sph_system";
+    points.action = visualization_msgs::Marker::ADD;
+    points.pose.orientation.w = 1.0;
+    points.id = 0;
+    points.type = visualization_msgs::Marker::POINTS;
+
+    // 设置点的尺寸
+    points.scale.x = 0.5; // 直径为0.5
+    points.scale.y = 0.5; // 直径为0.5
+    points.color.g = 1.0f;
+    points.color.a = 1.0;
+
     //根据Particle的名字更新位置
     for (size_t i = 0; i < particleCount; i++) {
         Particle& p = particles[i];
+
+        // 创建一个新的点，并将其添加到点数组中
+        geometry_msgs::Point point;
+        point.x = p.position.x;
+        point.y = p.position.y;
+        point.z = p.position.z;
+        points.points.push_back(point);
+
         auto it = uav_publishers.find(p.name.data); // 假设name字段是std_msgs::String类型
         if (it != uav_publishers.end()) {
             quadrotor_msgs::PositionCommand cmd_msg;
@@ -346,5 +403,5 @@ void SPHSystem::pubroscmd()
             it->second.publish(cmd_msg);
         }
     }
-    
+    particles_publisher.publish(points);
 }
