@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     timer               = nh.createTimer(ros::Duration(0.05),   timerCallback);
     nav_goal_sub        = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
     particles_publisher = nh.advertise<visualization_msgs::Marker>("particles_vis", 10);
-
+    traj_sub            = nh.subscribe("/bspline_traj", 10, trajCallback);
     //create parallel sub
     for (const auto &info : master_topics) {
             // Check if topic name matches the pattern /uav(i)_odomWithNeighbors
@@ -119,6 +119,24 @@ void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg) {
     else {
         current_odomBroadcast_ = *msg;
         // ROS_INFO("Current OdomBroadcast updated.");
+    }
+}
+
+void trajCallback(const bspline_race::BsplineTraj::ConstPtr& msg) {
+
+    if (first_traj)
+    {
+        // 清空旧数据
+        global_positions.clear();
+        global_velocities.clear();
+        global_accelerations.clear();
+
+        // 存储新数据
+        global_positions     = msg->position;
+        global_velocities    = msg->velocity;
+        global_accelerations = msg->acceleration;
+
+        first_traj = false;        
     }
 }
 
@@ -341,25 +359,32 @@ void SPHSystem::parallelForces()
 
 
 void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
-{
-    for (size_t i = 0; i < particleCount; i++) {
-        Particle *p = &particles[i];
-        
-        // 计算加速度和速度
-        water_swarm::Acceleration acceleration;
-        acceleration.x = p->force.x / p->density;
-        acceleration.y = p->force.y / p->density; 
-        // acceleration.z = p->force.z / p->density + settings.g; // 假设settings.g是重力加速度在z方向的分量;
-        acceleration.z = p->force.z / p->density;
+{  
+    if (!global_accelerations.empty()) {
+        // 获取轨迹的第一个加速度
+        auto& traj_acceleration = global_accelerations.front().pose.position;
 
-        p->velocity.x += acceleration.x * deltaTime;
-        p->velocity.y += acceleration.y * deltaTime;
-        p->velocity.z += acceleration.z * deltaTime;
+        for (size_t i = 0; i < particleCount; i++) {
+            Particle *p = &particles[i];
+            
+            // 计算加速度和速度
+            water_swarm::Acceleration acceleration;
+            acceleration.x = p->force.x / p->density + traj_acceleration.x;
+            acceleration.y = p->force.y / p->density + traj_acceleration.y;
+            acceleration.z = p->force.z / p->density;  // 不改变Z方向的加速度
 
-        // 更新位置
-        p->position.x += p->velocity.x * deltaTime;
-        p->position.y += p->velocity.y * deltaTime;
-        p->position.z += p->velocity.z * deltaTime;
+            p->velocity.x += acceleration.x * deltaTime;
+            p->velocity.y += acceleration.y * deltaTime;
+            p->velocity.z += acceleration.z * deltaTime;
+
+            // 更新位置
+            p->position.x += p->velocity.x * deltaTime;
+            p->position.y += p->velocity.y * deltaTime;
+            p->position.z += p->velocity.z * deltaTime;
+        }
+
+        // 删除已应用的轨迹加速度
+        global_accelerations.erase(global_accelerations.begin());
     }
 }
 

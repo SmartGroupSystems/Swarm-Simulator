@@ -21,15 +21,22 @@
 #include "water_swarm/OdomWithNeighbors.h"
 #include "water_swarm/OdomBroadcast.h"
 #include "quadrotor_msgs/PositionCommand.h"
+#include "bspline_race/BsplineTraj.h"
 
 ros::Subscriber                                         odomBroadcast_sub;
 ros::Timer                                              timer;
 ros::Subscriber                                         nav_goal_sub;
 ros::Publisher                                          particles_publisher;
+ros::Subscriber                                         traj_sub;
 
 std::map<std::string, ros::Publisher>                   uav_publishers;
 std::map<std::string, ros::Subscriber>                  odomSubscribers;
 std::map<std::string, water_swarm::OdomWithNeighbors>   odomWithNeighbors;
+
+//存储轨迹
+std::vector<geometry_msgs::PoseStamped> global_positions;
+std::vector<geometry_msgs::PoseStamped> global_velocities;
+std::vector<geometry_msgs::PoseStamped> global_accelerations;
 
 bool isInitialReceived = false;  // 用于检查是否已经接收到第一个odomBroadcast
 water_swarm::OdomBroadcast  initial_odomBroadcast_;
@@ -44,12 +51,14 @@ float mass, restDensity, gasConstant, viscosity, h, g, tension;
 bool use_pctrl = false;//使用位置控制
 bool use_vctrl = false;//使用速度控制
 bool use_actrl = false;//使用加速度控制
+bool first_traj= true;//第一次接收轨迹
 
 void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
 void timerCallback(const ros::TimerEvent&);
 void subscribeOdomWithNeighbors(const std::string &topic_name, ros::NodeHandle &nh);
 void odomWithNeighborsCallback(const water_swarm::OdomWithNeighborsConstPtr& msg, const std::string& uav_name); 
+void trajCallback(const bspline_race::BsplineTraj::ConstPtr& msg);
 void publishPositionCommand(const std::string& uav_name, ros::NodeHandle& nh);
 
 struct SPHSettings
