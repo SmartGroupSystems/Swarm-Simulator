@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
     nh.param("restDensity", restDensity, 1000.0f);
     nh.param("gasConstant", gasConstant, 1.0f);
     nh.param("viscosity", viscosity, 1.04f);
-    nh.param("h", h, 0.15f);
+    nh.param("h", h, 0.15f);//这个参数很影响，无法与实际对应，思考这个问题咋办
     nh.param("g", g, -9.8f);
     nh.param("tension", tension, 0.2f);
     nh.param("use_pctrl", use_pctrl, true);
@@ -268,51 +268,77 @@ void SPHSystem::parallelForces()
 {
     for (size_t i = 0; i < particleCount; i++) {
 
-            Particle& pi = particles[i];
-            // 重置力
-            pi.force.x = 0.0;
-            pi.force.y = 0.0;
-            pi.force.z = 0.0;
+        Particle& pi = particles[i];
+        // 重置力
+        pi.force.x = 0.0;
+        pi.force.y = 0.0;
+        pi.force.z = 0.0;
 
-            auto it = odomWithNeighbors.find(pi.name.data);
-            if (it == odomWithNeighbors.end()) continue;
+        auto it = odomWithNeighbors.find(pi.name.data);
+        if (it == odomWithNeighbors.end()) continue;
 
-            const auto& myOdom = it->second.myOdom;
-            for (const auto& neighborOdom : it->second.neighborsOdom) {
-                // 计算距离和方向
-                auto dx = neighborOdom.position.x - myOdom.position.x;
-                auto dy = neighborOdom.position.y - myOdom.position.y;
-                auto dz = neighborOdom.position.z - myOdom.position.z;
-                double dist2 = dx*dx + dy*dy + dz*dz;
+        const auto& myOdom        = it->second.myOdom;
+        const auto& neighborsOdom = it->second.neighborsOdom;
+        const auto& drone_names   = it->second.drone_names;
 
-                if (dist2 < settings.h2 && dist2 > 0) {
-                    double dist = std::sqrt(dist2);
-                    double h_minus_dist = settings.h - dist;
+        for (size_t j = 0; j < neighborsOdom.size(); ++j) {
+            const auto& neighborOdom = neighborsOdom[j];
+            const auto& pj_name = drone_names[j]; // 获取当前邻居的名字
 
-                    // 计算压力力
-                    double pressure = (pi.pressure + pi.pressure) / (2.0 * pi.density); 
-                    water_swarm::Force pressureForce;
-                    pressureForce.x =    -pressure * dx / dist * h_minus_dist * h_minus_dist;
-                    pressureForce.y =    -pressure * dy / dist * h_minus_dist * h_minus_dist;
-                    pressureForce.z =    -pressure * dz / dist * h_minus_dist * h_minus_dist;
-
-                    // 计算粘性力
-                    auto dvx = neighborOdom.velocity.x - myOdom.velocity.x;
-                    auto dvy = neighborOdom.velocity.y - myOdom.velocity.y;
-                    auto dvz = neighborOdom.velocity.z - myOdom.velocity.z;
-                    water_swarm::Force viscosityForce; 
-                    viscosityForce.x =    settings.viscosity * dvx / pi.density * h_minus_dist;
-                    viscosityForce.y =    settings.viscosity * dvy / pi.density * h_minus_dist;
-                    viscosityForce.z =    settings.viscosity * dvz / pi.density * h_minus_dist;
-
-                    // 应用力
-                    pi.force.x += (pressureForce.x + viscosityForce.x) * settings.mass;
-                    pi.force.y += (pressureForce.y + viscosityForce.y) * settings.mass;
-                    pi.force.z += (pressureForce.z + viscosityForce.z) * settings.mass;
+            Particle* pj = nullptr; // 指向找到的粒子
+            for (size_t k = 0; k < particleCount; ++k) {
+                if (particles[k].name == pj_name) {
+                    pj = &particles[k];
+                    break; // 找到匹配的粒子，跳出循环
                 }
             }
+            if (!pj) {
+                continue; // 如果没有找到对应的粒子，继续下一个循环
+            }
+
+            // 计算距离和方向
+            auto dx = neighborOdom.position.x - myOdom.position.x;
+            auto dy = neighborOdom.position.y - myOdom.position.y;
+            auto dz = neighborOdom.position.z - myOdom.position.z;
+            double dist2 = dx * dx + dy * dy + dz * dz;
+
+            if (dist2 < settings.h2 && dist2 > 0) {
+                double dist = std::sqrt(dist2);
+
+                //计算归一化向量
+                double dir_x = dx / dist;
+                double dir_y = dy / dist;
+                double dir_z = dz / dist;
+
+                // 计算压力力，使用邻居粒子的压力和密度
+                double pressure = (pi.pressure + pj->pressure) / (2.0 * pj->density);
+                
+                water_swarm::Force pressureForce;
+                pressureForce.x = -dir_x * settings.mass * pressure * settings.spikyGrad;
+                pressureForce.y = -dir_y * settings.mass * pressure * settings.spikyGrad;
+                pressureForce.z = -dir_z * settings.mass * pressure * settings.spikyGrad;
+                pressureForce.x *= std::pow(settings.h - dist, 2);
+                pressureForce.y *= std::pow(settings.h - dist, 2);
+                pressureForce.z *= std::pow(settings.h - dist, 2);
+                
+                // 计算粘性力
+                auto dvx = pj->velocity.x - myOdom.velocity.x;
+                auto dvy = pj->velocity.y - myOdom.velocity.y;
+                auto dvz = pj->velocity.z - myOdom.velocity.z;
+
+                water_swarm::Force viscosityForce; 
+                viscosityForce.x = settings.mass * settings.viscosity * dvx / pj->density * settings.spikyLap * (settings.h - dist);
+                viscosityForce.y = settings.mass * settings.viscosity * dvy / pj->density * settings.spikyLap * (settings.h - dist);
+                viscosityForce.z = settings.mass * settings.viscosity * dvz / pj->density * settings.spikyLap * (settings.h - dist);
+
+                pi.force.x += pressureForce.x + viscosityForce.x;
+                pi.force.y += pressureForce.y + viscosityForce.y;
+                pi.force.z += pressureForce.z + viscosityForce.z;
+            }
+        }
     }
 }
+
 
 void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 {
