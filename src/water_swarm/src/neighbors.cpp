@@ -45,12 +45,24 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& na
 
     //find neighbors
     std::vector<water_swarm::Odom> neighbors;
-    for (const auto& neighbor_odom : broadcast_odom) {
+    std::vector<std_msgs::String>  neighbors_names;
+    // for (const auto& neighbor_odom : broadcast_odom) {
+    //     double dist = sqrt(pow(neighbor_odom.position.x - current_odom.position.x, 2) +
+    //                        pow(neighbor_odom.position.y - current_odom.position.y, 2) +
+    //                        pow(neighbor_odom.position.z - current_odom.position.z, 2));
+    //     if (dist <= neighbor_dist_ && dist != 0) {  // dist != 0 确保不将当前odom作为其自己的邻居
+    //         neighbors.push_back(neighbor_odom);
+    //         // neighbors_names.push_back();
+    //     }
+    // }
+    for (size_t i = 0; i < broadcast_odom.size(); ++i) {
+        const auto& neighbor_odom = broadcast_odom[i];
         double dist = sqrt(pow(neighbor_odom.position.x - current_odom.position.x, 2) +
-                           pow(neighbor_odom.position.y - current_odom.position.y, 2) +
-                           pow(neighbor_odom.position.z - current_odom.position.z, 2));
+                       pow(neighbor_odom.position.y - current_odom.position.y, 2) +
+                       pow(neighbor_odom.position.z - current_odom.position.z, 2));
         if (dist <= neighbor_dist_ && dist != 0) {  // dist != 0 确保不将当前odom作为其自己的邻居
             neighbors.push_back(neighbor_odom);
+            neighbors_names.push_back(uav_names[i]);  // 添加对应的uav名称到neighbors_names
         }
     }
 
@@ -60,6 +72,7 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& na
     odom_with_neighbors_msg.header.frame_id = "world"; // 或者其他适合的frame_id
     odom_with_neighbors_msg.drone_name      = uav_name;
     odom_with_neighbors_msg.myOdom = current_odom;
+    odom_with_neighbors_msg.drone_names = neighbors_names;
     odom_with_neighbors_msg.neighborsOdom = neighbors;
 
     //pub odom_with_neighbors  odom_broadcast

@@ -290,7 +290,7 @@ void SPHSystem::parallelForces()
                     double h_minus_dist = settings.h - dist;
 
                     // 计算压力力
-                    double pressure = (pi.pressure + pi.pressure) / (2.0 * pi.density); // 假设pi和邻居的密度相似
+                    double pressure = (pi.pressure + pi.pressure) / (2.0 * pi.density); 
                     water_swarm::Force pressureForce;
                     pressureForce.x =    -pressure * dx / dist * h_minus_dist * h_minus_dist;
                     pressureForce.y =    -pressure * dy / dist * h_minus_dist * h_minus_dist;
@@ -324,7 +324,7 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         acceleration.x = p->force.x / p->density;
         acceleration.y = p->force.y / p->density; 
         // acceleration.z = p->force.z / p->density + settings.g; // 假设settings.g是重力加速度在z方向的分量;
-        acceleration.z = p->force.z / p->density + settings.g;
+        acceleration.z = p->force.z / p->density;
 
         p->velocity.x += acceleration.x * deltaTime;
         p->velocity.y += acceleration.y * deltaTime;
