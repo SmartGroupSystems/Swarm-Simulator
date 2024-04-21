@@ -27,6 +27,7 @@ ros::Subscriber                                         odomBroadcast_sub;
 ros::Timer                                              timer;
 ros::Subscriber                                         nav_goal_sub;
 ros::Publisher                                          particles_publisher;
+ros::Publisher                                          virtual_particles_vis;
 ros::Subscriber                                         traj_sub;
 
 std::map<std::string, ros::Publisher>                   uav_publishers;
@@ -52,6 +53,9 @@ bool use_pctrl = false;//使用位置控制
 bool use_vctrl = false;//使用速度控制
 bool use_actrl = false;//使用加速度控制
 bool first_traj= true;//第一次接收轨迹
+
+double particlessideLength; // 边界边长
+int    particlesPerSide;    // 每边x个粒子
 
 void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
@@ -139,6 +143,7 @@ public:
 
     Particle                    *particles;
     size_t                      particleCount;
+    std::vector<Particle>       virtual_particles;
 
     /// Finite State Machine
     //updates the SPH system
@@ -165,10 +170,13 @@ public:
         Particle *particles, const size_t particleCount, const SPHSettings &settings,
         float deltaTime);
     
+    void calaDynamicBound();
+    void generateVirtualParticles(const double l, const int particlesPerSide, const water_swarm::Position& apex);
     void parallelDensityAndPressures();
     void parallelForces();
     void parallelUpdateParticlePositions(const float deltaTime);
     void pubroscmd();
+
 };
 
 // Function to extract the UAV number from the input string

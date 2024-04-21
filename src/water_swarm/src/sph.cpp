@@ -14,16 +14,17 @@ int main(int argc, char **argv) {
     nh.param("g", g, -9.8f);
     nh.param("tension", tension, 0.2f);
     nh.param("use_pctrl", use_pctrl, true);
-    
+
     ros::master::V_TopicInfo master_topics;
     ros::master::getTopics(master_topics);
 
     //ros sub&pub
-    odomBroadcast_sub   = nh.subscribe("/odomBroadcast", 1000,  odomBroadcastCallback);
-    timer               = nh.createTimer(ros::Duration(0.05),   timerCallback);
-    nav_goal_sub        = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
-    particles_publisher = nh.advertise<visualization_msgs::Marker>("particles_vis", 10);
-    traj_sub            = nh.subscribe("/bspline_traj", 10, trajCallback);
+    odomBroadcast_sub     = nh.subscribe("/odomBroadcast", 1000,  odomBroadcastCallback);
+    timer                 = nh.createTimer(ros::Duration(0.05),   timerCallback);
+    nav_goal_sub          = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
+    particles_publisher   = nh.advertise<visualization_msgs::Marker>("particles_vis", 10);
+    virtual_particles_vis = nh.advertise<visualization_msgs::Marker>("virtual_particles_vis", 10);
+    traj_sub              = nh.subscribe("/bspline_traj", 10, trajCallback);
     //create parallel sub
     for (const auto &info : master_topics) {
             // Check if topic name matches the pattern /uav(i)_odomWithNeighbors
@@ -47,7 +48,7 @@ int main(int argc, char **argv) {
     SPHSettings sphSettings(mass, restDensity, gasConstant, viscosity, h, g, tension);
 	
     sph_planner = new SPHSystem(15, sphSettings, false);
-    // sph_planner ->initPlanner();
+    // sph_planner ->initPlanner();//no need
 
     ROS_INFO("sph_planner node has started.");
 
@@ -177,7 +178,14 @@ void SPHSystem::initPlanner()
 
     initParticles();
 
-	//start init
+    //calc boundary 
+    particlessideLength =   std::ceil(std::sqrt(particleCount)) + 1;
+    particlesPerSide    =   particlessideLength * 10;
+    water_swarm::Position apex;
+    apex.x = -0.5; apex.y = -0.5; apex.z = 0;
+    generateVirtualParticles(particlessideLength, particlesPerSide, apex);
+	
+    //start init
 	started = false;
 }
 
@@ -357,6 +365,11 @@ void SPHSystem::parallelForces()
     }
 }
 
+void SPHSystem::calaDynamicBound()
+{
+
+}
+
 
 void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 {  
@@ -399,12 +412,25 @@ void SPHSystem::pubroscmd()
     points.pose.orientation.w = 1.0;
     points.id = 0;
     points.type = visualization_msgs::Marker::POINTS;
-
-    // 设置点的尺寸
-    points.scale.x = 0.5; // 直径为0.5
-    points.scale.y = 0.5; // 直径为0.5
+    points.scale.x = 0.5; //
+    points.scale.y = 0.5; // 
     points.color.g = 1.0f;
     points.color.a = 1.0;
+
+    visualization_msgs::Marker virtual_points; // 虚拟粒子
+    virtual_points.header.frame_id = "world";
+    virtual_points.header.stamp = ros::Time::now();
+    virtual_points.ns = "virtual_particles";
+    virtual_points.action = visualization_msgs::Marker::ADD;
+    virtual_points.pose.orientation.w = 1.0;
+    virtual_points.id = 0;
+    virtual_points.type = visualization_msgs::Marker::POINTS;
+    virtual_points.scale.x = 0.2; // 
+    virtual_points.scale.y = 0.2; // 
+    virtual_points.color.r = 0.5f;
+    virtual_points.color.g = 0.0f;
+    virtual_points.color.b = 0.5f;
+    virtual_points.color.a = 1.0; //
 
     //根据Particle的名字更新位置
     for (size_t i = 0; i < particleCount; i++) {
@@ -454,5 +480,71 @@ void SPHSystem::pubroscmd()
             it->second.publish(cmd_msg);
         }
     }
+
+    for (const auto& particle : virtual_particles) {
+        geometry_msgs::Point p;
+        p.x = particle.position.x;
+        p.y = particle.position.y;
+        p.z = particle.position.z;
+        virtual_points.points.push_back(p);
+    }
+
     particles_publisher.publish(points);
+    virtual_particles_vis.publish(virtual_points);
+}
+
+// 生成边长为 l 的正方形边界上的虚拟粒子
+void SPHSystem::generateVirtualParticles(const double l, const int particlesPerSide, const water_swarm::Position& apex) {
+
+        float step = l / particlesPerSide;
+        // 遍历正方形的四条边
+        for (int i = 0; i <= particlesPerSide; ++i) {
+            double coordX = apex.x + i * step;
+        
+            // 上边和下边
+            for (double yOffset : std::initializer_list<double>{0, l}) {
+            Particle particle;
+            particle.position.x = coordX;
+            particle.position.y = apex.y + yOffset;
+            particle.position.z = apex.z + 1.0; 
+            particle.velocity.x = 0;
+            particle.velocity.y = 0;
+            particle.velocity.z = 0;
+            particle.acceleration.x = 0;
+            particle.acceleration.y = 0;
+            particle.acceleration.z = 0;
+            particle.force.x = 0;
+            particle.force.y = 0;
+            particle.force.z = 0;
+            particle.density = 1000; // 假设水的密度
+            particle.pressure = 0;
+            particle.hash = 0;
+            particle.name.data = "Virtual Particle";
+            virtual_particles.push_back(particle);
+        }
+
+            // 左边和右边，避免角点重复
+            if (i != 0 && i != particlesPerSide) {
+                for (double xOffset : std::initializer_list<double>{0, l}) {
+                Particle particle;
+                particle.position.x = apex.x + xOffset;
+                particle.position.y = apex.y + i * step;
+                particle.position.z = apex.z + 1.0;
+                particle.velocity.x = 0;
+                particle.velocity.y = 0;
+                particle.velocity.z = 0;
+                particle.acceleration.x = 0;
+                particle.acceleration.y = 0;
+                particle.acceleration.z = 0;
+                particle.force.x = 0;
+                particle.force.y = 0;
+                particle.force.z = 0;
+                particle.density = 1000; // 假设水的密度
+                particle.pressure = 0;
+                particle.hash = 0;
+                particle.name.data = "Virtual Particle";
+                virtual_particles.push_back(particle);
+            }
+        }
+    }
 }

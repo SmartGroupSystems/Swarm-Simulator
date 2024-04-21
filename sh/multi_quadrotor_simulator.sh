@@ -13,8 +13,12 @@ if [ $(echo "$SIDE_LENGTH * $SIDE_LENGTH" | bc) -lt $NUM_UAVS ]; then
     SIDE_LENGTH=$(($SIDE_LENGTH + 1))
 fi
 
+# # 通过 ((SIDE_LENGTH / 2)) 计算正方形一半的长度
+# half_length=$((SIDE_LENGTH / 2))
+
 # 生成初始位置坐标
 INIT_POSITIONS=()
+
 for ((x=0; x<$SIDE_LENGTH; x++))
 do
     for ((y=0; y<$SIDE_LENGTH; y++))
@@ -26,6 +30,31 @@ do
         fi
     done
 done
+
+# # 计算正方形边长
+# SIDE_LENGTH=$(echo "scale=0; sqrt($NUM_UAVS)" | bc)
+# if [ $(echo "$SIDE_LENGTH * $SIDE_LENGTH" | bc) -lt $NUM_UAVS ]; then
+#     SIDE_LENGTH=$(($SIDE_LENGTH + 1))
+# fi
+
+# # 通过 ((SIDE_LENGTH / 2)) 计算正方形一半的长度
+# half_length=$((SIDE_LENGTH / 2))
+
+# # 生成初始位置坐标
+# INIT_POSITIONS=()
+
+# # 使用一个嵌套循环遍历从 -half_length 到 half_length 的每个位置
+# for ((x=-half_length; x<half_length; x++))
+# do
+#     for ((y=-half_length; y<half_length; y++))
+#     do
+#         if [ ${#INIT_POSITIONS[@]} -lt $NUM_UAVS ]; then
+#             INIT_POSITIONS+=("$x $y 1")
+#         else
+#             break 2 # 当达到无人机数上限时，完全退出所有循环
+#         fi
+#     done
+# done
 
 # 循环来启动每个 UAV
 for ((i=1; i<=NUM_UAVS; i++))
