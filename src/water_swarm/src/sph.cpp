@@ -372,14 +372,14 @@ void SPHSystem::calaDynamicBound()
 
 
 void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
-{  
+{
     if (!global_accelerations.empty()) {
         // 获取轨迹的第一个加速度
         auto& traj_acceleration = global_accelerations.front().pose.position;
 
         for (size_t i = 0; i < particleCount; i++) {
             Particle *p = &particles[i];
-            
+
             // 计算加速度和速度
             water_swarm::Acceleration acceleration;
             acceleration.x = p->force.x / p->density + traj_acceleration.x;
@@ -389,8 +389,20 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
             p->velocity.x += acceleration.x * deltaTime;
             p->velocity.y += acceleration.y * deltaTime;
             p->velocity.z += acceleration.z * deltaTime;
+            
+            // 预计算新位置
+            double newX = p->position.x + p->velocity.x * deltaTime;
+            double newY = p->position.y + p->velocity.y * deltaTime;
+            double newZ = p->position.z + p->velocity.z * deltaTime;
 
-            // 更新位置
+            // 检查是否触碰到虚拟粒子构成的墙
+            if (isNearVirtualParticle(newX, newY, newZ)) {
+                // 碰撞反弹，这里简化处理，仅在x和y方向反弹
+                p->velocity.x = -p->velocity.x;
+                p->velocity.y = -p->velocity.y;
+            }
+
+            // 更新位置，碰撞处理后
             p->position.x += p->velocity.x * deltaTime;
             p->position.y += p->velocity.y * deltaTime;
             p->position.z += p->velocity.z * deltaTime;
@@ -547,4 +559,17 @@ void SPHSystem::generateVirtualParticles(const double l, const int particlesPerS
             }
         }
     }
+}
+
+bool SPHSystem::isNearVirtualParticle(double x, double y, double z) {
+    const double threshold = 0.1;  // 定义碰撞阈值，例如粒子半径
+    for (const Particle& vp : virtual_particles) {
+        double dx = vp.position.x - x;
+        double dy = vp.position.y - y;
+        double dz = vp.position.z - z;
+        if (sqrt(dx * dx + dy * dy + dz * dz) < threshold) {
+            return true;
+        }
+    }
+    return false;
 }

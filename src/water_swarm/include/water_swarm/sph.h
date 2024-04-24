@@ -171,6 +171,7 @@ public:
         float deltaTime);
     
     void calaDynamicBound();
+    bool isNearVirtualParticle(double x, double y, double z);
     void generateVirtualParticles(const double l, const int particlesPerSide, const water_swarm::Position& apex);
     void parallelDensityAndPressures();
     void parallelForces();
