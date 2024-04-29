@@ -6,6 +6,10 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "sph_planner");
     ros::NodeHandle nh("~");
 
+// float new_h = 5.0f; // 新的核函数半径
+// float volume_per_particle = (4.0f/3.0f) * PI * pow(new_h/2, 3);
+// float new_mass = restDensity * volume_per_particle; // 根据静止密度和粒子体积计算新的质量
+
     nh.param("mass", mass, 1.00f);
     nh.param("restDensity", restDensity, 1000.0f);
     nh.param("gasConstant", gasConstant, 1.0f);
@@ -14,6 +18,15 @@ int main(int argc, char **argv) {
     nh.param("g", g, -9.8f);
     nh.param("tension", tension, 0.2f);
     nh.param("use_pctrl", use_pctrl, true);
+
+    // nh.param("mass", mass, new_mass);
+    // nh.param("restDensity", restDensity, 1000.0f);
+    // nh.param("gasConstant", gasConstant, 1.0f);
+    // nh.param("viscosity", viscosity, 1.04f); // 可能需要根据模拟结果进一步调整
+    // nh.param("h", h, new_h);
+    // nh.param("g", g, -9.8f); // 根据新的h调整重力作用范围可能需要更细致的分析
+    // nh.param("tension", tension, 0.2f); // 表面张力参数也可能需要调整
+    // nh.param("use_pctrl", use_pctrl, true);
 
     ros::master::V_TopicInfo master_topics;
     ros::master::getTopics(master_topics);
@@ -24,7 +37,7 @@ int main(int argc, char **argv) {
     nav_goal_sub          = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
     particles_publisher   = nh.advertise<visualization_msgs::Marker>("particles_vis", 10);
     virtual_particles_vis = nh.advertise<visualization_msgs::Marker>("virtual_particles_vis", 10);
-    traj_sub              = nh.subscribe("/bspline_traj", 10, trajCallback);
+    // traj_sub              = nh.subscribe("/bspline_traj", 10, trajCallback);
     //create parallel sub
     for (const auto &info : master_topics) {
             // Check if topic name matches the pattern /uav(i)_odomWithNeighbors
@@ -46,6 +59,7 @@ int main(int argc, char **argv) {
 
     //start sph planner
     SPHSettings sphSettings(mass, restDensity, gasConstant, viscosity, h, g, tension);
+    // SPHSettings sphSettings(10000.0, restDensity, gasConstant, viscosity, 5.0, g, tension);
 	
     sph_planner = new SPHSystem(15, sphSettings, false);
     // sph_planner ->initPlanner();//no need
@@ -371,46 +385,82 @@ void SPHSystem::calaDynamicBound()
 }
 
 
+// void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
+// {
+//     if (!global_accelerations.empty()) {
+//         // 获取轨迹的第一个加速度
+//         auto& traj_acceleration = global_accelerations.front().pose.position;
+
+//         for (size_t i = 0; i < particleCount; i++) {
+//             Particle *p = &particles[i];
+
+//             // 计算加速度和速度
+//             water_swarm::Acceleration acceleration;
+//             acceleration.x = p->force.x / p->density; //+ traj_acceleration.x;
+//             acceleration.y = p->force.y / p->density; //+ traj_acceleration.y;
+//             acceleration.z = p->force.z / p->density;  // 不改变Z方向的加速度
+
+//             p->velocity.x += acceleration.x * deltaTime;
+//             p->velocity.y += acceleration.y * deltaTime;
+//             p->velocity.z += acceleration.z * deltaTime;
+            
+//             // 预计算新位置
+//             double newX = p->position.x + p->velocity.x * deltaTime;
+//             double newY = p->position.y + p->velocity.y * deltaTime;
+//             double newZ = p->position.z + p->velocity.z * deltaTime;
+
+//             // 检查是否触碰到虚拟粒子构成的墙
+//             if (isNearVirtualParticle(newX, newY, newZ)) {
+//                 // 碰撞反弹，这里简化处理，仅在x和y方向反弹
+//                 p->velocity.x = -p->velocity.x;
+//                 p->velocity.y = -p->velocity.y;
+//             }
+
+//             // 更新位置，碰撞处理后
+//             p->position.x += p->velocity.x * deltaTime;
+//             p->position.y += p->velocity.y * deltaTime;
+//             p->position.z += p->velocity.z * deltaTime;
+//         }
+
+//         // 删除已应用的轨迹加速度
+//         global_accelerations.erase(global_accelerations.begin());
+//     }
+// }
+
 void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 {
-    if (!global_accelerations.empty()) {
-        // 获取轨迹的第一个加速度
-        auto& traj_acceleration = global_accelerations.front().pose.position;
 
-        for (size_t i = 0; i < particleCount; i++) {
-            Particle *p = &particles[i];
+    for (size_t i = 0; i < particleCount; i++) {
+        Particle *p = &particles[i];
 
-            // 计算加速度和速度
-            water_swarm::Acceleration acceleration;
-            acceleration.x = p->force.x / p->density + traj_acceleration.x;
-            acceleration.y = p->force.y / p->density + traj_acceleration.y;
-            acceleration.z = p->force.z / p->density;  // 不改变Z方向的加速度
+        // 计算加速度和速度
+        water_swarm::Acceleration acceleration;
+        acceleration.x = p->force.x / p->density; //+ traj_acceleration.x;
+        acceleration.y = p->force.y / p->density; //+ traj_acceleration.y;
+        acceleration.z = p->force.z / p->density;  // 不改变Z方向的加速度
 
-            p->velocity.x += acceleration.x * deltaTime;
-            p->velocity.y += acceleration.y * deltaTime;
-            p->velocity.z += acceleration.z * deltaTime;
-            
-            // 预计算新位置
-            double newX = p->position.x + p->velocity.x * deltaTime;
-            double newY = p->position.y + p->velocity.y * deltaTime;
-            double newZ = p->position.z + p->velocity.z * deltaTime;
+        p->velocity.x += acceleration.x * deltaTime;
+        p->velocity.y += acceleration.y * deltaTime;
+        p->velocity.z += acceleration.z * deltaTime;
+        
+        // 预计算新位置
+        double newX = p->position.x + p->velocity.x * deltaTime;
+        double newY = p->position.y + p->velocity.y * deltaTime;
+        double newZ = p->position.z + p->velocity.z * deltaTime;
 
-            // 检查是否触碰到虚拟粒子构成的墙
-            if (isNearVirtualParticle(newX, newY, newZ)) {
-                // 碰撞反弹，这里简化处理，仅在x和y方向反弹
-                p->velocity.x = -p->velocity.x;
-                p->velocity.y = -p->velocity.y;
-            }
-
-            // 更新位置，碰撞处理后
-            p->position.x += p->velocity.x * deltaTime;
-            p->position.y += p->velocity.y * deltaTime;
-            p->position.z += p->velocity.z * deltaTime;
+        // 检查是否触碰到虚拟粒子构成的墙
+        if (isNearVirtualParticle(newX, newY, newZ)) {
+            // 碰撞反弹，这里简化处理，仅在x和y方向反弹
+            p->velocity.x = -p->velocity.x;
+            p->velocity.y = -p->velocity.y;
         }
 
-        // 删除已应用的轨迹加速度
-        global_accelerations.erase(global_accelerations.begin());
+        // 更新位置，碰撞处理后
+        p->position.x += p->velocity.x * deltaTime;
+        p->position.y += p->velocity.y * deltaTime;
+        p->position.z += p->velocity.z * deltaTime;
     }
+
 }
 
 void SPHSystem::pubroscmd()
