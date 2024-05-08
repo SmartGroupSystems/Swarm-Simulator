@@ -2,11 +2,11 @@
     <!-- Run the sph_planner node -->
     <node name="sph_planner" pkg="water_swarm" type="sph_planner" output="screen">
         <!-- Define parameters -->
-        <param name="mass" value="1000.0"/>
+        <param name="mass" value="1000.0"/> <!-- 基于水的密度和粒子作用体积计算得到 -->
         <param name="restDensity" value="1000.0"/>
         <param name="gasConstant" value="1.0"/>
         <param name="viscosity" value="1.04"/>
-        <param name="h" value="3.0"/>
+        <param name="h" value="3.0"/> <!-- 2-3倍粒子间距， 1-dim:5; 2-dim:21; 3-dim:57 -->
         <param name="g" value="-9.8"/>
         <param name="tension" value="0.2"/>
         <param name="use_pctrl" value="true"/>
