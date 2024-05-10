@@ -40,3 +40,6 @@ target_link_libraries(neighbors ${catkin_LIBRARIES})
 
 add_executable(sph_planner src/sph.cpp)
 target_link_libraries(sph_planner ${catkin_LIBRARIES})
+
+add_executable(sph_particles src/sph_particles.cpp)
+target_link_libraries(sph_particles ${catkin_LIBRARIES})
