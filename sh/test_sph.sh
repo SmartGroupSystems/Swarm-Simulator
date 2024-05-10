@@ -9,8 +9,8 @@ echo "Launching bspline_race planning..."
 roslaunch bspline_race planning.launch & sleep 2;
 
 echo "Running water_swarm neighbors node..."
-roslaunch water_swarm neighbors.launch #& sleep 3;
+rosrun water_swarm neighbors.launch & sleep 3;
 
-# echo "Running water_swarm sph_planner node..."
-# roslaunch water_swarm sph_planner.launch 
+echo "Running water_swarm sph_planner node..."
+roslaunch water_swarm sph_planner.launch 
 

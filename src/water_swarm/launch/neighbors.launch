@@ -1,0 +1,20 @@
+<launch>
+    <!-- Define parameters -->
+    <arg name="mass" value="1000.0"/> <!-- 基于水的密度和粒子作用体积计算得到 -->
+    <arg name="restDensity" value="1000.0"/>
+    <arg name="gasConstant" value="1.0"/>
+    <arg name="viscosity" value="1.04"/>
+    <arg name="h" value="3.10"/> <!-- 2-3倍粒子间距， 1-dim:5; 2-dim:21; 3-dim:57 -->
+    <arg name="g" value="-9.8"/>
+    <arg name="tension" value="0.2"/>
+    <arg name="use_pctrl" value="true"/>
+    <arg name="threshold_dist" value="0.1"/>
+
+    <!-- Run the neighbors node -->
+    <node name="neighbors_node" pkg="water_swarm" type="neighbors" output="screen">
+        <param name="neigh/neighbor_dist"    value="$(arg h)"/> 
+        <param name="neigh/threshold_dist"   value="$(arg threshold_dist)"/>
+
+    </node>
+
+</launch>

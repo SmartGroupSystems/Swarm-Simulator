@@ -10,14 +10,14 @@ int main(int argc, char **argv) {
 // float volume_per_particle = (4.0f/3.0f) * PI * pow(new_h/2, 3);
 // float new_mass = restDensity * volume_per_particle; // 根据静止密度和粒子体积计算新的质量
 
-    nh.param("mass", mass, 1.00f);
-    nh.param("restDensity", restDensity, 1000.0f);
-    nh.param("gasConstant", gasConstant, 1.0f);
-    nh.param("viscosity", viscosity, 1.04f);
-    nh.param("h", h, 0.15f);//这个参数很影响，无法与实际对应，思考这个问题咋办
-    nh.param("g", g, -9.8f);
-    nh.param("tension", tension, 0.2f);
-    nh.param("use_pctrl", use_pctrl, true);
+    nh.param("sph/mass", mass, 1.00f);
+    nh.param("sph/restDensity", restDensity, 1000.0f);
+    nh.param("sph/gasConstant", gasConstant, 1.0f);
+    nh.param("sph/viscosity", viscosity, 1.04f);
+    nh.param("sph/h", h, 0.15f);//这个参数很影响，无法与实际对应，思考这个问题咋办
+    nh.param("sph/g", g, -9.8f);
+    nh.param("sph/tension", tension, 0.2f);
+    nh.param("sph/use_pctrl", use_pctrl, true);
 
     // nh.param("mass", mass, new_mass);
     // nh.param("restDensity", restDensity, 1000.0f);
@@ -30,6 +30,9 @@ int main(int argc, char **argv) {
 
     ros::master::V_TopicInfo master_topics;
     ros::master::getTopics(master_topics);
+
+    // wait 3 seconds
+    ros::Duration(3.0).sleep();
 
     //ros sub&pub
     odomBroadcast_sub     = nh.subscribe("/odomBroadcast", 1000,  odomBroadcastCallback);
@@ -53,9 +56,6 @@ int main(int argc, char **argv) {
             }
         }    
     }
-
-    // wait 2 seconds
-    ros::Duration(2.0).sleep();
 
     //start sph planner
     SPHSettings sphSettings(mass, restDensity, gasConstant, viscosity, h, g, tension);
@@ -292,7 +292,8 @@ void SPHSystem::parallelDensityAndPressures()
 
             // 包括自身的密度
             pi.density = pDensity + settings.selfDens;
-
+            std::cout<< "partice "<<i<<" density is: "<<  pi.density << 
+                    "  neighbors num is: " << odomNeighbors.neighborsOdom.size() << std::endl;
             // 计算压力
             pi.pressure = settings.gasConstant * (pi.density - settings.restDensity);
 
