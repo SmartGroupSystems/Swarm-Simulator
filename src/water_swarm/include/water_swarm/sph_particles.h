@@ -8,6 +8,7 @@
 #include <ros/topic_manager.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <std_msgs/String.h>
 #include <regex>
 #include <map>
@@ -26,10 +27,15 @@
 ros::Timer                                              timer;
 ros::Subscriber                                         nav_goal_sub;
 ros::Publisher                                          particles_publisher;
-ros::Publisher                                          virtual_particles_vis;
+ros::Publisher                                          virtual_particles_publisher;
+
+ros::Time last_time;//控制时间loop
+ros::Time last_print_time;//打印时间loop
+ros::Time current_time;
 
 int    particleCount;
 double particleInterval;
+double updateInterval;
 float  mass, restDensity, gasConstant, viscosity, h, g, tension;
 
 
@@ -104,9 +110,6 @@ public:
     bool runOnGPU;
     bool isInitialReceived = false;  // 用于检查是否已经接收到第一个消息
 
-    //initializes the particles that will be used
-	void initParticles();
-
 public:
 	SPHSystem(
         size_t numParticles, const SPHSettings &settings,
@@ -116,9 +119,14 @@ public:
 
     std::vector<Particle>       particles;
     std::vector<Particle>       virtual_particles;
+    std::map<const Particle*, std::vector<std::pair<const Particle*, float>>> particleNeighborsTable;
 
-    /// Finite State Machine
-    //updates the SPH system
+    //initializes the particles that will be used
+	void initParticles();
+    void findNeighbors();
+    
+    // Finite State Machine
+    // updates the SPH system
 	void update(float deltaTime);
 	void reset();
 	void start();
