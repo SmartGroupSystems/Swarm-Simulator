@@ -37,6 +37,7 @@ int    particleCount;
 double particleInterval;
 double particleVisScale;
 double updateInterval;
+double threshold_dist;
 float  mass, restDensity, gasConstant, viscosity, h, g, tension;
 
 

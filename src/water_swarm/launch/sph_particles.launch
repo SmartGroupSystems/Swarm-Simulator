@@ -6,7 +6,7 @@
     <arg name="updateInterval" value="0.005"/>  <!-- 时间步长，需满足clf条件 -->
     <arg name="h" value="0.35"/>                <!-- 2-3倍particleInterval， 1-dim:5; 2-dim:21; 3-dim:57 -->
     <arg name="mass" value="10.0"/>             <!-- 基于水的密度和粒子作用体积计算得到 -->
-    <arg name="threshold_dist" value="0.1"/>    <!-- 与虚拟粒子边界的距离 -->
+    <arg name="threshold_dist" value="0.03"/>   <!-- 与虚拟粒子边界的距离 -->
     
     <!-- Physical parameters -->
     <arg name="gasConstant" value="1.0"/>      
@@ -30,6 +30,7 @@
         <param name="sph/particleInterval"  value="$(arg particleInterval)"/>
         <param name="sph/updateInterval"    value="$(arg updateInterval)"/>
         <param name="sph/particleVisScale"  value="$(arg particleVisScale)"/>
+        <param name="sph/threshold_dist"    value="$(arg threshold_dist)"/>
     </node>
 
     <!-- RViz-->

@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
     nh.param("sph/g", g, -9.8f);
     nh.param("sph/tension", tension, 0.2f);
     nh.param("sph/updateInterval", updateInterval, 0.01);
+    nh.param("sph/threshold_dist", threshold_dist, 0.1);
 
     timer                 = nh.createTimer(ros::Duration(updateInterval),   timerCallback);
     nav_goal_sub          = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
@@ -451,13 +452,13 @@ void SPHSystem::generateVirtualParticles(const double l, const int particlesPerS
     }
 }
 
-bool SPHSystem::isNearVirtualParticle(double x, double y, double z) {
-    const double threshold = 0.1;  // 定义碰撞阈值，例如粒子半径
+bool SPHSystem::isNearVirtualParticle(double x, double y, double z) 
+{
     for (const Particle& vp : virtual_particles) {
         double dx = vp.position.x - x;
         double dy = vp.position.y - y;
         double dz = vp.position.z - z;
-        if (sqrt(dx * dx + dy * dy + dz * dz) < threshold) {
+        if (sqrt(dx * dx + dy * dy + dz * dz) < threshold_dist) {
             return true;
         }
     }
