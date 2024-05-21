@@ -1,17 +1,20 @@
 <launch>
     <!-- Define parameters -->
-    <arg name="particleCount" value="100"/> <!-- 10的倍数的平方 -->
-    <arg name="particleInterval" value="1.0"/>
-    <arg name="updateInterval" value="0.005"/> <!-- 时间步长，非常重要 -->
-    <arg name="mass" value="1000.0"/> <!-- 基于水的密度和粒子作用体积计算得到 -->
-    <arg name="restDensity" value="1000.0"/>
-    <arg name="gasConstant" value="1.0"/>
-    <arg name="viscosity" value="1.04"/>
-    <arg name="h" value="3.05"/> <!-- 2-3倍particleInterval， 1-dim:5; 2-dim:21; 3-dim:57 -->
+    <arg name="particleCount" value="100"/>     <!-- 10的倍数的平方 -->
+    <arg name="particleInterval" value="0.1"/>  <!-- 粒子之间的间距 -->
+    <arg name="particleVisScale" value="0.05"/> <!-- 粒子可视化尺寸 -->
+    <arg name="updateInterval" value="0.005"/>  <!-- 时间步长，需满足clf条件 -->
+    <arg name="h" value="0.35"/>                <!-- 2-3倍particleInterval， 1-dim:5; 2-dim:21; 3-dim:57 -->
+    <arg name="mass" value="10.0"/>             <!-- 基于水的密度和粒子作用体积计算得到 -->
+    <arg name="threshold_dist" value="0.1"/>    <!-- 与虚拟粒子边界的距离 -->
+    
+    <!-- Physical parameters -->
+    <arg name="gasConstant" value="1.0"/>      
     <arg name="g" value="-9.8"/>
     <arg name="tension" value="0.2"/>
     <arg name="use_pctrl" value="true"/>
-    <arg name="threshold_dist" value="0.1"/>
+    <arg name="restDensity" value="1000.0"/>
+    <arg name="viscosity" value="1.04"/>
 
     <!-- Run the sph_particles node -->
     <node name="sph_particles" pkg="water_swarm" type="sph_particles" output="screen">
@@ -26,6 +29,7 @@
         <param name="sph/particleCount"     value="$(arg particleCount)"/> 
         <param name="sph/particleInterval"  value="$(arg particleInterval)"/>
         <param name="sph/updateInterval"    value="$(arg updateInterval)"/>
+        <param name="sph/particleVisScale"  value="$(arg particleVisScale)"/>
     </node>
 
     <!-- RViz-->

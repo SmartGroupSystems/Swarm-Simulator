@@ -8,6 +8,7 @@ int main(int argc, char **argv) {
 
     nh.param("sph/particleCount", particleCount, -1);
     nh.param("sph/particleInterval", particleInterval, 0.1);
+    nh.param("sph/particleVisScale", particleVisScale, 0.1);
     nh.param("sph/mass", mass, 1.00f);
     nh.param("sph/restDensity", restDensity, 1000.0f);
     nh.param("sph/gasConstant", gasConstant, 1.0f);
@@ -350,9 +351,9 @@ void SPHSystem::pubroscmd()
         marker.pose.orientation.w = 1.0;
         marker.id = id++;
         marker.type = visualization_msgs::Marker::SPHERE;  // 更改类型为SPHERE
-        marker.scale.x = 0.5; // 球的直径，根据需要调整大小
-        marker.scale.y = 0.5;
-        marker.scale.z = 0.5;
+        marker.scale.x = particleVisScale; // 球的直径，根据需要调整大小
+        marker.scale.y = particleVisScale;
+        marker.scale.z = particleVisScale;
         marker.color.a = 1.0; // 透明度
         marker.color.r = 0.0; // 红色
         marker.color.g = 1.0; // 绿色
@@ -374,9 +375,9 @@ void SPHSystem::pubroscmd()
         marker.pose.orientation.w = 1.0;
         marker.id = id++;
         marker.type = visualization_msgs::Marker::CUBE;
-        marker.scale.x = 0.5; // 根据需要调整大小
-        marker.scale.y = 0.5;
-        marker.scale.z = 0.5;
+        marker.scale.x = particleVisScale; // 根据需要调整大小
+        marker.scale.y = particleVisScale;
+        marker.scale.z = particleVisScale;
         marker.color.a = 1.0; // 透明度
         marker.color.r = 0.0; // 黑色
         marker.color.g = 0.0;

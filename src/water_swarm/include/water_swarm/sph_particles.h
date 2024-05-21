@@ -35,6 +35,7 @@ ros::Time current_time;
 
 int    particleCount;
 double particleInterval;
+double particleVisScale;
 double updateInterval;
 float  mass, restDensity, gasConstant, viscosity, h, g, tension;
 
