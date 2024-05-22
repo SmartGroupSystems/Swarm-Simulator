@@ -472,6 +472,10 @@ SPHSystem::SPHSystem(
     , settings(settings)
     , runOnGPU(runOnGPU)
 {
+    /*---TEST-------*/ 
+    started = true;
+    /*--------------*/
+
     initParticles();
     findNeighbors();
    
