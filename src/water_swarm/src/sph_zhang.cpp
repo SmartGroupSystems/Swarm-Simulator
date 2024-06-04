@@ -10,14 +10,14 @@ int main(int argc, char **argv) {
     nh.param("sph/particleInterval", particleInterval, 0.1);
     nh.param("sph/particleVisScale", particleVisScale, 0.1);
     nh.param("sph/mass", mass, 1.00f);
-    nh.param("sph/restDensity", restDensity, 1000.0f);
-    nh.param("sph/gasConstant", gasConstant, 1.0f);
-    nh.param("sph/viscosity", viscosity, 1.04f);
-    nh.param("sph/h", h, 0.15f);//
+    nh.param("sph/restDensity", restDensity, 1.0f);
+    nh.param("sph/h", h, 0.15f);
     nh.param("sph/g", g, -9.8f);
-    nh.param("sph/tension", tension, 0.2f);
     nh.param("sph/updateInterval", updateInterval, 0.01);
     nh.param("sph/threshold_dist", threshold_dist, 0.1);
+    nh.param("sph/k_den", k_den, -1.0);
+    nh.param("sph/k_rep", k_rep, -1.0);
+    nh.param("sph/k_fri", k_fri, -1.0);
 
     timer                 = nh.createTimer(ros::Duration(updateInterval),   timerCallback);
     nav_goal_sub          = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 
 
     //start sph
-    SPHSettings sphSettings(mass, restDensity, gasConstant, viscosity, h, g, tension);
+    SPHSettings sphSettings(mass, restDensity, h, g);
     sph_planner = new SPHSystem(15, sphSettings, false);
 
     ROS_INFO("sph_planner node has started.");
@@ -141,28 +141,13 @@ void SPHSystem::findNeighbors() {
             float dist2 = dx * dx + dy * dy + dz * dz;
             float h2 = settings.h * settings.h;
 
-            if (dist2 < h2) {
+            if (dist2 < 4 * h2) {
                 neighbors.push_back(std::make_pair(&other, dist2));
             }
         }
 
         particleNeighborsTable[&particle] = neighbors;
     }
-
-    // // 输出邻居信息作为测试
-    // for (const auto& pair : particleNeighborsTable) {
-    //     const Particle* particle = pair.first;
-    //     const std::vector<std::pair<const Particle*, float>>& neighbors = pair.second;
-
-    //     std::cout << particle->name.data << " 的邻居数量: " << neighbors.size() << std::endl;
-
-    //     for (const auto& neighbor_pair : neighbors) {
-    //         const Particle* neighbor = neighbor_pair.first;
-    //         float dist2 = neighbor_pair.second;
-    //         std::cout << " - 邻居: " << neighbor->name.data
-    //                   << ", 距离平方: " << std::fixed << std::setprecision(2) << dist2 << std::endl;
-    //     }
-    // }
 
 }
 
@@ -223,17 +208,78 @@ void SPHSystem::parallelDensityAndPressures()
     for (auto& particle : particles) {
 
         float pDensity = 0.0;
+        float neighborGrad = 0.0;
+
+        particle.u_den.x = 0.0;
+        particle.u_den.y = 0.0;
+        particle.u_den.z = 0.0;
 
         auto& neighbors = particleNeighborsTable[&particle];
         for (auto& neighbor_pair : neighbors) {
-            // const Particle* neighbor = neighbor_pair.first;
-            float dist2 = neighbor_pair.second;
 
-            pDensity += settings.massPoly6Product * std::pow(settings.h2 - dist2, 3);
+            float dist2 = neighbor_pair.second;
+            double k = std::sqrt(dist2)/h;
+            double q;
+
+            if ( k>=0 && k<=1)
+            {
+                q = 1-(3/2)*k*k + (3/4)*k*k*k;
+            }
+            else if (k>=1 && k<=2)
+            {
+                q = (1/4)*(2-k)*(2-k)*(2-k);
+            }   
+            else
+            {
+                q = 0;
+            }
+
+            pDensity += settings.poly * q;
         }
 
         particle.density = pDensity + settings.selfDens;
-        particle.pressure = settings.gasConstant * (particle.density - settings.restDensity);
+
+        for (auto& neighbor_pair : neighbors)
+        {
+            const Particle* neighbor = neighbor_pair.first;
+            float dist2 = neighbor_pair.second;
+            float dist = std::sqrt(dist2);
+
+            // 计算方向向量
+            float dx = particle.position.x - neighbor->position.x;
+            float dy = particle.position.y - neighbor->position.y;
+            float dz = particle.position.z - neighbor->position.z;
+
+            // 归一化方向向量
+            float dir_x = dx / dist;
+            float dir_y = dy / dist;
+            float dir_z = dz / dist;
+
+            double k = std::sqrt(dist2)/h;
+            double q;
+
+            if ( k>=0 && k<=1)
+            {
+                q = -3*k + (9/4)*k*k;
+            }
+            else if (k>=1 && k<=2)
+            {
+                q = (-3/4)*(2-k)*(2-k);
+            }   
+            else
+            {
+                q = 0;
+            }
+
+            neighborGrad = settings.poly * h * q;
+
+            double p = -k_den * (1/particle.density) * (std::pow(particle.density/settings.restDensity,7) -1 );
+            
+            particle.u_den.x += p * neighborGrad * dir_x;
+            particle.u_den.y += p * neighborGrad * dir_y;
+            particle.u_den.z += p * neighborGrad * dir_z;
+
+        }
     }
 }
 
@@ -241,10 +287,13 @@ void SPHSystem::parallelForces()
 {
     for (auto& particle : particles) {
 
-        // 重置粒子的力
-        particle.force.x = 0.0;
-        particle.force.y = 0.0;
-        particle.force.z = 0.0;
+        particle.u_rep.x = 0.0;
+        particle.u_rep.y = 0.0;
+        particle.u_rep.z = 0.0;
+
+        particle.u_fri.x = 0.0; 
+        particle.u_fri.y = 0.0; 
+        particle.u_fri.z = 0.0; 
 
         auto& neighbors = particleNeighborsTable[&particle];
         
@@ -265,41 +314,16 @@ void SPHSystem::parallelForces()
             float dir_y = dy / dist;
             float dir_z = dz / dist;
 
-            // 计算压力力
-            float pressure = (particle.pressure + neighbor->pressure) / (2.0 * neighbor->density);
-
-            water_swarm::Force pressureForce;
-            pressureForce.x = -dir_x * settings.mass * pressure * settings.spikyGrad;
-            pressureForce.y = -dir_y * settings.mass * pressure * settings.spikyGrad;
-            pressureForce.z = -dir_z * settings.mass * pressure * settings.spikyGrad;
-            // pressureForce.x = dir_x * settings.mass * pressure * settings.spikyGrad;
-            // pressureForce.y = dir_y * settings.mass * pressure * settings.spikyGrad;
-            // pressureForce.z = dir_z * settings.mass * pressure * settings.spikyGrad;
-
-
-            // 调整压力力的权重
-            pressureForce.x *= std::pow(settings.h - dist, 2);
-            pressureForce.y *= std::pow(settings.h - dist, 2);
-            pressureForce.z *= std::pow(settings.h - dist, 2);
-
-             // 计算粘性力
-            float dvx = neighbor->velocity.x - particle.velocity.x;
-            float dvy = neighbor->velocity.y - particle.velocity.y;
-            float dvz = neighbor->velocity.z - particle.velocity.z;
-
-            water_swarm::Force viscosityForce;
-            viscosityForce.x = settings.mass * settings.viscosity * dvx / neighbor->density * settings.spikyLap * (settings.h - dist);
-            viscosityForce.y = settings.mass * settings.viscosity * dvy / neighbor->density * settings.spikyLap * (settings.h - dist);
-            viscosityForce.z = settings.mass * settings.viscosity * dvz / neighbor->density * settings.spikyLap * (settings.h - dist);
-
-            // 将压力力和粘性力累加到粒子 `pi` 上
-            particle.force.x += pressureForce.x + viscosityForce.x;
-            particle.force.y += pressureForce.y + viscosityForce.y;
-            particle.force.z += pressureForce.z + viscosityForce.z;
+            particle.u_rep.x += k_rep * 1/dist2 * dist * dir_x;
+            particle.u_rep.y += k_rep * 1/dist2 * dist * dir_y;
+            particle.u_rep.z += k_rep * 1/dist2 * dist * dir_z;
 
         }
-       
-    }
+    
+        particle.u_fri.x = -k_fri * particle.velocity.x; 
+        particle.u_fri.y = -k_fri * particle.velocity.y; 
+        particle.u_fri.z = -k_fri * particle.velocity.z; 
+    }   
 }
 
 void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
@@ -307,11 +331,11 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
     for (size_t i = 0; i < particles.size(); i++) {
         Particle *p = &particles[i];
 
-        // 计算加速度
+        // 计算加速度 u_i = u_i^{den} + u_i^{rep} + u_i^{fri}
         water_swarm::Acceleration acceleration;
-        acceleration.x = p->force.x / p->density;  // 根据牛顿第二定律计算加速度
-        acceleration.y = p->force.y / p->density;
-        acceleration.z = p->force.z / p->density;
+        acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
+        acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
+        acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
 
         // 更新速度
         p->velocity.x += acceleration.x * deltaTime;

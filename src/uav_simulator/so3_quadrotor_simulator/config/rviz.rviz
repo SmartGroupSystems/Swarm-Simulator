@@ -3,7 +3,9 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /particles1
+        - /vitural_particles1
       Splitter Ratio: 0.5176470875740051
     Tree Height: 363
   - Class: rviz/Selection
@@ -860,7 +862,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /sph_particles/particles_vis
+      Marker Topic: /sph_zhang/particles_vis
       Name: particles
       Namespaces:
         particles: true
@@ -868,7 +870,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /sph_particles/virtual_particles_vis
+      Marker Topic: /sph_zhang/virtual_particles_vis
       Name: vitural_particles
       Namespaces:
         virtual_particles: true
@@ -914,7 +916,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.547729015350342
+      Distance: 59.403560638427734
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -922,17 +924,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.4157005846500397
-        Y: 0.47927558422088623
-        Z: -1.9166901111602783
+        X: 4.191247940063477
+        Y: 2.758286476135254
+        Z: -1.827547550201416
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5397963523864746
+      Pitch: 1.5547963380813599
       Target Frame: world
-      Yaw: 4.7131805419921875
+      Yaw: 4.698175430297852
     Saved: ~
 Window Geometry:
   Displays:

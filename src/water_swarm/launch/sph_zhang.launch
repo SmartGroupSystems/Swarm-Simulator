@@ -1,36 +1,34 @@
 <launch>
     <!-- Define parameters -->
     <arg name="particleCount" value="100"/>     <!-- 10的倍数的平方 -->
-    <arg name="particleInterval" value="0.1"/>  <!-- 粒子之间的间距 -->
-    <arg name="particleVisScale" value="0.05"/> <!-- 粒子可视化尺寸 -->
-    <arg name="updateInterval" value="0.005"/>  <!-- 时间步长，需满足clf条件 -->
-    <arg name="h" value="0.35"/>                <!-- 2-3倍particleInterval， 1-dim:5; 2-dim:21; 3-dim:57 -->
-    <arg name="mass" value="10.0"/>             <!-- 基于水的密度和粒子作用体积计算得到 -->
-    <arg name="threshold_dist" value="0.03"/>   <!-- 与虚拟粒子边界的距离 -->
-    
-    <!-- Physical parameters -->
-    <arg name="gasConstant" value="1.0"/>      
-    <arg name="g" value="-9.8"/>
-    <arg name="tension" value="0.2"/>
-    <arg name="use_pctrl" value="true"/>
-    <arg name="restDensity" value="0.001"/>
-    <arg name="viscosity" value="1.04"/>
+    <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
+    <arg name="particleVisScale" value="0.35"/> <!-- 粒子可视化尺寸 -->
+    <arg name="updateInterval" value="0.02"/>   <!-- 时间步长 -->
+    <arg name="h" value="1.0"/>                 <!-- 2-3倍particleInterval， 1-dim:5; 2-dim:21; 3-dim:57 -->
+    <arg name="mass" value="1.0"/>              <!-- default MASS -->
+    <arg name="threshold_dist" value="0.03"/>   <!-- 粒子与虚拟粒子的碰撞检测距离 -->
+    <arg name="k_den" value="100.0"/>           <!-- k_den -->
+    <arg name="k_rep" value="10.0"/>            <!-- k_rep -->
+    <arg name="k_fri" value="1.0"/>             <!-- k_fri -->
+    <arg name="restDensity" value="10000.0"/>   <!-- \rho0 -->
+    <arg name="g" value="-9.8"/>                <!-- 重力 -->
+    <arg name="use_pctrl" value="true"/>        <!-- 使用位置\速度\加速度控制，默认使用位置控制 -->
 
     <!-- Run the sph_particles node -->
     <node name="sph_zhang" pkg="water_swarm" type="sph_zhang" output="screen">
         <param name="sph/mass"              value="$(arg mass)"/> 
         <param name="sph/restDensity"       value="$(arg restDensity)"/>
-        <param name="sph/gasConstant"       value="$(arg gasConstant)"/>
-        <param name="sph/viscosity"         value="$(arg viscosity)"/>
         <param name="sph/h"                 value="$(arg h)"/> 
         <param name="sph/g"                 value="$(arg g)"/>
-        <param name="sph/tension"           value="$(arg tension)"/>
         <param name="sph/use_pctrl"         value="$(arg use_pctrl)"/>
         <param name="sph/particleCount"     value="$(arg particleCount)"/> 
         <param name="sph/particleInterval"  value="$(arg particleInterval)"/>
         <param name="sph/updateInterval"    value="$(arg updateInterval)"/>
         <param name="sph/particleVisScale"  value="$(arg particleVisScale)"/>
         <param name="sph/threshold_dist"    value="$(arg threshold_dist)"/>
+        <param name="sph/k_den"             value="$(arg k_den)"/> 
+        <param name="sph/k_rep"             value="$(arg k_rep)"/> 
+        <param name="sph/k_fri"             value="$(arg k_fri)"/> 
     </node>
 
     <!-- RViz-->
