@@ -17,7 +17,7 @@
     <arg name="viscosity" value="1.04"/>
 
     <!-- Run the sph_particles node -->
-    <node name="sph_particles" pkg="water_swarm" type="sph_particles" output="screen">
+    <node name="sph_zhang" pkg="water_swarm" type="sph_zhang" output="screen">
         <param name="sph/mass"              value="$(arg mass)"/> 
         <param name="sph/restDensity"       value="$(arg restDensity)"/>
         <param name="sph/gasConstant"       value="$(arg gasConstant)"/>

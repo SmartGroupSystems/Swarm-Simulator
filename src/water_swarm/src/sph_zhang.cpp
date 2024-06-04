@@ -1,4 +1,4 @@
-#include "sph_particles.h"
+#include "sph_zhang.h"
 
 SPHSystem* sph_planner;
 
