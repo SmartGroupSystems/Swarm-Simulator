@@ -1,17 +1,19 @@
 <launch>
     <!-- Define parameters -->
-    <arg name="particleCount" value="100"/>     <!-- 10的倍数的平方 -->
+    <arg name="particleCount" value="400"/>      <!-- 粒子的数量，如果是10的倍数的平方，则以正方形分布 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.35"/> <!-- 粒子可视化尺寸 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长 -->
-    <arg name="h" value="1.0"/>                 <!-- 2-3倍particleInterval， 1-dim:5; 2-dim:21; 3-dim:57 -->
+    <arg name="h" value="5.0"/>                 <!-- 2-3倍particleInterval， 1-dim:5; 2-dim:21; 3-dim:57 -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
     <arg name="threshold_dist" value="0.03"/>   <!-- 粒子与虚拟粒子的碰撞检测距离 -->
     <arg name="k_den" value="100.0"/>           <!-- k_den -->
-    <arg name="k_rep" value="10.0"/>            <!-- k_rep -->
-    <arg name="k_fri" value="1.0"/>             <!-- k_fri -->
-    <arg name="restDensity" value="10000.0"/>   <!-- \rho0 -->
-    <arg name="g" value="-9.8"/>                <!-- 重力 -->
+    <arg name="k_rep" value="50.0"/>            <!-- k_rep -->
+    <arg name="k_fri" value="100.0"/>           <!-- k_fri -->
+    <arg name="v_max" value="1.0"/>             <!-- v_max -->
+    <arg name="a_max" value="1.0"/>             <!-- a_max -->
+    <arg name="restDensity" value="1000000.0"/> <!-- \rho0 -->
+    <arg name="g" value="-9.8"/>                <!-- 重力,no use -->
     <arg name="use_pctrl" value="true"/>        <!-- 使用位置\速度\加速度控制，默认使用位置控制 -->
 
     <!-- Run the sph_particles node -->
@@ -29,6 +31,8 @@
         <param name="sph/k_den"             value="$(arg k_den)"/> 
         <param name="sph/k_rep"             value="$(arg k_rep)"/> 
         <param name="sph/k_fri"             value="$(arg k_fri)"/> 
+        <param name="sph/v_max"             value="$(arg v_max)"/>
+        <param name="sph/a_max"             value="$(arg a_max)"/>
     </node>
 
     <!-- RViz-->

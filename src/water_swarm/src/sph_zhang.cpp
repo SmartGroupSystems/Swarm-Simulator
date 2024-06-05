@@ -18,6 +18,8 @@ int main(int argc, char **argv) {
     nh.param("sph/k_den", k_den, -1.0);
     nh.param("sph/k_rep", k_rep, -1.0);
     nh.param("sph/k_fri", k_fri, -1.0);
+    nh.param("sph/v_max", v_max, -1.0);
+    nh.param("sph/a_max", a_max, -1.0);
 
     timer                 = nh.createTimer(ros::Duration(updateInterval),   timerCallback);
     nav_goal_sub          = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
@@ -225,7 +227,7 @@ void SPHSystem::parallelDensityAndPressures()
             {
                 q = 1-(3/2)*k*k + (3/4)*k*k*k;
             }
-            else if (k>=1 && k<=2)
+            else if (k>1 && k<=2)
             {
                 q = (1/4)*(2-k)*(2-k)*(2-k);
             }   
@@ -238,6 +240,7 @@ void SPHSystem::parallelDensityAndPressures()
         }
 
         particle.density = pDensity + settings.selfDens;
+        double p = -k_den * (1/particle.density) * (std::pow(particle.density/settings.restDensity,7) -1 );
 
         for (auto& neighbor_pair : neighbors)
         {
@@ -262,7 +265,7 @@ void SPHSystem::parallelDensityAndPressures()
             {
                 q = -3*k + (9/4)*k*k;
             }
-            else if (k>=1 && k<=2)
+            else if (k>1 && k<=2)
             {
                 q = (-3/4)*(2-k)*(2-k);
             }   
@@ -273,8 +276,6 @@ void SPHSystem::parallelDensityAndPressures()
 
             neighborGrad = settings.poly * h * q;
 
-            double p = -k_den * (1/particle.density) * (std::pow(particle.density/settings.restDensity,7) -1 );
-            
             particle.u_den.x += p * neighborGrad * dir_x;
             particle.u_den.y += p * neighborGrad * dir_y;
             particle.u_den.z += p * neighborGrad * dir_z;
@@ -337,10 +338,20 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
         acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
 
+        //加速度限制
+        acceleration.x = clamp(acceleration.x, a_max);
+        acceleration.y = clamp(acceleration.y, a_max);
+        acceleration.z = clamp(acceleration.z, a_max);      
+
         // 更新速度
         p->velocity.x += acceleration.x * deltaTime;
         p->velocity.y += acceleration.y * deltaTime;
         p->velocity.z += acceleration.z * deltaTime;
+
+        //速度限制
+        p->velocity.x = clamp(p->velocity.x, v_max);
+        p->velocity.y = clamp(p->velocity.y, v_max);
+        p->velocity.z = clamp(p->velocity.z, v_max);
 
         // 预计算新位置
         double newX = p->position.x + p->velocity.x * deltaTime;
@@ -348,10 +359,10 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         double newZ = p->position.z + p->velocity.z * deltaTime;
 
         // 检查是否触碰到虚拟粒子构成的墙
-        if (isNearVirtualParticle(newX, newY, newZ)) {
-            p->velocity.x = -p->velocity.x;
-            p->velocity.y = -p->velocity.y;
-        }
+        // if (isNearVirtualParticle(newX, newY, newZ)) {
+        //     p->velocity.x = -p->velocity.x;
+        //     p->velocity.y = -p->velocity.y;
+        // }
 
         // 更新位置
         p->position.x += p->velocity.x * deltaTime;

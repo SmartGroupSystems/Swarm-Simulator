@@ -40,7 +40,8 @@ double particleVisScale;
 double updateInterval;
 double threshold_dist;
 float  mass, restDensity, h, g;
-double  k_den, k_rep, k_fri;
+double k_den, k_rep, k_fri;
+double v_max, a_max;
 
 void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
@@ -144,6 +145,16 @@ public:
     void parallelViscosity();
     void parallelUpdateParticlePositions(const float deltaTime);
     void pubroscmd();
+    
+    inline double clamp(double value, double max_value) 
+    {
+        if (value > max_value) {
+            return max_value;
+        } else if (value < -max_value) {
+            return -max_value;
+        }
+        return value;
+    }
 
 };
 
