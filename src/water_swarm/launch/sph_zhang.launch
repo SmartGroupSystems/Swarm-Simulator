@@ -1,14 +1,20 @@
 <launch>
     <!-- Define parameters -->
-    <arg name="particleCount" value="400"/>      <!-- 粒子的数量，如果是10的倍数的平方，则以正方形分布 -->
+    <!-- The system is designed based on <<Collective fission behavior in swarming systems with density-based interaction>> 
+         The parameters is defined as follows. 
+         Generally speaking, increasing the kernel function radius h, the strength of density force k_den,
+         and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
+         swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
+
+    <arg name="particleCount" value="1"/>       <!-- 粒子的数量，如果是10的倍数的平方，则以正方形分布 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
-    <arg name="particleVisScale" value="0.35"/> <!-- 粒子可视化尺寸 -->
+    <arg name="particleVisScale" value="0.5"/>  <!-- 粒子可视化尺寸 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长 -->
-    <arg name="h" value="5.0"/>                 <!-- 2-3倍particleInterval， 1-dim:5; 2-dim:21; 3-dim:57 -->
+    <arg name="h" value="10.0"/>                <!-- kernel function radius -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
     <arg name="threshold_dist" value="0.03"/>   <!-- 粒子与虚拟粒子的碰撞检测距离 -->
     <arg name="k_den" value="100.0"/>           <!-- k_den -->
-    <arg name="k_rep" value="50.0"/>            <!-- k_rep -->
+    <arg name="k_rep" value="100.0"/>           <!-- k_rep -->
     <arg name="k_fri" value="100.0"/>           <!-- k_fri -->
     <arg name="v_max" value="1.0"/>             <!-- v_max -->
     <arg name="a_max" value="1.0"/>             <!-- a_max -->
