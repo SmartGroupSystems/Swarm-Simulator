@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(map_generator)
+project(dynamic_map_generator)
 
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++11")
@@ -51,7 +51,22 @@ target_link_libraries(dyn_map
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES})
 
-  add_executable(local_dyn_map src/local_dyn_map.cpp)
-  target_link_libraries(local_dyn_map
+add_executable(local_dyn_map src/local_dyn_map.cpp)
+target_link_libraries(local_dyn_map
     ${catkin_LIBRARIES}
     ${PCL_LIBRARIES})
+
+add_executable(click_map src/click_map.cpp)
+target_link_libraries(click_map
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES})
+
+add_executable (map_recorder src/map_recorder.cpp )
+target_link_libraries(map_recorder
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES})
+
+add_executable (map_pub src/map_publisher.cpp )
+target_link_libraries(map_pub
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES})

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>map_generator</name>
+  <name>dynamic_map_generator</name>
   <version>1.0.0</version>
   <description>The map_generator package</description>
 
