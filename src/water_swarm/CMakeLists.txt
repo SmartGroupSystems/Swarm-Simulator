@@ -1,13 +1,15 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(water_swarm)
 
-
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
   message_generation
+  bspline_race
 )
+find_package(NLopt REQUIRED)
+set(NLopt_INCLUDE_DIRS ${NLOPT_INCLUDE_DIR})
 
 add_message_files(
   FILES
@@ -27,12 +29,14 @@ generate_messages(
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS message_runtime std_msgs roscpp rospy
+  CATKIN_DEPENDS message_runtime std_msgs roscpp rospy bspline_race
 )
 
 include_directories(
   include/water_swarm
-  ${catkin_INCLUDE_DIRS}
+  SYSTEM
+  ${catkin_INCLUDE_DIRS} 
+  ${NLOPT_INCLUDE_DIRS}
 )
 
 add_executable(neighbors src/neighbors.cpp)

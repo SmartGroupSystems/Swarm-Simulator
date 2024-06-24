@@ -44,9 +44,6 @@
     <!-- Obs map-->
     <node pkg ="dynamic_map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find dynamic_map_generator)/resource/tmp.pcd"/>
 
-    <!-- Traj opt-->
-    
-
     <!-- RViz-->
     <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/rviz.rviz" />
     

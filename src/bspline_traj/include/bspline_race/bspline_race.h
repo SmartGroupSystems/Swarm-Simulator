@@ -35,7 +35,7 @@
 using namespace std;
 
 struct Point { double x, y, z;};
-bspline_race::BsplineTraj traj_;//执行轨迹
+
 
 namespace FLAG_Race
 {
@@ -59,12 +59,16 @@ namespace FLAG_Race
             std::shared_ptr<UniformBspline> u;
             double lambda1_,lambda2_;
             
+            //Traj
+            bspline_race::BsplineTraj traj_;//执行轨迹
+
         public:
             plan_manager(){}
             plan_manager(ros::NodeHandle &nh);
             ~plan_manager();
             void setParam(ros::NodeHandle &nh);//从ros节点中读取参数
             bspline_race::BsplineTraj getSmoothTraj(const std::vector<Point> waypoints);
+            void optTraj();
     };
 
 }

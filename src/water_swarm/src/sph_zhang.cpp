@@ -33,6 +33,11 @@ int main(int argc, char **argv) {
 
     ROS_INFO("sph_planner node has started.");
 
+    //start swarm trajectoty optimization
+    FLAG_Race::plan_manager traj_manager(nh);
+
+    ROS_INFO("swarm trajectoty optimization node has started.");
+
     ros::spin();
     return 0;
 }

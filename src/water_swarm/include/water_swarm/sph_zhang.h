@@ -25,6 +25,9 @@
 #include "quadrotor_msgs/PositionCommand.h"
 #include "bspline_race/BsplineTraj.h"
 
+#include <bspline_race/bspline_race.h>
+
+
 ros::Timer                                              timer;
 ros::Subscriber                                         nav_goal_sub;
 ros::Publisher                                          particles_publisher;

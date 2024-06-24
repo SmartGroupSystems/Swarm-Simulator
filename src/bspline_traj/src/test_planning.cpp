@@ -70,6 +70,7 @@ int main(int argc, char ** argv)
     }
 
     //计算轨迹
+    bspline_race::BsplineTraj traj_;
     traj_ = manager.getSmoothTraj(waypoints);
 
     // 设置轨迹可视化 Marker 消息

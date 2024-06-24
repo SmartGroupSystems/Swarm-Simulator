@@ -124,4 +124,10 @@ namespace FLAG_Race
         return traj;
     }
 
+    void plan_manager::optTraj()
+    {
+        
+
+    }
+
 }
