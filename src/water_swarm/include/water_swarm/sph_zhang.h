@@ -25,8 +25,6 @@
 #include "quadrotor_msgs/PositionCommand.h"
 #include "bspline_race/BsplineTraj.h"
 
-#include <bspline_race/bspline_race.h>
-
 
 ros::Timer                                              timer;
 ros::Subscriber                                         nav_goal_sub;
@@ -90,6 +88,7 @@ struct Particle
     uint16_t                    hash;
     water_swarm::Force          u_den, u_rep, u_fri;
     std_msgs::String            name;
+    int                         index;
 };
 
 class SPHSystem

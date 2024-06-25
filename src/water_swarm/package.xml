@@ -23,9 +23,9 @@
   <exec_depend>std_msgs</exec_depend>
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
-  <build_depend>bspline_race</build_depend>
+  <!-- <build_depend>bspline_race</build_depend>
   <exec_depend>bspline_race</exec_depend>
-  <build_export_depend>bspline_race</build_export_depend>
+  <build_export_depend>bspline_race</build_export_depend> -->
   
   <!-- The export tag contains other, unspecified, tags -->
   <export>

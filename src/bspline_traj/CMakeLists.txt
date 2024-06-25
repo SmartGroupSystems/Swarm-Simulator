@@ -56,6 +56,7 @@ target_link_libraries(bspline_race
 add_dependencies(bspline_race
   ${PROJECT_NAME}_generate_messages_cpp
 )
+
 add_executable( flag_planner 
     src/test_planning.cpp
  )
@@ -65,6 +66,17 @@ target_link_libraries(flag_planner
  ${catkin_LIBRARIES}
  ${NLOPT_LIBRARIES}
 )
+
+add_executable( swarm_planning 
+    src/swarm_planning.cpp
+ )
+ 
+target_link_libraries(swarm_planning 
+ bspline_race
+ ${catkin_LIBRARIES}
+ ${NLOPT_LIBRARIES}
+)
+
 
 add_executable(traj_server src/traj_server.cpp)
 target_link_libraries(traj_server ${catkin_LIBRARIES})  

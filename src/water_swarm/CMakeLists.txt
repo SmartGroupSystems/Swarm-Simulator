@@ -6,10 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
-  bspline_race
 )
-find_package(NLopt REQUIRED)
-set(NLopt_INCLUDE_DIRS ${NLOPT_INCLUDE_DIR})
 
 add_message_files(
   FILES
@@ -29,7 +26,7 @@ generate_messages(
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS message_runtime std_msgs roscpp rospy bspline_race
+  CATKIN_DEPENDS message_runtime std_msgs roscpp rospy 
 )
 
 include_directories(

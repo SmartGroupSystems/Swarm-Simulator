@@ -33,11 +33,6 @@ int main(int argc, char **argv) {
 
     ROS_INFO("sph_planner node has started.");
 
-    //start swarm trajectoty optimization
-    FLAG_Race::plan_manager traj_manager(nh);
-
-    ROS_INFO("swarm trajectoty optimization node has started.");
-
     ros::spin();
     return 0;
 }
@@ -108,6 +103,7 @@ void SPHSystem::initParticles()
             p.density = settings.selfDens;
             p.pressure = 0.0;
             p.hash = 0; // 根据需要设置
+            p.index= i;
 
             // 设置粒子名称，例如"Particle 1", "Particle 2"等
             std::stringstream ss;
@@ -394,7 +390,7 @@ void SPHSystem::pubroscmd()
         marker.pose.position.y = particle.position.y;
         marker.pose.position.z = particle.position.z;
         marker.pose.orientation.w = 1.0;
-        marker.id = id++;
+        marker.id = particle.index;
         marker.type = visualization_msgs::Marker::SPHERE;  // 更改类型为SPHERE
         marker.scale.x = particleVisScale; // 球的直径，根据需要调整大小
         marker.scale.y = particleVisScale;
@@ -437,7 +433,7 @@ void SPHSystem::pubroscmd()
 
 void SPHSystem::calaDynamicBound()
 {
-
+    
 }
 
 // 生成边长为 l 的正方形边界上的虚拟粒子

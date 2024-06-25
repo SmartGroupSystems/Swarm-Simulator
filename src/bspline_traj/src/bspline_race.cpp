@@ -127,7 +127,6 @@ namespace FLAG_Race
     void plan_manager::optTraj()
     {
         
-
     }
 
 }
