@@ -124,9 +124,13 @@ namespace FLAG_Race
         return traj;
     }
 
+    void plan_manager::update(const common_msgs::Swarm_particles& particles) 
+    {
+        current_particles = particles;  
+    }
+    
     void plan_manager::optTraj()
     {
         
     }
-
 }

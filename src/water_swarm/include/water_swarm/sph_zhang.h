@@ -26,7 +26,7 @@
 #include "common_msgs/Swarm_particles.h"
 #include "common_msgs/PositionCommand.h"
 #include "common_msgs/BsplineTraj.h"
-
+#include "common_msgs/Swarm_traj.h"
 
 
 ros::Timer                                              timer;
@@ -34,6 +34,7 @@ ros::Subscriber                                         nav_goal_sub;
 ros::Publisher                                          particles_publisher;
 ros::Publisher                                          virtual_particles_publisher;
 ros::Publisher                                          swarm_pub;
+ros::Subscriber                                         swarm_traj_sub;
 
 ros::Time last_time;//控制时间loop
 ros::Time last_print_time;//打印时间loop
@@ -51,6 +52,7 @@ double v_max, a_max;
 void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
 void timerCallback(const ros::TimerEvent&);
+void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg);
 
 struct SPHSettings
 {   

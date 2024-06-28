@@ -26,7 +26,8 @@ int main(int argc, char **argv) {
     particles_publisher   = nh.advertise<visualization_msgs::MarkerArray>("particles_vis", 10);
     virtual_particles_publisher = nh.advertise<visualization_msgs::MarkerArray>("virtual_particles_vis", 10);
     swarm_pub             = nh.advertise<common_msgs::Swarm_particles>("/swarm_particles", 10);
-    
+    swarm_traj_sub        = nh.subscribe("/swarm_traj", 1000, swarmTrajCallback);
+
     //start sph
     SPHSettings sphSettings(mass, restDensity, h, g);
     sph_planner = new SPHSystem(15, sphSettings, false);
@@ -35,6 +36,11 @@ int main(int argc, char **argv) {
 
     ros::spin();
     return 0;
+}
+
+void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg)
+{
+    
 }
 
 

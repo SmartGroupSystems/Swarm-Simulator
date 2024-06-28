@@ -10,9 +10,12 @@ ros::Publisher traj_vis;
 ros::Publisher traj_puber;
 ros::Publisher waypoint_vis;
 ros::Subscriber particles_sub;   
+ros::Timer      traj_timer;
 
 common_msgs::Swarm_particles latest_swarm_particles;
 
+
 void particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
+void timerCallback(const ros::TimerEvent&);
 
 #endif
