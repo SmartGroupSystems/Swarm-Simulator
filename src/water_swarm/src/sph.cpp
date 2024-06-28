@@ -72,16 +72,16 @@ int main(int argc, char **argv) {
 
 void publishPositionCommand(const std::string& uav_name, ros::NodeHandle& nh) {
     std::string topic_name = uav_name + "/position_cmd";
-    uav_publishers[uav_name] = nh.advertise<quadrotor_msgs::PositionCommand>(topic_name, 10);
+    uav_publishers[uav_name] = nh.advertise<common_msgs::PositionCommand>(topic_name, 10);
 }
 
 
-void odomWithNeighborsCallback(const water_swarm::OdomWithNeighborsConstPtr& msg, const std::string& uav_name) {
+void odomWithNeighborsCallback(const common_msgs::OdomWithNeighborsConstPtr& msg, const std::string& uav_name) {
     odomWithNeighbors[extractUavName(uav_name)] = *msg;
 }
 
 void subscribeOdomWithNeighbors(const std::string &topic_name, ros::NodeHandle &nh) {
-    odomSubscribers[topic_name] = nh.subscribe<water_swarm::OdomWithNeighbors>(
+    odomSubscribers[topic_name] = nh.subscribe<common_msgs::OdomWithNeighbors>(
         topic_name, 
         1000, 
         boost::bind(odomWithNeighborsCallback, _1, topic_name)
@@ -121,7 +121,7 @@ void timerCallback(const ros::TimerEvent&) {
     }
 }
 
-void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg) {
+void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg) {
     if (!isInitialReceived) {
         initial_odomBroadcast_ = *msg;
         isInitialReceived = true;
@@ -137,7 +137,7 @@ void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg) {
     }
 }
 
-void trajCallback(const bspline_race::BsplineTraj::ConstPtr& msg) {
+void trajCallback(const common_msgs::BsplineTraj::ConstPtr& msg) {
 
     if (first_traj)
     {
@@ -195,7 +195,7 @@ void SPHSystem::initPlanner()
     //calc boundary 
     particlessideLength =   std::ceil(std::sqrt(particleCount)) + 1;
     particlesPerSide    =   particlessideLength * 10;
-    water_swarm::Position apex;
+    common_msgs::Position apex;
     apex.x = -0.5; apex.y = -0.5; apex.z = 0;
     generateVirtualParticles(particlessideLength, particlesPerSide, apex);
 	
@@ -279,7 +279,7 @@ void SPHSystem::parallelDensityAndPressures()
             float pDensity = 0;
 
             for (const auto& neighborOdom : odomNeighbors.neighborsOdom) {
-                water_swarm::Position diff;
+                common_msgs::Position diff;
                 diff.x = neighborOdom.position.x - odomNeighbors.myOdom.position.x;
                 diff.y = neighborOdom.position.y - odomNeighbors.myOdom.position.y;
                 diff.z = neighborOdom.position.z - odomNeighbors.myOdom.position.z;
@@ -354,7 +354,7 @@ void SPHSystem::parallelForces()
                 // 计算压力力，使用邻居粒子的压力和密度
                 double pressure = (pi.pressure + pj->pressure) / (2.0 * pj->density);
                 
-                water_swarm::Force pressureForce;
+                common_msgs::Force pressureForce;
                 pressureForce.x = -dir_x * settings.mass * pressure * settings.spikyGrad;
                 pressureForce.y = -dir_y * settings.mass * pressure * settings.spikyGrad;
                 pressureForce.z = -dir_z * settings.mass * pressure * settings.spikyGrad;
@@ -367,7 +367,7 @@ void SPHSystem::parallelForces()
                 auto dvy = pj->velocity.y - myOdom.velocity.y;
                 auto dvz = pj->velocity.z - myOdom.velocity.z;
 
-                water_swarm::Force viscosityForce; 
+                common_msgs::Force viscosityForce; 
                 viscosityForce.x = settings.mass * settings.viscosity * dvx / pj->density * settings.spikyLap * (settings.h - dist);
                 viscosityForce.y = settings.mass * settings.viscosity * dvy / pj->density * settings.spikyLap * (settings.h - dist);
                 viscosityForce.z = settings.mass * settings.viscosity * dvz / pj->density * settings.spikyLap * (settings.h - dist);
@@ -396,7 +396,7 @@ void SPHSystem::calaDynamicBound()
 //             Particle *p = &particles[i];
 
 //             // 计算加速度和速度
-//             water_swarm::Acceleration acceleration;
+//             common_msgs::Acceleration acceleration;
 //             acceleration.x = p->force.x / p->density; //+ traj_acceleration.x;
 //             acceleration.y = p->force.y / p->density; //+ traj_acceleration.y;
 //             acceleration.z = p->force.z / p->density;  // 不改变Z方向的加速度
@@ -435,7 +435,7 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         Particle *p = &particles[i];
 
         // 计算加速度和速度
-        water_swarm::Acceleration acceleration;
+        common_msgs::Acceleration acceleration;
         acceleration.x = p->force.x / p->density; //+ traj_acceleration.x;
         acceleration.y = p->force.y / p->density; //+ traj_acceleration.y;
         acceleration.z = p->force.z / p->density;  // 不改变Z方向的加速度
@@ -508,7 +508,7 @@ void SPHSystem::pubroscmd()
 
         auto it = uav_publishers.find(p.name.data); // 假设name字段是std_msgs::String类型
         if (it != uav_publishers.end()) {
-            quadrotor_msgs::PositionCommand cmd_msg;
+            common_msgs::PositionCommand cmd_msg;
             cmd_msg.header.stamp = ros::Time::now();
             cmd_msg.yaw = 0.0;
             cmd_msg.yaw_dot = 0.0;
@@ -557,7 +557,7 @@ void SPHSystem::pubroscmd()
 }
 
 // 生成边长为 l 的正方形边界上的虚拟粒子
-void SPHSystem::generateVirtualParticles(const double l, const int particlesPerSide, const water_swarm::Position& apex) {
+void SPHSystem::generateVirtualParticles(const double l, const int particlesPerSide, const common_msgs::Position& apex) {
 
         float step = l / particlesPerSide;
         // 遍历正方形的四条边

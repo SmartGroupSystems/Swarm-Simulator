@@ -13,7 +13,7 @@ int main(int argc, char ** argv)
     plan_manager manager(nh);
 
     ros::Publisher waypoint_vis = nh.advertise<visualization_msgs::Marker>("/waypoint_vis", 10, true);
-    ros::Publisher traj_puber = nh.advertise<bspline_race::BsplineTraj>("/bspline_traj", 10, true);
+    ros::Publisher traj_puber = nh.advertise<common_msgs::BsplineTraj>("/bspline_traj", 10, true);
     ros::Publisher traj_vis = nh.advertise<visualization_msgs::Marker>("/traj_vis", 10, true);
 
     // 获取文件路径
@@ -70,7 +70,7 @@ int main(int argc, char ** argv)
     }
 
     //计算轨迹
-    bspline_race::BsplineTraj traj_;
+    common_msgs::BsplineTraj traj_;
     traj_ = manager.getSmoothTraj(waypoints);
 
     // 设置轨迹可视化 Marker 消息

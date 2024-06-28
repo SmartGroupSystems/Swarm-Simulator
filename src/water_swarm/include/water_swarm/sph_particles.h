@@ -14,15 +14,15 @@
 #include <map>
 #include <thread>
 
-#include "water_swarm/Position.h"
-#include "water_swarm/Velocity.h"
-#include "water_swarm/Acceleration.h"
-#include "water_swarm/Force.h"
-#include "water_swarm/Odom.h"
-#include "water_swarm/OdomWithNeighbors.h"
-#include "water_swarm/OdomBroadcast.h"
-#include "quadrotor_msgs/PositionCommand.h"
-#include "bspline_race/BsplineTraj.h"
+#include "common_msgs/Position.h"
+#include "common_msgs/Velocity.h"
+#include "common_msgs/Acceleration.h"
+#include "common_msgs/Force.h"
+#include "common_msgs/Odom.h"
+#include "common_msgs/OdomWithNeighbors.h"
+#include "common_msgs/OdomBroadcast.h"
+#include "common_msgs/PositionCommand.h"
+#include "common_msgs/BsplineTraj.h"
 
 ros::Timer                                              timer;
 ros::Subscriber                                         nav_goal_sub;
@@ -41,7 +41,7 @@ double threshold_dist;
 float  mass, restDensity, gasConstant, viscosity, h, g, tension;
 
 
-void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg);
+void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
 void timerCallback(const ros::TimerEvent&);
 
@@ -91,10 +91,10 @@ struct SPHSettings
 
 struct Particle
 {
-    water_swarm::Position       position;
-    water_swarm::Velocity       velocity;
-    water_swarm::Acceleration   acceleration;
-    water_swarm::Force          force;
+    common_msgs::Position       position;
+    common_msgs::Velocity       velocity;
+    common_msgs::Acceleration   acceleration;
+    common_msgs::Force          force;
     float                       density;
     float                       pressure;
     uint16_t                    hash;
@@ -151,7 +151,7 @@ public:
     
     void calaDynamicBound();
     bool isNearVirtualParticle(double x, double y, double z);
-    void generateVirtualParticles(const double l, const int particlesPerSide, const water_swarm::Position& apex);
+    void generateVirtualParticles(const double l, const int particlesPerSide, const common_msgs::Position& apex);
     void parallelDensityAndPressures();
     void parallelForces();
     void parallelUpdateParticlePositions(const float deltaTime);

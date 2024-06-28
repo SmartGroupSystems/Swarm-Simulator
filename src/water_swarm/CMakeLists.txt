@@ -6,27 +6,21 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  common_msgs
 )
 
-add_message_files(
-  FILES
-  OdomWithNeighbors.msg
-  Odom.msg
-  Position.msg
-  Velocity.msg
-  Acceleration.msg
-  Force.msg
-  OdomBroadcast.msg
-)
+# add_message_files(
+#   FILES
+# )
 
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+# )
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS message_runtime std_msgs roscpp rospy 
+  CATKIN_DEPENDS message_runtime std_msgs roscpp rospy common_msgs
 )
 
 include_directories(

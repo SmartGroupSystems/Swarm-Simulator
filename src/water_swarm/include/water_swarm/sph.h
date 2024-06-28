@@ -13,15 +13,15 @@
 #include <map>
 #include <thread>
 
-#include "water_swarm/Position.h"
-#include "water_swarm/Velocity.h"
-#include "water_swarm/Acceleration.h"
-#include "water_swarm/Force.h"
-#include "water_swarm/Odom.h"
-#include "water_swarm/OdomWithNeighbors.h"
-#include "water_swarm/OdomBroadcast.h"
-#include "quadrotor_msgs/PositionCommand.h"
-#include "bspline_race/BsplineTraj.h"
+#include "common_msgs/Position.h"
+#include "common_msgs/Velocity.h"
+#include "common_msgs/Acceleration.h"
+#include "common_msgs/Force.h"
+#include "common_msgs/Odom.h"
+#include "common_msgs/OdomWithNeighbors.h"
+#include "common_msgs/OdomBroadcast.h"
+#include "common_msgs/PositionCommand.h"
+#include "common_msgs/BsplineTraj.h"
 
 ros::Subscriber                                         odomBroadcast_sub;
 ros::Timer                                              timer;
@@ -32,7 +32,7 @@ ros::Subscriber                                         traj_sub;
 
 std::map<std::string, ros::Publisher>                   uav_publishers;
 std::map<std::string, ros::Subscriber>                  odomSubscribers;
-std::map<std::string, water_swarm::OdomWithNeighbors>   odomWithNeighbors;
+std::map<std::string, common_msgs::OdomWithNeighbors>   odomWithNeighbors;
 
 //存储轨迹
 std::vector<geometry_msgs::PoseStamped> global_positions;
@@ -40,8 +40,8 @@ std::vector<geometry_msgs::PoseStamped> global_velocities;
 std::vector<geometry_msgs::PoseStamped> global_accelerations;
 
 bool isInitialReceived = false;  // 用于检查是否已经接收到第一个odomBroadcast
-water_swarm::OdomBroadcast  initial_odomBroadcast_;
-water_swarm::OdomBroadcast  current_odomBroadcast_;
+common_msgs::OdomBroadcast  initial_odomBroadcast_;
+common_msgs::OdomBroadcast  current_odomBroadcast_;
 
 ros::Time last_time;//控制时间loop
 ros::Time last_print_time;//打印时间loop
@@ -57,12 +57,12 @@ bool first_traj= true;//第一次接收轨迹
 double particlessideLength; // 边界边长
 int    particlesPerSide;    // 每边x个粒子
 
-void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg);
+void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
 void timerCallback(const ros::TimerEvent&);
 void subscribeOdomWithNeighbors(const std::string &topic_name, ros::NodeHandle &nh);
-void odomWithNeighborsCallback(const water_swarm::OdomWithNeighborsConstPtr& msg, const std::string& uav_name); 
-void trajCallback(const bspline_race::BsplineTraj::ConstPtr& msg);
+void odomWithNeighborsCallback(const common_msgs::OdomWithNeighborsConstPtr& msg, const std::string& uav_name); 
+void trajCallback(const common_msgs::BsplineTraj::ConstPtr& msg);
 void publishPositionCommand(const std::string& uav_name, ros::NodeHandle& nh);
 
 struct SPHSettings
@@ -111,10 +111,10 @@ struct SPHSettings
 
 struct Particle
 {
-    water_swarm::Position       position;
-    water_swarm::Velocity       velocity;
-    water_swarm::Acceleration   acceleration;
-    water_swarm::Force          force;
+    common_msgs::Position       position;
+    common_msgs::Velocity       velocity;
+    common_msgs::Acceleration   acceleration;
+    common_msgs::Force          force;
     float                       density;
     float                       pressure;
     uint16_t                    hash;
@@ -172,7 +172,7 @@ public:
     
     void calaDynamicBound();
     bool isNearVirtualParticle(double x, double y, double z);
-    void generateVirtualParticles(const double l, const int particlesPerSide, const water_swarm::Position& apex);
+    void generateVirtualParticles(const double l, const int particlesPerSide, const common_msgs::Position& apex);
     void parallelDensityAndPressures();
     void parallelForces();
     void parallelUpdateParticlePositions(const float deltaTime);

@@ -2,31 +2,21 @@
 
 using namespace FLAG_Race;
 
-ros::Publisher traj_vis;
-ros::Publisher traj_puber;
-ros::Publisher waypoint_vis;
-
-ros::Subscriber particles_sub;   
-    
 int main(int argc, char ** argv)
 {
     ros::init(argc, argv, "swarm_planning");
     ros::NodeHandle nh("~");
     plan_manager manager(nh);
-
-    waypoint_vis = nh.advertise<visualization_msgs::Marker>("/waypoint_vis", 10, true);
-    traj_puber = nh.advertise<bspline_race::BsplineTraj>("/swarm_traj", 10, true);
-    traj_vis = nh.advertise<visualization_msgs::Marker>("/traj_vis", 10, true);
-    particles_sub = nh.subscribe("particles_vis", 1000, particlesCallback);
-
+      
+    traj_puber = nh.advertise<common_msgs::Swarm_traj>("/swarm_traj", 10, true);
+    particles_sub = nh.subscribe("/swarm_particles", 1000, particlesCallback);
 
     ros::spin();
     return 0;
 }
 
-void particlesCallback(const visualization_msgs::MarkerArray::ConstPtr& msg)
+void particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
 {
-    ROS_INFO("Received MarkerArray with %lu markers", msg->markers.size());
-
-
+    latest_swarm_particles = *msg;
+    // ROS_INFO("Received new swarm particles data with %ld particles", msg->particles.size());
 }

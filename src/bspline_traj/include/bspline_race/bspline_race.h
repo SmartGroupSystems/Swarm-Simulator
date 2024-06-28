@@ -29,8 +29,9 @@
 //自定义
 #include <bspline_race/UniformBspline.h>
 #include <bspline_race/bspline_opt.h>
-#include <bspline_race/BsplineTraj.h>
-#include <bspline_race/PositionCommand.h>
+#include "common_msgs/BsplineTraj.h"
+#include "common_msgs/PositionCommand.h"
+#include "common_msgs/Swarm_traj.h"
 
 using namespace std;
 
@@ -60,14 +61,14 @@ namespace FLAG_Race
             double lambda1_,lambda2_;
             
             //Traj
-            bspline_race::BsplineTraj traj_;//执行轨迹
+            common_msgs::BsplineTraj traj_;//执行轨迹
 
         public:
             plan_manager(){}
             plan_manager(ros::NodeHandle &nh);
             ~plan_manager();
             void setParam(ros::NodeHandle &nh);//从ros节点中读取参数
-            bspline_race::BsplineTraj getSmoothTraj(const std::vector<Point> waypoints);
+            common_msgs::BsplineTraj getSmoothTraj(const std::vector<Point> waypoints);
             void optTraj();
     };
 

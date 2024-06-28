@@ -8,9 +8,9 @@
 #include <regex>
 #include <map>
 
-#include "water_swarm/Odom.h"
-#include "water_swarm/OdomWithNeighbors.h"
-#include "water_swarm/OdomBroadcast.h"
+#include "common_msgs/Odom.h"
+#include "common_msgs/OdomWithNeighbors.h"
+#include "common_msgs/OdomBroadcast.h"
 
 void subscribeOdom(const std::string &topic_name, ros::NodeHandle &nh);
 void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& name);
@@ -21,7 +21,7 @@ ros::Publisher odomBroadcast_pub;
 double neighbor_dist_;
 double threshold_dist_;
 
-std::vector<water_swarm::Odom> broadcast_odom;
+std::vector<common_msgs::Odom> broadcast_odom;
 std::vector<std_msgs::String> uav_names;
 
 // Function to extract the UAV number from the input string

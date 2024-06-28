@@ -1,5 +1,6 @@
 # BsplineTraj.msg
 std_msgs/Header header
+int32           traj_id
 
 geometry_msgs/PoseStamped[] position
 geometry_msgs/PoseStamped[] velocity

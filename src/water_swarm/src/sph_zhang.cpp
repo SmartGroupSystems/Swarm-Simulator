@@ -25,8 +25,8 @@ int main(int argc, char **argv) {
     nav_goal_sub          = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
     particles_publisher   = nh.advertise<visualization_msgs::MarkerArray>("particles_vis", 10);
     virtual_particles_publisher = nh.advertise<visualization_msgs::MarkerArray>("virtual_particles_vis", 10);
-
-
+    swarm_pub             = nh.advertise<common_msgs::Swarm_particles>("/swarm_particles", 10);
+    
     //start sph
     SPHSettings sphSettings(mass, restDensity, h, g);
     sph_planner = new SPHSystem(15, sphSettings, false);
@@ -114,7 +114,7 @@ void SPHSystem::initParticles()
             particles.push_back(p);
         }
 
-    water_swarm::Position apex;
+    common_msgs::Position apex;
     apex.x = -0.1; apex.y = -0.1; apex.z = 0;
     generateVirtualParticles(maxRange,static_cast<int>(std::sqrt(particleCount))*3,apex);
 
@@ -334,7 +334,7 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         Particle *p = &particles[i];
 
         // 计算加速度 u_i = u_i^{den} + u_i^{rep} + u_i^{fri}
-        water_swarm::Acceleration acceleration;
+        common_msgs::Acceleration acceleration;
         acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
         acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
         acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
@@ -377,8 +377,9 @@ void SPHSystem::pubroscmd()
 {
     visualization_msgs::MarkerArray particles_markers;
     visualization_msgs::MarkerArray virtual_particles_markers;
+    common_msgs::Swarm_particles swarm_msg;  
 
-    // 为每个实际粒子设置 Marker
+    // 为每个实际粒子设置 Marker 并填充 Swarm_particles 消息
     int id = 0;
     for (const auto& particle : particles) {
         visualization_msgs::Marker marker;
@@ -391,15 +392,26 @@ void SPHSystem::pubroscmd()
         marker.pose.position.z = particle.position.z;
         marker.pose.orientation.w = 1.0;
         marker.id = particle.index;
-        marker.type = visualization_msgs::Marker::SPHERE;  // 更改类型为SPHERE
-        marker.scale.x = particleVisScale; // 球的直径，根据需要调整大小
+        marker.type = visualization_msgs::Marker::SPHERE;
+        marker.scale.x = particleVisScale;
         marker.scale.y = particleVisScale;
         marker.scale.z = particleVisScale;
-        marker.color.a = 1.0; // 透明度
-        marker.color.r = 0.0; // 红色
-        marker.color.g = 1.0; // 绿色
-        marker.color.b = 0.0; // 蓝色
+        marker.color.a = 1.0;
+        marker.color.r = 0.0;
+        marker.color.g = 1.0;
+        marker.color.b = 0.0;
         particles_markers.markers.push_back(marker);
+
+        // 同时将粒子信息添加到 Swarm_particles 消息中
+        common_msgs::Particle swarm_particle;
+        swarm_particle.position = particle.position;
+        swarm_particle.velocity = particle.velocity;
+        swarm_particle.acceleration = particle.acceleration;
+        swarm_particle.force = particle.force;
+        swarm_particle.density = particle.density;
+        swarm_particle.pressure = particle.pressure;
+        swarm_particle.index = particle.index;
+        swarm_msg.particles.push_back(swarm_particle);
     }
 
     // 为每个虚拟粒子设置 Marker
@@ -416,11 +428,11 @@ void SPHSystem::pubroscmd()
         marker.pose.orientation.w = 1.0;
         marker.id = id++;
         marker.type = visualization_msgs::Marker::CUBE;
-        marker.scale.x = particleVisScale; // 根据需要调整大小
+        marker.scale.x = particleVisScale;
         marker.scale.y = particleVisScale;
         marker.scale.z = particleVisScale;
-        marker.color.a = 1.0; // 透明度
-        marker.color.r = 0.0; // 黑色
+        marker.color.a = 1.0;
+        marker.color.r = 0.0;
         marker.color.g = 0.0;
         marker.color.b = 0.0;
         virtual_particles_markers.markers.push_back(marker);
@@ -429,15 +441,20 @@ void SPHSystem::pubroscmd()
     // 发布所有粒子
     particles_publisher.publish(particles_markers);
     virtual_particles_publisher.publish(virtual_particles_markers);
+
+    // 发布 Swarm_particles 消息
+    swarm_msg.header.stamp = ros::Time::now();  // 设置时间戳
+    swarm_msg.header.frame_id = "world";  // 设置 frame_id
+    swarm_pub.publish(swarm_msg);  // 发布消息
 }
 
 void SPHSystem::calaDynamicBound()
 {
-    
+
 }
 
 // 生成边长为 l 的正方形边界上的虚拟粒子
-void SPHSystem::generateVirtualParticles(const double l, const int particlesPerSide, const water_swarm::Position& apex) {
+void SPHSystem::generateVirtualParticles(const double l, const int particlesPerSide, const common_msgs::Position& apex) {
 
         float step = l / particlesPerSide;
         // 遍历正方形的四条边

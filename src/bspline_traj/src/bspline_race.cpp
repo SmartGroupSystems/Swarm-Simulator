@@ -22,9 +22,9 @@ namespace FLAG_Race
     }
 
 
-    bspline_race::BsplineTraj plan_manager::getSmoothTraj(const std::vector<Point> waypoints)
+    common_msgs::BsplineTraj plan_manager::getSmoothTraj(const std::vector<Point> waypoints)
     {
-        bspline_race::BsplineTraj traj;
+        common_msgs::BsplineTraj traj;
         std::vector<Eigen::Vector2d> control_points_;
         initial_state.resize(3,2);
         terminal_state.resize(3,2);

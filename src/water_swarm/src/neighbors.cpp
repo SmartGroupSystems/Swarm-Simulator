@@ -2,7 +2,7 @@
 
 void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& name) {
     // ROS_INFO("Received odom from %s", uav_name.c_str());
-    water_swarm::Odom current_odom;
+    common_msgs::Odom current_odom;
     current_odom.position.x = msg->pose.pose.position.x;
     current_odom.position.y = msg->pose.pose.position.y;
     current_odom.position.z = msg->pose.pose.position.z;
@@ -36,7 +36,7 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& na
         broadcast_odom.push_back(current_odom);
         uav_names.push_back(uav_name);
     }
-    water_swarm::OdomBroadcast odom_broadcast_msg;
+    common_msgs::OdomBroadcast odom_broadcast_msg;
     odom_broadcast_msg.header.frame_id  = "world";
     odom_broadcast_msg.header.stamp     = ros::Time::now();
     odom_broadcast_msg.drone_names      = uav_names; 
@@ -44,7 +44,7 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& na
     // ROS_INFO("Size of broadcast_odom: %lu", broadcast_odom.size());
 
     //find neighbors
-    std::vector<water_swarm::Odom> neighbors;
+    std::vector<common_msgs::Odom> neighbors;
     std::vector<std_msgs::String>  neighbors_names;
     // for (const auto& neighbor_odom : broadcast_odom) {
     //     double dist = sqrt(pow(neighbor_odom.position.x - current_odom.position.x, 2) +
@@ -67,7 +67,7 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, const std::string& na
     }
 
     // 创建OdomWithNeighbors消息
-    water_swarm::OdomWithNeighbors odom_with_neighbors_msg;
+    common_msgs::OdomWithNeighbors odom_with_neighbors_msg;
     odom_with_neighbors_msg.header.stamp    = ros::Time::now();
     odom_with_neighbors_msg.header.frame_id = "world"; // 或者其他适合的frame_id
     odom_with_neighbors_msg.drone_name      = uav_name;
@@ -109,13 +109,13 @@ int main(int argc, char **argv) {
                 ROS_INFO("Subscribed to %s, uav name:%s", info.name.c_str(),extractUavName(info.name).c_str());
                 // 为每个UAV创建一个独立的Publisher
                 std::string publisher_topic = extractUavName(info.name) + "_odomWithNeighbors";  // 创建基于UAV名称的话题
-                odom_neighbors_publishers[info.name] = nh.advertise<water_swarm::OdomWithNeighbors>(publisher_topic, 1000);
+                odom_neighbors_publishers[info.name] = nh.advertise<common_msgs::OdomWithNeighbors>(publisher_topic, 1000);
                 ROS_INFO("Publisher created for topic: %s", publisher_topic.c_str());
             }
         }
     }
 
-    odomBroadcast_pub = nh.advertise<water_swarm::OdomBroadcast>("/odomBroadcast",1000);
+    odomBroadcast_pub = nh.advertise<common_msgs::OdomBroadcast>("/odomBroadcast",1000);
 
 
     ros::spin();

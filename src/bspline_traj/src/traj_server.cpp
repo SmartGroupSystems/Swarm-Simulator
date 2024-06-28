@@ -10,7 +10,7 @@ double roll, pitch, yaw;//定义存储r\p\y的容器
 double last_yaw;
 double last_yaw_dot;
 
-bspline_race::PositionCommand pva_msg;
+common_msgs::PositionCommand pva_msg;
 nav_msgs::Path vis_path;
 class bs_traj
 {
@@ -87,7 +87,7 @@ void run()
 }
 
 
-void traj_cb(const bspline_race::BsplineTrajConstPtr &msg)
+void traj_cb(const common_msgs::BsplineTrajConstPtr &msg)
 {
   ROS_INFO("RECEIVED TRAJ, SIZE: %d",msg->position.size());
   // 收到新轨迹
@@ -230,7 +230,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "traj_server");
     ros::NodeHandle nh("~");
-    cmd_pub   = nh.advertise<bspline_race::PositionCommand>("/position_cmd", 10, true);
+    cmd_pub   = nh.advertise<common_msgs::PositionCommand>("/position_cmd", 10, true);
     cmd_sub   = nh.subscribe("/bspline_traj",1, traj_cb);
     ros::Rate rate(T_RATE);
 

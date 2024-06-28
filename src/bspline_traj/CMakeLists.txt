@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   message_filters
   cv_bridge
+  common_msgs
 )
 
 find_package(Eigen3 REQUIRED)
@@ -20,20 +21,20 @@ find_package(PCL 1.7 REQUIRED)
 
 #add_dependencies(bspline_race ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
-add_message_files(
-  FILES
-  BsplineTraj.msg
-  PositionCommand.msg
-)
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-)
+# add_message_files(
+#   #FILES
+# )
+
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+#   geometry_msgs
+# )
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES bspline_race
-  CATKIN_DEPENDS roscpp rospy tf std_msgs visualization_msgs message_runtime
+  CATKIN_DEPENDS roscpp rospy tf std_msgs visualization_msgs message_runtime common_msgs
   #DEPENDS system_lib
 )
 include_directories(
@@ -45,6 +46,7 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
   ${CMAKE_CURRENT_BINARY_DIR}/devel/include
 )
+
 add_library( bspline_race 
    src/UniformBspline.cpp
    src/bspline_opt.cpp 
@@ -53,9 +55,9 @@ add_library( bspline_race
 target_link_libraries(bspline_race
   ${catkin_LIBRARIES}
 )
-add_dependencies(bspline_race
-  ${PROJECT_NAME}_generate_messages_cpp
-)
+# add_dependencies(bspline_race
+#   ${PROJECT_NAME}_generate_messages_cpp
+# )
 
 add_executable( flag_planner 
     src/test_planning.cpp

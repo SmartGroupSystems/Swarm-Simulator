@@ -111,7 +111,7 @@ void SPHSystem::initParticles()
             particles.push_back(p);
         }
 
-    water_swarm::Position apex;
+    common_msgs::Position apex;
     apex.x = -0.1; apex.y = -0.1; apex.z = 0;
     generateVirtualParticles(maxRange,static_cast<int>(std::sqrt(particleCount))*3,apex);
 
@@ -268,7 +268,7 @@ void SPHSystem::parallelForces()
             // 计算压力力
             float pressure = (particle.pressure + neighbor->pressure) / (2.0 * neighbor->density);
 
-            water_swarm::Force pressureForce;
+            common_msgs::Force pressureForce;
             pressureForce.x = -dir_x * settings.mass * pressure * settings.spikyGrad;
             pressureForce.y = -dir_y * settings.mass * pressure * settings.spikyGrad;
             pressureForce.z = -dir_z * settings.mass * pressure * settings.spikyGrad;
@@ -287,7 +287,7 @@ void SPHSystem::parallelForces()
             float dvy = neighbor->velocity.y - particle.velocity.y;
             float dvz = neighbor->velocity.z - particle.velocity.z;
 
-            water_swarm::Force viscosityForce;
+            common_msgs::Force viscosityForce;
             viscosityForce.x = settings.mass * settings.viscosity * dvx / neighbor->density * settings.spikyLap * (settings.h - dist);
             viscosityForce.y = settings.mass * settings.viscosity * dvy / neighbor->density * settings.spikyLap * (settings.h - dist);
             viscosityForce.z = settings.mass * settings.viscosity * dvz / neighbor->density * settings.spikyLap * (settings.h - dist);
@@ -308,7 +308,7 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         Particle *p = &particles[i];
 
         // 计算加速度
-        water_swarm::Acceleration acceleration;
+        common_msgs::Acceleration acceleration;
         acceleration.x = p->force.x / p->density;  // 根据牛顿第二定律计算加速度
         acceleration.y = p->force.y / p->density;
         acceleration.z = p->force.z / p->density;
@@ -401,7 +401,7 @@ void SPHSystem::calaDynamicBound()
 }
 
 // 生成边长为 l 的正方形边界上的虚拟粒子
-void SPHSystem::generateVirtualParticles(const double l, const int particlesPerSide, const water_swarm::Position& apex) {
+void SPHSystem::generateVirtualParticles(const double l, const int particlesPerSide, const common_msgs::Position& apex) {
 
         float step = l / particlesPerSide;
         // 遍历正方形的四条边

@@ -15,21 +15,25 @@
 #include <thread>
 #include <math.h>
 
-#include "water_swarm/Position.h"
-#include "water_swarm/Velocity.h"
-#include "water_swarm/Acceleration.h"
-#include "water_swarm/Force.h"
-#include "water_swarm/Odom.h"
-#include "water_swarm/OdomWithNeighbors.h"
-#include "water_swarm/OdomBroadcast.h"
-#include "quadrotor_msgs/PositionCommand.h"
-#include "bspline_race/BsplineTraj.h"
+#include "common_msgs/Position.h"
+#include "common_msgs/Velocity.h"
+#include "common_msgs/Acceleration.h"
+#include "common_msgs/Force.h"
+#include "common_msgs/Odom.h"
+#include "common_msgs/OdomWithNeighbors.h"
+#include "common_msgs/OdomBroadcast.h"
+#include "common_msgs/Particle.h"
+#include "common_msgs/Swarm_particles.h"
+#include "common_msgs/PositionCommand.h"
+#include "common_msgs/BsplineTraj.h"
+
 
 
 ros::Timer                                              timer;
 ros::Subscriber                                         nav_goal_sub;
 ros::Publisher                                          particles_publisher;
 ros::Publisher                                          virtual_particles_publisher;
+ros::Publisher                                          swarm_pub;
 
 ros::Time last_time;//控制时间loop
 ros::Time last_print_time;//打印时间loop
@@ -44,7 +48,7 @@ float  mass, restDensity, h, g;
 double k_den, k_rep, k_fri;
 double v_max, a_max;
 
-void odomBroadcastCallback(const water_swarm::OdomBroadcast::ConstPtr& msg);
+void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
 void timerCallback(const ros::TimerEvent&);
 
@@ -79,14 +83,14 @@ struct SPHSettings
 
 struct Particle
 {
-    water_swarm::Position       position;
-    water_swarm::Velocity       velocity;
-    water_swarm::Acceleration   acceleration;
-    water_swarm::Force          force;
+    common_msgs::Position       position;
+    common_msgs::Velocity       velocity;
+    common_msgs::Acceleration   acceleration;
+    common_msgs::Force          force;
     float                       density;
     float                       pressure;
     uint16_t                    hash;
-    water_swarm::Force          u_den, u_rep, u_fri;
+    common_msgs::Force          u_den, u_rep, u_fri;
     std_msgs::String            name;
     int                         index;
 };
@@ -141,7 +145,7 @@ public:
     
     void calaDynamicBound();
     bool isNearVirtualParticle(double x, double y, double z);
-    void generateVirtualParticles(const double l, const int particlesPerSide, const water_swarm::Position& apex);
+    void generateVirtualParticles(const double l, const int particlesPerSide, const common_msgs::Position& apex);
     void parallelDensityAndPressures();
     void parallelForces();
     void parallelViscosity();
