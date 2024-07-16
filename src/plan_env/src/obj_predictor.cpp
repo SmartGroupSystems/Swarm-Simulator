@@ -26,7 +26,7 @@
 #include <plan_env/obj_predictor.h>
 #include <string>
 
-namespace fast_planner {
+namespace FLAG_Race {
 /* ============================== obj history_ ============================== */
 
 int ObjHistory::queue_size_;
@@ -240,4 +240,4 @@ void ObjPredictor::predictConstVel() {
 }
 
 // ObjPredictor::
-}  // namespace fast_planner
+}  // namespace FLAG_Race

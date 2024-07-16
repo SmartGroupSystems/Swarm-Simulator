@@ -41,7 +41,7 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
-namespace fast_planner {
+namespace FLAG_Race {
 class PolynomialPrediction;
 typedef shared_ptr<vector<PolynomialPrediction>> ObjPrediction;
 typedef shared_ptr<vector<Eigen::Vector3d>> ObjScale;
@@ -161,6 +161,6 @@ public:
   typedef shared_ptr<ObjPredictor> Ptr;
 };
 
-}  // namespace fast_planner
+}  // namespace FLAG_Race
 
 #endif

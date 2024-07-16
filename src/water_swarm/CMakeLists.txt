@@ -1,12 +1,16 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(water_swarm)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
+find_package(PCL 1.7 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
   message_generation
   common_msgs
+  cv_bridge
 )
 
 # add_message_files(
@@ -28,6 +32,7 @@ include_directories(
   SYSTEM
   ${catkin_INCLUDE_DIRS} 
   ${NLOPT_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 add_executable(neighbors src/neighbors.cpp)

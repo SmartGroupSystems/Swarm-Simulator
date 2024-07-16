@@ -14,7 +14,7 @@
 #include <utility>
 #include "plan_env/edt_environment.h"
 
-namespace fast_planner {
+namespace FLAG_Race {
 // #define REACH_HORIZON 1
 // #define REACH_END 2
 // #define NO_PATH 3
@@ -182,6 +182,6 @@ class KinodynamicAstar {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-}  // namespace fast_planner
+}  // namespace FLAG_Race
 
 #endif

@@ -1,5 +1,5 @@
 <launch>
-    <!-- Define parameters -->
+    <!-- SPH Define parameters -->
     <!-- The system is designed based on <<Collective fission behavior in swarming systems with density-based interaction>> 
          The parameters is defined as follows. 
          Generally speaking, increasing the kernel function radius h, the strength of density force k_den,
@@ -22,6 +22,18 @@
     <arg name="g" value="-9.8"/>                <!-- 重力,no use -->
     <arg name="use_pctrl" value="true"/>        <!-- 使用位置\速度\加速度控制，默认使用位置控制 -->
 
+
+    <!-- Planning  parameters-->
+    <arg name="map_size_x_" value="40.0"/>
+    <arg name="map_size_y_" value="40.0"/>
+    <arg name="map_size_z_" value=" 3.0"/>
+    
+    <!-- intrinsic params of the depth camera -->
+    <arg name="cx" value="321.04638671875"/>
+    <arg name="cy" value="243.44969177246094"/>
+    <arg name="fx" value="387.229248046875"/>
+    <arg name="fy" value="387.229248046875"/>
+
     <!-- Run the sph_particles node -->
     <node name="sph_zhang" pkg="water_swarm" type="sph_zhang" output="screen">
         <param name="sph/mass"              value="$(arg mass)"/> 
@@ -42,10 +54,51 @@
     </node>
 
     <!-- Obs map-->
-    <node pkg ="dynamic_map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find dynamic_map_generator)/resource/tmp.pcd"/>
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/tmp.pcd"/>
 
     <!-- Traj opt-->
-    <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
+  <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
+        <param name="sdf_map/resolution"      value="0.1" /> 
+        <param name="sdf_map/map_size_x"   value="$(arg map_size_x_)" /> 
+        <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
+        <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
+        <param name="sdf_map/local_update_range_x"  value="5.5" /> 
+        <param name="sdf_map/local_update_range_y"  value="5.5" /> 
+        <param name="sdf_map/local_update_range_z"  value="4.5" /> 
+        <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
+        <param name="sdf_map/local_bound_inflate"    value="0.0"/>
+        <param name="sdf_map/local_map_margin" value="50"/>
+        <param name="sdf_map/ground_height"        value="-0.01"/>
+        <!-- camera parameter -->
+        <param name="sdf_map/cx" value="$(arg cx)"/>
+        <param name="sdf_map/cy" value="$(arg cy)"/>
+        <param name="sdf_map/fx" value="$(arg fx)"/>
+        <param name="sdf_map/fy" value="$(arg fy)"/>
+        <!-- depth filter -->
+        <param name="sdf_map/use_depth_filter" value="true"/>
+        <param name="sdf_map/depth_filter_tolerance" value="0.15"/>
+        <param name="sdf_map/depth_filter_maxdist"   value="5.0"/>
+        <param name="sdf_map/depth_filter_mindist"   value="0.2"/>
+        <param name="sdf_map/depth_filter_margin"    value="2"/>
+        <param name="sdf_map/k_depth_scaling_factor" value="1000.0"/>
+        <param name="sdf_map/skip_pixel" value="2"/>
+        <!-- local fusion -->
+        <param name="sdf_map/p_hit"  value="0.65"/>
+        <param name="sdf_map/p_miss" value="0.35"/>
+        <param name="sdf_map/p_min"  value="0.12"/>
+        <param name="sdf_map/p_max"  value="0.90"/>
+        <param name="sdf_map/p_occ"  value="0.80"/>
+        <param name="sdf_map/min_ray_length" value="0.5"/>
+        <param name="sdf_map/max_ray_length" value="4.5"/>
+
+        <param name="sdf_map/esdf_slice_height" value="0.3"/>
+        <param name="sdf_map/visualization_truncate_height"   value="2.49"/>
+        <param name="sdf_map/virtual_ceil_height"   value="2.5"/>
+        <param name="sdf_map/show_occ_time"  value="false"/>
+        <param name="sdf_map/show_esdf_time" value="false"/>
+        <param name="sdf_map/pose_type"     value="2"/>  
+        <param name="sdf_map/frame_id"      value="world"/>
+
         
     </node>
 

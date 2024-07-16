@@ -5,7 +5,9 @@ namespace FLAG_Race
 {
     plan_manager::plan_manager(ros::NodeHandle &nh)
     {
+        // testInit(nh);
         setParam(nh);
+        parallelInitESDF(nh);
     }
     plan_manager::~plan_manager() {}
 
@@ -19,6 +21,7 @@ namespace FLAG_Race
         nh.param("planning/lambda1",lambda1_,-1.0);
         nh.param("planning/lambda2",lambda2_,-1.0);
         beta = max_vel_/0.5;
+
     }
 
 
@@ -128,9 +131,48 @@ namespace FLAG_Race
     {
         current_particles = particles;  
     }
-    
+
     void plan_manager::optTraj()
     {
         
     }
+
+    void plan_manager::parallelInitESDF(ros::NodeHandle &nh) {
+        ros::master::V_TopicInfo topic_list;
+        ros::master::getTopics(topic_list);
+        std::regex topic_pattern("/particle(\\d+)/odom");
+        std::smatch match;
+        
+        for (const auto &info : topic_list) {
+            if (info.datatype == "nav_msgs/Odometry" && std::regex_search(info.name, match, topic_pattern)) {
+                try {
+                    std::string particle_index = match[1];
+                    std::string particle_base = "/particle" + particle_index;
+                    std::string odom_topic = particle_base + "/odom";
+                    std::string cloud_topic = "/map_generator/global_cloud";
+
+                    // 创建 SDFMap 的 shared_ptr 实例，并初始化
+                    auto sdf_map_ = std::make_shared<SDFMap>();
+                    sdf_map_->initMap(nh, particle_base, odom_topic, cloud_topic);
+                    auto edt_environment_ = std::make_shared<EDTEnvironment>();
+                    edt_environment_->setMap(sdf_map_);
+                    sdf_maps.push_back(sdf_map_);
+                    edt_environments.push_back(edt_environment_);
+
+                } catch (const std::exception& e) {
+                    ROS_ERROR("Exception caught while initializing environments for %s: %s", info.name.c_str(), e.what());
+                } catch (...) {
+                    ROS_ERROR("Unknown exception caught during initialization for %s", info.name.c_str());
+                }
+            }
+        }
+    }
+
+    void plan_manager::testInit(ros::NodeHandle& nh)
+    {
+        ros::NodeHandle node_;
+        node_ = nh;
+        ROS_INFO("Test Init~~~~~!");
+    }
+
 }

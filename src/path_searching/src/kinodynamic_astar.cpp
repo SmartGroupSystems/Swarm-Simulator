@@ -28,7 +28,7 @@
 using namespace std;
 using namespace Eigen;
 
-namespace fast_planner
+namespace FLAG_Race
 {
 KinodynamicAstar::~KinodynamicAstar()
 {
@@ -780,4 +780,4 @@ void KinodynamicAstar::stateTransit(Eigen::Matrix<double, 6, 1>& state0, Eigen::
   state1 = phi_ * state0 + integral;
 }
 
-}  // namespace fast_planner
+}  // namespace FLAG_Race

@@ -29,7 +29,7 @@
 using namespace std;
 using namespace Eigen;
 
-namespace fast_planner {
+namespace FLAG_Race {
 Astar::~Astar() {
   for (int i = 0; i < allocate_num_; i++) {
     delete path_node_pool_[i];
@@ -328,4 +328,4 @@ int Astar::timeToIndex(double time) {
   int idx = floor((time - time_origin_) * inv_time_resolution_);
 }
 
-}  // namespace fast_planner
+}  // namespace FLAG_Race

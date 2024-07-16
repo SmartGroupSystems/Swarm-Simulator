@@ -26,7 +26,7 @@
 #include <path_searching/topo_prm.h>
 #include <thread>
 
-namespace fast_planner {
+namespace FLAG_Race {
 TopologyPRM::TopologyPRM(/* args */) {}
 
 TopologyPRM::~TopologyPRM() {}
@@ -722,4 +722,4 @@ bool TopologyPRM::triangleVisib(Eigen::Vector3d pt, Eigen::Vector3d p1, Eigen::V
   return true;
 }
 // TopologyPRM::
-}  // namespace fast_planner
+}  // namespace FLAG_Race

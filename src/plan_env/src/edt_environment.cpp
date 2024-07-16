@@ -25,7 +25,7 @@
 
 #include <plan_env/edt_environment.h>
 
-namespace fast_planner {
+namespace FLAG_Race {
 /* ============================== edt_environment ==============================
  */
 void EDTEnvironment::init() {
@@ -128,4 +128,4 @@ double EDTEnvironment::evaluateCoarseEDT(Eigen::Vector3d& pos, double time) {
 }
 
 // EDTEnvironment::
-}  // namespace fast_planner
+}  // namespace FLAG_Race

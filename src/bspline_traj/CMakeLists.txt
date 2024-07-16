@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(bspline_race)
-add_definitions(-std=c++14 -g -Og -ftree-vectorize -ffast-math -march=native -lpthread)
+set(CMAKE_CXX_STANDARD 14)
+# add_definitions(-std=c++11 -g -Og -ftree-vectorize -ffast-math -march=native -lpthread)
 
 find_package(NLopt REQUIRED)
 set(NLopt_INCLUDE_DIRS ${NLOPT_INCLUDE_DIR})
@@ -14,27 +15,16 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   cv_bridge
   common_msgs
+  plan_env
 )
 
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 
-#add_dependencies(bspline_race ${${PROJECT_NAME}_EXPORTED_TARGETS})
-
-# add_message_files(
-#   #FILES
-# )
-
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-#   geometry_msgs
-# )
-
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES bspline_race
-  CATKIN_DEPENDS roscpp rospy tf std_msgs visualization_msgs message_runtime common_msgs
+  CATKIN_DEPENDS roscpp rospy tf std_msgs visualization_msgs message_runtime common_msgs plan_env
   #DEPENDS system_lib
 )
 include_directories(

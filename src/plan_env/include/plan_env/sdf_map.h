@@ -122,7 +122,7 @@ struct MappingData {
   std::vector<double> distance_buffer_neg_;
   std::vector<double> distance_buffer_all_;
   std::vector<double> tmp_buffer1_;
-  std::vector<double> tmp_buffer2_;
+  std::vector<double> tmp_buffer2_;  
 
   // camera position and pose data
 
@@ -206,8 +206,8 @@ public:
   void getSliceESDF(const double height, const double res, const Eigen::Vector4d& range,
                     vector<Eigen::Vector3d>& slice, vector<Eigen::Vector3d>& grad,
                     int sign = 1);  // 1 pos, 2 neg, 3 combined
+  void initMap(ros::NodeHandle& nh,const std::string& particle, const std::string& odom, const std::string& cloud);
   void initMap(ros::NodeHandle& nh);
-
   void publishMap();
   void publishMapInflate(bool all_info = false);
   void publishESDF();
@@ -269,7 +269,7 @@ private:
   typedef shared_ptr<message_filters::Synchronizer<SyncPolicyImagePose>> SynchronizerImagePose;
   typedef shared_ptr<message_filters::Synchronizer<SyncPolicyImageOdom>> SynchronizerImageOdom;
 
-  ros::NodeHandle node_;
+  // ros::NodeHandle node_;
   shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> depth_sub_;
   shared_ptr<message_filters::Subscriber<geometry_msgs::PoseStamped>> pose_sub_;
   shared_ptr<message_filters::Subscriber<nav_msgs::Odometry>> odom_sub_;

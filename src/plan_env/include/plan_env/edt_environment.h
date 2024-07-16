@@ -43,7 +43,7 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
-namespace fast_planner {
+namespace FLAG_Race {
 class EDTEnvironment {
 private:
   /* data */
@@ -78,6 +78,6 @@ public:
   typedef shared_ptr<EDTEnvironment> Ptr;
 };
 
-}  // namespace fast_planner
+}  // namespace FLAG_Race
 
 #endif

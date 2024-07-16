@@ -35,6 +35,7 @@ ros::Publisher                                          particles_publisher;
 ros::Publisher                                          virtual_particles_publisher;
 ros::Publisher                                          swarm_pub;
 ros::Subscriber                                         swarm_traj_sub;
+std::vector<ros::Publisher>                             odom_publishers;
 
 ros::Time last_time;//控制时间loop
 ros::Time last_print_time;//打印时间loop

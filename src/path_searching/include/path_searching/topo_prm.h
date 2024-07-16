@@ -30,7 +30,7 @@
 #include <plan_env/raycast.h>
 #include <random>
 
-namespace fast_planner {
+namespace FLAG_Race {
 
 /* ---------- used for iterating all topo combination ---------- */
 class TopoIterator {
@@ -202,6 +202,6 @@ public:
 
 };
 
-}  // namespace fast_planner
+}  // namespace FLAG_Race
 
 #endif

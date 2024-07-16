@@ -27,6 +27,12 @@ int main(int argc, char **argv) {
     virtual_particles_publisher = nh.advertise<visualization_msgs::MarkerArray>("virtual_particles_vis", 10);
     swarm_pub             = nh.advertise<common_msgs::Swarm_particles>("/swarm_particles", 10);
     swarm_traj_sub        = nh.subscribe("/swarm_traj", 1000, swarmTrajCallback);
+    odom_publishers.resize(particleCount);
+    for (int i = 0; i < particleCount; ++i) {
+        std::stringstream ss;
+        ss << "/particle" << i << "/odom";
+        odom_publishers[i] = nh.advertise<nav_msgs::Odometry>(ss.str(), 10);
+    }
 
     //start sph
     SPHSettings sphSettings(mass, restDensity, h, g);
@@ -442,6 +448,28 @@ void SPHSystem::pubroscmd()
         marker.color.g = 0.0;
         marker.color.b = 0.0;
         virtual_particles_markers.markers.push_back(marker);
+    }
+
+    //pub particles odom
+    for (const auto& particle : particles) {
+        nav_msgs::Odometry odom;
+        odom.header.stamp = ros::Time::now();
+        odom.header.frame_id = "world";
+        odom.child_frame_id = "particle" + std::to_string(particle.index);
+
+        odom.pose.pose.position.x = particle.position.x;
+        odom.pose.pose.position.y = particle.position.y;
+        odom.pose.pose.position.z = particle.position.z;
+        odom.pose.pose.orientation.w = 1.0;  // Assuming no orientation information
+
+        odom.twist.twist.linear.x = particle.velocity.x;
+        odom.twist.twist.linear.y = particle.velocity.y;
+        odom.twist.twist.linear.z = particle.velocity.z;
+
+        // 使用与 particle.index 对应的 Publisher 发布消息
+        if (particle.index < odom_publishers.size()) {
+            odom_publishers[particle.index].publish(odom);
+        }
     }
 
     // 发布所有粒子

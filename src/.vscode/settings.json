@@ -76,7 +76,9 @@
     "valarray": "cpp",
     "variant": "cpp",
     "bit": "cpp",
-    "regex": "cpp"
+    "regex": "cpp",
+    "*.ipp": "cpp",
+    "core": "cpp"
   },
   "C_Cpp_Runner.msvcBatchPath": "",
   "C_Cpp_Runner.cCompilerPath": "gcc",
