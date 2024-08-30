@@ -11,6 +11,12 @@ namespace FLAG_Race
 
     UniformBspline::~UniformBspline() {}
 
+    void UniformBspline::init(ros::NodeHandle& nh)
+    {
+        //this func...
+        
+    }
+
     void UniformBspline::initUniformBspline(const int &p,  const int &n, const double &beta, const int &D, 
                                                  const Eigen::MatrixXd &s_ini, const Eigen::MatrixXd &s_ter)
     {

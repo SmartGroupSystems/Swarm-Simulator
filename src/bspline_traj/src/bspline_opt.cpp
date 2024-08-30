@@ -21,6 +21,11 @@ namespace FLAG_Race
     
     bspline_optimizer::~bspline_optimizer(){}
     
+    void bspline_optimizer::init(ros::NodeHandle& nh)
+    {
+        // this function..
+    }
+
     void bspline_optimizer::setOptParam(const double lambda1,const double lambda2,const double lambda3,
                                                                                     const double safe_dist)
     {
@@ -36,9 +41,9 @@ namespace FLAG_Race
             max_acc_ = acc;
     }
 
-    // void bspline_optimizer::setEnvironment(const EDTEnvironment::Ptr& env) {
-    //     this->edt_environment_ = env;
-    // }
+    void bspline_optimizer::setEnvironment(const EDTEnvironment::Ptr& env) {
+        this->edt_environment_ = env;
+    }
 
     void bspline_optimizer::setSmoothParam(const double lambda1,const double lambda2,
                                                             const double vel, const double acc)

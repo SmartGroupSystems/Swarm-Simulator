@@ -40,11 +40,11 @@
 #include <bspline_race/bspline_opt.h>
 #include "common_msgs/common_msgs.h"
 #include <plan_env/edt_environment.h>
+#include <path_searching/astar.h>
 
 using namespace std;
 
 struct Point { double x, y, z;};
-
 
 namespace FLAG_Race
 {
@@ -52,7 +52,6 @@ namespace FLAG_Race
     {
         public:
             //从launch读取的参数
-
             int p_order_;// order of bspline
             int N_;// number of control points
             int Dim_;// dimension of traj
@@ -63,22 +62,33 @@ namespace FLAG_Race
             Eigen::MatrixXd initial_state,terminal_state;//初始，结束P V A
             Eigen::MatrixXd p_,v_,a_,j_;//轨迹buffer
             Eigen::MatrixXd A_ini, A_ter;
-
+            double lambda1_,lambda2_,lambda3_;
+            
             //智能类指针
             std::shared_ptr<UniformBspline> u;
-            double lambda1_,lambda2_,lambda3_;
+            std::vector<std::shared_ptr<UniformBspline>> swarm_bspline;
+            std::vector<std::shared_ptr<bspline_optimizer>> swarm_opt;
+            std::vector<std::shared_ptr<Astar>> swarm_astar;
             std::vector<std::shared_ptr<SDFMap>> sdf_maps;
             std::vector<std::shared_ptr<EDTEnvironment>> edt_environments;
-
-            //test
-            SDFMap::Ptr sdf_map_;
-            EDTEnvironment::Ptr edt_environment_;
-
+            
             //Traj
             common_msgs::BsplineTraj traj_;//执行轨迹
 
             //Particles
+            bool isFirstCall = true; 
             common_msgs::Swarm_particles current_particles;
+            common_msgs::Swarm_particles init_particles;
+            common_msgs::Swarm_particles particles_goal;
+
+        public:
+            //ROS
+            ros::Subscriber particles_sub; 
+            ros::Publisher  traj_vis;
+            ros::Publisher  traj_puber;
+            ros::Publisher  waypoint_vis;  
+            ros::Timer      traj_timer;
+            ros::Subscriber goal_sub;
 
         public:
             plan_manager(){};  
@@ -88,8 +98,11 @@ namespace FLAG_Race
             void setParam(ros::NodeHandle &nh);//从ros节点中读取参数
             common_msgs::BsplineTraj getSmoothTraj(const std::vector<Point> waypoints);
             void optTraj();
-            void parallelInitESDF(ros::NodeHandle &nh);
+            void parallelInit(ros::NodeHandle &nh);
             void update(const common_msgs::Swarm_particles& particles);
+            void particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
+            void timerCallback(const ros::TimerEvent&);
+            void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
     };
 
 }

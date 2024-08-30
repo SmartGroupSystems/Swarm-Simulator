@@ -39,6 +39,8 @@
    <exec_depend>plan_env</exec_depend>
    <build_export_depend>plan_env</build_export_depend>
    <build_depend>plan_env</build_depend>
+   <build_depend>path_searching</build_depend>
+   <exec_depend>path_searching</exec_depend>
   <!-- <build_export_depend>common_msgs</build_export_depend> -->
   <!-- The export tag contains other, unspecified, tags -->
   <export>

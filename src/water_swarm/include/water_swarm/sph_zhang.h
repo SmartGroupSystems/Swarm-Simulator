@@ -30,7 +30,6 @@
 
 
 ros::Timer                                              timer;
-ros::Subscriber                                         nav_goal_sub;
 ros::Publisher                                          particles_publisher;
 ros::Publisher                                          virtual_particles_publisher;
 ros::Publisher                                          swarm_pub;

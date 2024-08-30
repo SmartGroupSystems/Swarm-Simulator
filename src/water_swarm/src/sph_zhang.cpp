@@ -22,7 +22,6 @@ int main(int argc, char **argv) {
     nh.param("sph/a_max", a_max, -1.0);
 
     timer                 = nh.createTimer(ros::Duration(updateInterval),   timerCallback);
-    nav_goal_sub          = nh.subscribe("/move_base_simple/goal", 10, navGoalCallback);
     particles_publisher   = nh.advertise<visualization_msgs::MarkerArray>("particles_vis", 10);
     virtual_particles_publisher = nh.advertise<visualization_msgs::MarkerArray>("virtual_particles_vis", 10);
     swarm_pub             = nh.advertise<common_msgs::Swarm_particles>("/swarm_particles", 10);
@@ -46,15 +45,6 @@ int main(int argc, char **argv) {
 
 void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg)
 {
-    
-}
-
-
-void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
-    sph_planner->started = true;
-    ROS_INFO("Received 2D Nav Goal at position: (%.2f, %.2f, %.2f), orientation: (%.2f, %.2f, %.2f, %.2f)",
-             msg->pose.position.x, msg->pose.position.y, msg->pose.position.z,
-             msg->pose.orientation.x, msg->pose.orientation.y, msg->pose.orientation.z, msg->pose.orientation.w);
     
 }
 

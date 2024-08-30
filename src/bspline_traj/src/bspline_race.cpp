@@ -7,7 +7,8 @@ namespace FLAG_Race
     {
         // testInit(nh);
         setParam(nh);
-        parallelInitESDF(nh);
+        parallelInit(nh);
+
     }
     plan_manager::~plan_manager() {}
 
@@ -20,10 +21,52 @@ namespace FLAG_Race
         nh.param("planning/max_acc", max_acc_, -1.0);
         nh.param("planning/lambda1",lambda1_,-1.0);
         nh.param("planning/lambda2",lambda2_,-1.0);
+        nh.param("planning/lambda3",lambda3_,-1.0);
         beta = max_vel_/0.5;
+
+        particles_sub = nh.subscribe("/swarm_particles", 1000, &plan_manager::particlesCallback,this);
+        traj_timer = nh.createTimer(ros::Duration(0.05), &plan_manager::timerCallback,this);
+        traj_puber = nh.advertise<common_msgs::Swarm_traj>("/swarm_traj", 10, true);
+        goal_sub = nh.subscribe("/move_base_simple/goal", 1000, &plan_manager::goalCallback, this); 
+    }
+
+    void plan_manager::particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
+    {
+        if (isFirstCall) {
+            init_particles = *msg; 
+            isFirstCall = false; 
+        } 
+        else {
+            current_particles = *msg; 
+        }
+    }
+
+    void plan_manager::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
+    {
+        ROS_INFO("Received goal: [%f, %f, %f]", msg->pose.position.x, 
+                                                msg->pose.position.y, 
+                                                msg->pose.position.z);
+        particles_goal = init_particles;                                            
+        for (size_t i = 0; i < particles_goal.particles.size(); i++)
+        {
+            particles_goal.particles[i].position.x += msg->pose.position.x;
+            particles_goal.particles[i].position.y += msg->pose.position.y;
+            particles_goal.particles[i].position.z += msg->pose.position.z;
+            ROS_INFO("Particle %d's goal: %f, %f,  %f",particles_goal.particles[i].index,
+                                                       particles_goal.particles[i].position.x,
+                                                       particles_goal.particles[i].position.y,
+                                                       particles_goal.particles[i].position.z);
+        }
 
     }
 
+    void plan_manager::timerCallback(const ros::TimerEvent&) 
+    {
+        common_msgs::Swarm_traj new_traj;
+        // 填充 new_traj 的数据
+
+        traj_puber.publish(new_traj);
+    }
 
     common_msgs::BsplineTraj plan_manager::getSmoothTraj(const std::vector<Point> waypoints)
     {
@@ -137,7 +180,7 @@ namespace FLAG_Race
         
     }
 
-    void plan_manager::parallelInitESDF(ros::NodeHandle &nh) {
+    void plan_manager::parallelInit(ros::NodeHandle &nh) {
         ros::master::V_TopicInfo topic_list;
         ros::master::getTopics(topic_list);
         std::regex topic_pattern("/particle(\\d+)/odom");
@@ -150,14 +193,30 @@ namespace FLAG_Race
                     std::string particle_base = "/particle" + particle_index;
                     std::string odom_topic = particle_base + "/odom";
                     std::string cloud_topic = "/map_generator/global_cloud";
-
-                    // 创建 SDFMap 的 shared_ptr 实例，并初始化
+                    //MAP
                     auto sdf_map_ = std::make_shared<SDFMap>();
                     sdf_map_->initMap(nh, particle_base, odom_topic, cloud_topic);
+                    //EDT
                     auto edt_environment_ = std::make_shared<EDTEnvironment>();
                     edt_environment_->setMap(sdf_map_);
+                    // //ASTAR bug.....
+                    // auto geo_path_finder_ = std::make_shared<Astar>();
+                    // geo_path_finder_->setParam(nh);
+                    // geo_path_finder_->setEnvironment(edt_environment_);
+                    // geo_path_finder_->init();
+                    //OPT
+                    auto bspline_opt_ = std::make_shared<bspline_optimizer>();
+                    bspline_opt_->init(nh);
+                    bspline_opt_->setEnvironment(edt_environment_);
+                    //UNIFORMBSPLINE
+                    auto spline_ = std::make_shared<UniformBspline>();
+                    spline_->init(nh);
+
                     sdf_maps.push_back(sdf_map_);
                     edt_environments.push_back(edt_environment_);
+                    // swarm_astar.push_back(geo_path_finder_);
+                    swarm_opt.push_back(bspline_opt_);
+                    swarm_bspline.push_back(spline_);
 
                 } catch (const std::exception& e) {
                     ROS_ERROR("Exception caught while initializing environments for %s: %s", info.name.c_str(), e.what());

@@ -14,6 +14,7 @@
 #include <numeric>
 #include <string>
 #include <memory>
+#include <ros/ros.h>
 
 using namespace std;
 
@@ -42,6 +43,7 @@ namespace FLAG_Race
             UniformBspline(const int &p,  const int &n, const double &beta, const int &D, 
                                                             const Eigen::MatrixXd &s_ini, const Eigen::MatrixXd &s_ter);
             ~UniformBspline();
+            void init(ros::NodeHandle& nh);
             void initUniformBspline(const int &p,  const int &n, const double &beta, const int &D, 
                                                             const Eigen::MatrixXd &s_ini, const Eigen::MatrixXd &s_ter); 
             void setControlPoints(const Eigen::MatrixXd &ctrl_points);

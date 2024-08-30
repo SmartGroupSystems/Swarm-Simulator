@@ -103,6 +103,6 @@
     </node>
 
     <!-- RViz-->
-    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/rviz.rviz" />
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/swarm_rviz.rviz" />
     
 </launch>

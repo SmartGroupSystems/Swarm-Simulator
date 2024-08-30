@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   common_msgs
   plan_env
+  path_searching
 )
 
 find_package(Eigen3 REQUIRED)
@@ -24,7 +25,7 @@ find_package(PCL 1.7 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES bspline_race
-  CATKIN_DEPENDS roscpp rospy tf std_msgs visualization_msgs message_runtime common_msgs plan_env
+  CATKIN_DEPENDS roscpp rospy tf std_msgs visualization_msgs message_runtime common_msgs plan_env path_searching
   #DEPENDS system_lib
 )
 include_directories(

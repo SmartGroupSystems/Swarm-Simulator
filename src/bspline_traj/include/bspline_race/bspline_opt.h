@@ -23,7 +23,7 @@
 
 //自定义
 #include <bspline_race/UniformBspline.h>
-// #include<plan_env/edt_environment.h>
+#include<plan_env/edt_environment.h>
 
 using namespace std;
 
@@ -65,7 +65,7 @@ namespace FLAG_Race
             int    algorithm2_ = 11;             // optimization algorithms for general cost
 
             // std::shared_ptr<EDTEnvironment> edt_environment_;
-            // EDTEnvironment::Ptr edt_environment_;
+            EDTEnvironment::Ptr edt_environment_;
             
         public://函数
             bspline_optimizer() {}
@@ -74,6 +74,7 @@ namespace FLAG_Race
             ~bspline_optimizer();
 
             //从状态机读入
+            void init(ros::NodeHandle& nh);
             void setOptParam(const double lambda1,const double lambda2,const double lambda3,
                                                     const double safe_dist);
             void setMapParam(const double &origin_x,const double &origin_y, const double &map_resolution,
@@ -82,7 +83,7 @@ namespace FLAG_Race
             void setSmoothParam(const double lambda1,const double lambda2,
                                                             const double vel, const double acc);
             void setSplineParam(const UniformBspline &u);
-            // void setEnvironment(const EDTEnvironment::Ptr& env);
+            void setEnvironment(const EDTEnvironment::Ptr& env);
             //从mapping读入
             void setEsdfMap(const Eigen::MatrixXd &esdf_map);
             void initialControlPoints(UniformBspline u);
