@@ -58,7 +58,11 @@
 
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
-        <param name="sdf_map/resolution"      value="0.1" /> 
+        <!-- Plan Manager -->
+        <param name="planning/sphInitTime"      value="5.0" /> 
+
+        <!-- SDF Map -->
+        <param name="sdf_map/resolution"   value="0.1" /> 
         <param name="sdf_map/map_size_x"   value="$(arg map_size_x_)" /> 
         <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
         <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
@@ -90,7 +94,6 @@
         <param name="sdf_map/p_occ"  value="0.80"/>
         <param name="sdf_map/min_ray_length" value="0.5"/>
         <param name="sdf_map/max_ray_length" value="4.5"/>
-
         <param name="sdf_map/esdf_slice_height" value="0.3"/>
         <param name="sdf_map/visualization_truncate_height"   value="2.49"/>
         <param name="sdf_map/virtual_ceil_height"   value="2.5"/>
@@ -99,7 +102,15 @@
         <param name="sdf_map/pose_type"     value="2"/>  
         <param name="sdf_map/frame_id"      value="world"/>
 
-        
+        <!-- geometric path searching -->
+        <param name="astar/lambda_heu" value="10.0" type="double"/>
+        <param name="astar/resolution_astar" value="0.1" type="double"/>
+        <param name="astar/time_resolution" value="0.8" type="double"/>
+        <param name="astar/margin" value="0.1" type="double"/>
+        <param name="astar/allocate_num" value="100000" type="int"/>\
+
+        <!-- bspline opt -->
+
     </node>
 
     <!-- RViz-->

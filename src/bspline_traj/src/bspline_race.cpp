@@ -177,6 +177,7 @@ namespace FLAG_Race
 
     void plan_manager::optTraj()
     {
+        // this func...
         
     }
 
@@ -193,30 +194,37 @@ namespace FLAG_Race
                     std::string particle_base = "/particle" + particle_index;
                     std::string odom_topic = particle_base + "/odom";
                     std::string cloud_topic = "/map_generator/global_cloud";
-                    //MAP
+
+                    std::cout << "\033[1;33m" << particle_base << "  init: "<< "\033[0m" << std::endl;
+
+                    //EDT & MAP
                     auto sdf_map_ = std::make_shared<SDFMap>();
                     sdf_map_->initMap(nh, particle_base, odom_topic, cloud_topic);
-                    //EDT
                     auto edt_environment_ = std::make_shared<EDTEnvironment>();
                     edt_environment_->setMap(sdf_map_);
-                    // //ASTAR bug.....
-                    // auto geo_path_finder_ = std::make_shared<Astar>();
-                    // geo_path_finder_->setParam(nh);
-                    // geo_path_finder_->setEnvironment(edt_environment_);
-                    // geo_path_finder_->init();
+                    
+                    //ASTAR
+                    auto geo_path_finder_ = std::make_shared<Astar>();
+                    geo_path_finder_->setParam(nh);
+                    geo_path_finder_->setEnvironment(edt_environment_);
+                    geo_path_finder_->init();
+
                     //OPT
                     auto bspline_opt_ = std::make_shared<bspline_optimizer>();
                     bspline_opt_->init(nh);
                     bspline_opt_->setEnvironment(edt_environment_);
-                    //UNIFORMBSPLINE
+
+                    //UNIFORM BSPLINE
                     auto spline_ = std::make_shared<UniformBspline>();
                     spline_->init(nh);
 
                     sdf_maps.push_back(sdf_map_);
                     edt_environments.push_back(edt_environment_);
-                    // swarm_astar.push_back(geo_path_finder_);
+                    swarm_astar.push_back(geo_path_finder_);
                     swarm_opt.push_back(bspline_opt_);
                     swarm_bspline.push_back(spline_);
+
+                    std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
 
                 } catch (const std::exception& e) {
                     ROS_ERROR("Exception caught while initializing environments for %s: %s", info.name.c_str(), e.what());

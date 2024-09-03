@@ -24,6 +24,9 @@ namespace FLAG_Race
     void bspline_optimizer::init(ros::NodeHandle& nh)
     {
         // this function..
+
+
+        std::cout << "\033[1;32m" << "success init Opt module" << "\033[0m" << std::endl;
     }
 
     void bspline_optimizer::setOptParam(const double lambda1,const double lambda2,const double lambda3,

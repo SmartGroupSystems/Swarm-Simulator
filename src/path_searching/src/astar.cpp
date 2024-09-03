@@ -31,9 +31,9 @@ using namespace Eigen;
 
 namespace FLAG_Race {
 Astar::~Astar() {
-  for (int i = 0; i < allocate_num_; i++) {
-    delete path_node_pool_[i];
-  }
+  // for (int i = 0; i < allocate_num_; i++) {
+  //   delete path_node_pool_[i];
+  // }
 }
 
 int Astar::search(Eigen::Vector3d start_pt, Eigen::Vector3d end_pt, bool dynamic, double time_start) {
@@ -210,7 +210,7 @@ void Astar::setParam(ros::NodeHandle& nh) {
   nh.param("astar/allocate_num", allocate_num_, -1);
   tie_breaker_ = 1.0 + 1.0 / 10000;
 
-  cout << "margin:" << margin_ << endl;
+  // cout << "margin:" << margin_ << endl;
 }
 
 void Astar::retrievePath(NodePtr end_node) {
@@ -274,9 +274,9 @@ void Astar::init() {
   inv_time_resolution_ = 1.0 / time_resolution_;
   edt_environment_->getMapRegion(origin_, map_size_3d_);
 
-  cout << "origin_: " << origin_.transpose() << endl;
-  cout << "map size: " << map_size_3d_.transpose() << endl;
-
+  // cout << "origin_: " << origin_.transpose() << endl;
+  // cout << "map size: " << map_size_3d_.transpose() << endl;
+  std::cout << "\033[1;32m" << "success init Astar module" << "\033[0m" << std::endl;
   /* ---------- pre-allocated node ---------- */
   path_node_pool_.resize(allocate_num_);
   for (int i = 0; i < allocate_num_; i++) {

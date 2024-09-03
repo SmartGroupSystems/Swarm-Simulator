@@ -14,6 +14,8 @@ namespace FLAG_Race
     void UniformBspline::init(ros::NodeHandle& nh)
     {
         //this func...
+
+        std::cout << "\033[1;32m" << "success init Bspline module" << "\033[0m" << std::endl;
         
     }
 

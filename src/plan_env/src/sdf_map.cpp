@@ -87,12 +87,12 @@ void SDFMap::initMap(ros::NodeHandle& nh,const std::string& particle, const std:
   mp_.min_occupancy_log_ = logit(mp_.p_occ_);
   mp_.unknown_flag_ = 0.01;
 
-  cout << "hit: " << mp_.prob_hit_log_ << endl;
-  cout << "miss: " << mp_.prob_miss_log_ << endl;
-  cout << "min log: " << mp_.clamp_min_log_ << endl;
-  cout << "max: " << mp_.clamp_max_log_ << endl;
-  cout << "thresh log: " << mp_.min_occupancy_log_ << endl;
-  cout << "unknown_flag_: " << mp_.unknown_flag_ << endl;
+  // cout << "hit: " << mp_.prob_hit_log_ << endl;
+  // cout << "miss: " << mp_.prob_miss_log_ << endl;
+  // cout << "min log: " << mp_.clamp_min_log_ << endl;
+  // cout << "max: " << mp_.clamp_max_log_ << endl;
+  // cout << "thresh log: " << mp_.min_occupancy_log_ << endl;
+  // cout << "unknown_flag_: " << mp_.unknown_flag_ << endl;
 
   for (int i = 0; i < 3; ++i) mp_.map_voxel_num_(i) = ceil(mp_.map_size_(i) / mp_.resolution_);
 
@@ -165,7 +165,7 @@ void SDFMap::initMap(ros::NodeHandle& nh,const std::string& particle, const std:
   random_device rd;
   eng_ = default_random_engine(rd());
   
-  ROS_INFO("success init!");
+  std::cout << "\033[1;32m" << "success init SDF Map module" << "\033[0m" << std::endl;
 }
 
 void SDFMap::initMap(ros::NodeHandle& nh) {
@@ -227,12 +227,12 @@ void SDFMap::initMap(ros::NodeHandle& nh) {
   mp_.min_occupancy_log_ = logit(mp_.p_occ_);
   mp_.unknown_flag_ = 0.01;
 
-  cout << "hit: " << mp_.prob_hit_log_ << endl;
-  cout << "miss: " << mp_.prob_miss_log_ << endl;
-  cout << "min log: " << mp_.clamp_min_log_ << endl;
-  cout << "max: " << mp_.clamp_max_log_ << endl;
-  cout << "thresh log: " << mp_.min_occupancy_log_ << endl;
-  cout << "unknown_flag_: " << mp_.unknown_flag_ << endl;
+  // cout << "hit: " << mp_.prob_hit_log_ << endl;
+  // cout << "miss: " << mp_.prob_miss_log_ << endl;
+  // cout << "min log: " << mp_.clamp_min_log_ << endl;
+  // cout << "max: " << mp_.clamp_max_log_ << endl;
+  // cout << "thresh log: " << mp_.min_occupancy_log_ << endl;
+  // cout << "unknown_flag_: " << mp_.unknown_flag_ << endl;
 
   for (int i = 0; i < 3; ++i) mp_.map_voxel_num_(i) = ceil(mp_.map_size_(i) / mp_.resolution_);
 
