@@ -23,8 +23,14 @@ namespace FLAG_Race
     
     void bspline_optimizer::init(ros::NodeHandle& nh)
     {
-        // this function..
-
+        nh.param("planning/traj_order", p_order_, 3);
+        nh.param("planning/dimension", Dim_, -1);
+        nh.param("planning/max_vel", max_vel_, -1.0);
+        nh.param("planning/max_acc", max_acc_, -1.0);
+        nh.param("planning/lambda1",lambda1_,-1.0);
+        nh.param("planning/lambda2",lambda2_,-1.0);
+        nh.param("planning/lambda3",lambda3_,-1.0);
+        nh.param("planning/safe_dist",safe_distance_,-1.0);
 
         std::cout << "\033[1;32m" << "success init Opt module" << "\033[0m" << std::endl;
     }
@@ -238,13 +244,13 @@ namespace FLAG_Race
 
         for (int i = p_order_; i < q.cols()-p_order_; i++) 
         {
-            dist = calcDistance(q.col(i));
-            dist_grad = calcGrad(q.col(i));
+            // dist = calcDistance(q.col(i));
+            // dist_grad = calcGrad(q.col(i));
             
-            // q_3d << q(0,i), q(1,i) , 0.8; 
-            // edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
-            // cout << "dist_grad_3d is "<< dist_grad_3d.transpose()<<endl;
-            // dist_grad << dist_grad_3d(0), dist_grad_3d(1);
+            q_3d << q(0,i), q(1,i) , 1.0; 
+            edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
+            cout << "dist_grad_3d is "<< dist_grad_3d.transpose()<<endl;
+            dist_grad << dist_grad_3d(0), dist_grad_3d(1);
 
             if (dist_grad.norm() > 1e-4) dist_grad.normalize();
             if (dist < safe_distance_) 

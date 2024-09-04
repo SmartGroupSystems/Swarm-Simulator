@@ -6,28 +6,21 @@ namespace FLAG_Race
     plan_manager::plan_manager(ros::NodeHandle &nh)
     {
         // testInit(nh);
-        setParam(nh);
+        nh.param("fsm/planInterval", planInterval, -1.0);
+        initCallback(nh);
         parallelInit(nh);
-
     }
     plan_manager::~plan_manager() {}
 
-    void plan_manager::setParam(ros::NodeHandle &nh)
+    void plan_manager::initCallback(ros::NodeHandle &nh)
     {
-        nh.param("planning/traj_order", p_order_, 3);
-        nh.param("planning/dimension", Dim_, -1);
-        nh.param("planning/TrajSampleRate", TrajSampleRate, -1);
-        nh.param("planning/max_vel", max_vel_, -1.0);
-        nh.param("planning/max_acc", max_acc_, -1.0);
-        nh.param("planning/lambda1",lambda1_,-1.0);
-        nh.param("planning/lambda2",lambda2_,-1.0);
-        nh.param("planning/lambda3",lambda3_,-1.0);
-        beta = max_vel_/0.5;
-
         particles_sub = nh.subscribe("/swarm_particles", 1000, &plan_manager::particlesCallback,this);
-        traj_timer = nh.createTimer(ros::Duration(0.05), &plan_manager::timerCallback,this);
+        traj_timer = nh.createTimer(ros::Duration(0.01), &plan_manager::timerCallback,this);
         traj_puber = nh.advertise<common_msgs::Swarm_traj>("/swarm_traj", 10, true);
-        goal_sub = nh.subscribe("/move_base_simple/goal", 1000, &plan_manager::goalCallback, this); 
+        goal_sub = nh.subscribe("/move_base_simple/goal", 1000, &plan_manager::goalCallback, this);
+
+        lastPlanTime = ros::Time::now();
+        lastWaitOutputTime = ros::Time::now(); 
     }
 
     void plan_manager::particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
@@ -57,15 +50,41 @@ namespace FLAG_Race
                                                        particles_goal.particles[i].position.y,
                                                        particles_goal.particles[i].position.z);
         }
-
+        
+        receive_goal = true;
     }
 
     void plan_manager::timerCallback(const ros::TimerEvent&) 
     {
-        common_msgs::Swarm_traj new_traj;
-        // 填充 new_traj 的数据
+        ros::Time currentTime = ros::Time::now(); 
 
-        traj_puber.publish(new_traj);
+        if (receive_goal)
+        {   
+            receive_goal = false;
+            //this func...
+            
+
+            ROS_INFO("\033[1;32m PLAN_TRAJ \033[0m");
+            exec_traj = true;
+        }
+        else if (exec_traj)
+        {
+            double waitElapsedTime = (currentTime - lastWaitOutputTime).toSec();
+            if (waitElapsedTime >= 1.0)
+            {
+                ROS_INFO("EXEC_TRAJ");
+                lastWaitOutputTime = currentTime;
+            }
+        }
+        else
+        {
+            double waitElapsedTime = (currentTime - lastWaitOutputTime).toSec();
+            if (waitElapsedTime >= 1.0)
+            {
+                ROS_INFO("WAIT_TARGET");
+                lastWaitOutputTime = currentTime;
+            }
+        }
     }
 
     common_msgs::BsplineTraj plan_manager::getSmoothTraj(const std::vector<Point> waypoints)
@@ -178,7 +197,7 @@ namespace FLAG_Race
     void plan_manager::optTraj()
     {
         // this func...
-        
+
     }
 
     void plan_manager::parallelInit(ros::NodeHandle &nh) {

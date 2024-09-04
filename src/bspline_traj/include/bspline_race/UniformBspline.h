@@ -27,6 +27,8 @@ namespace FLAG_Race
         Eigen::VectorXd u_ ; // knot vectors
         double beta_;// time scale t(real time) * beta = u
         int D_;// Dimension of control points
+        double dist_p;
+        double max_vel_;
 
         public://变量
             Eigen::MatrixXd control_points_;

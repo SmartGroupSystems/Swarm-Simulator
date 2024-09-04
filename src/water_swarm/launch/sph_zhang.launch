@@ -59,7 +59,8 @@
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
         <!-- Plan Manager -->
-        <param name="planning/sphInitTime"      value="5.0" /> 
+        <param name="fsm/sphInitTime"      value="5.0" /> 
+        <!-- <param name="fsm/planInterval"     value="0.05" />  -->
 
         <!-- SDF Map -->
         <param name="sdf_map/resolution"   value="0.1" /> 
@@ -110,7 +111,16 @@
         <param name="astar/allocate_num" value="100000" type="int"/>\
 
         <!-- bspline opt -->
-
+        <param name="planning/traj_order" value="3"/>
+        <param name="planning/dimension" value="2" />
+        <param name="planning/TrajSampleRate" value="$50" />
+        <param name="planning/max_vel" value="$(arg v_max)" />
+        <param name="planning/max_acc" value="$(arg a_max)" />
+        <param name="planning/lambda1" value="5.0" />
+        <param name="planning/lambda2" value="1.0" />
+        <param name="planning/lambda3" value="1.0" />
+        <param name="planning/dist_p" value="0.5" />
+        <param name="planning/safe_distance" value="0.4" />
     </node>
 
     <!-- RViz-->

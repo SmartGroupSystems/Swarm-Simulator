@@ -13,7 +13,12 @@ namespace FLAG_Race
 
     void UniformBspline::init(ros::NodeHandle& nh)
     {
-        //this func...
+        nh.param("planning/traj_order", p_, 3);
+        nh.param("planning/dimension", D_, -1);
+        nh.param("planning/dist_p",dist_p,0.5);
+        nh.param("planning/max_vel", max_vel_, -1.0);
+        
+        beta_ = max_vel_/dist_p;
 
         std::cout << "\033[1;32m" << "success init Bspline module" << "\033[0m" << std::endl;
         

@@ -9,10 +9,10 @@
 #include <algorithm>
 #include <iostream>
 #include <math.h>
-#include <vector>
 #include <numeric>
 #include <memory>
-
+#include <thread>
+#include <vector>
 //ros
 #include <ros/ros.h>
 #include <tf/tf.h>
@@ -63,7 +63,8 @@ namespace FLAG_Race
             Eigen::MatrixXd p_,v_,a_,j_;//轨迹buffer
             Eigen::MatrixXd A_ini, A_ter;
             double lambda1_,lambda2_,lambda3_;
-            
+            double planInterval;
+
             //智能类指针
             std::shared_ptr<UniformBspline> u;
             std::vector<std::shared_ptr<UniformBspline>> swarm_bspline;
@@ -89,13 +90,18 @@ namespace FLAG_Race
             ros::Publisher  waypoint_vis;  
             ros::Timer      traj_timer;
             ros::Subscriber goal_sub;
+            ros::Time       lastPlanTime;
+            ros::Time       lastWaitOutputTime;
 
+            //fsm
+            bool receive_goal = false;
+            bool exec_traj = false;
         public:
             plan_manager(){};  
             plan_manager(ros::NodeHandle& nh); 
             ~plan_manager();
             void testInit(ros::NodeHandle& nh); 
-            void setParam(ros::NodeHandle &nh);//从ros节点中读取参数
+            void initCallback(ros::NodeHandle &nh);
             common_msgs::BsplineTraj getSmoothTraj(const std::vector<Point> waypoints);
             void optTraj();
             void parallelInit(ros::NodeHandle &nh);
