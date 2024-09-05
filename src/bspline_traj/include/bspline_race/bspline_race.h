@@ -65,13 +65,23 @@ namespace FLAG_Race
             double lambda1_,lambda2_,lambda3_;
             double planInterval;
 
-            //智能类指针
+            //智能类指针struct
             std::shared_ptr<UniformBspline> u;
-            std::vector<std::shared_ptr<UniformBspline>> swarm_bspline;
-            std::vector<std::shared_ptr<bspline_optimizer>> swarm_opt;
-            std::vector<std::shared_ptr<Astar>> swarm_astar;
-            std::vector<std::shared_ptr<SDFMap>> sdf_maps;
-            std::vector<std::shared_ptr<EDTEnvironment>> edt_environments;
+            // std::vector<std::shared_ptr<UniformBspline>> swarm_bspline;
+            // std::vector<std::shared_ptr<bspline_optimizer>> swarm_opt;
+            // std::vector<std::shared_ptr<Astar>> swarm_astar;
+            // std::vector<std::shared_ptr<SDFMap>> sdf_maps;
+            // std::vector<std::shared_ptr<EDTEnvironment>> edt_environments;
+            struct particleManager {
+                std::string particle_index;
+                std::shared_ptr<SDFMap> sdf_map_;
+                std::shared_ptr<EDTEnvironment> edt_environment_;
+                std::shared_ptr<Astar> geo_path_finder_;
+                std::shared_ptr<bspline_optimizer> bspline_opt_;
+                std::shared_ptr<UniformBspline> spline_;
+            };
+            std::vector<particleManager> swarmParticlesManager;
+
             
             //Traj
             common_msgs::BsplineTraj traj_;//执行轨迹

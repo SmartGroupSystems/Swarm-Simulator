@@ -62,9 +62,11 @@ namespace FLAG_Race
         {   
             receive_goal = false;
             //this func...
-            
-
-            ROS_INFO("\033[1;32m PLAN_TRAJ \033[0m");
+            ROS_INFO("\033[1;32m START OPTIMIZE_TRAJ! \033[0m");
+            optTraj();
+            ros::Time optfinishTime = ros::Time::now(); 
+            double optcostTime = (optfinishTime - currentTime).toSec();
+            ROS_INFO("\033[1;32m OPTIMIZE_FINISH, TOTAL TIME COST: %Fs \033[0m",optcostTime);
             exec_traj = true;
         }
         else if (exec_traj)
@@ -196,8 +198,36 @@ namespace FLAG_Race
 
     void plan_manager::optTraj()
     {
-        // this func...
+        for (size_t i = 0; i < init_particles.particles.size(); i++)
+        {
+            Eigen::Vector3d start_pt, end_pt;
+            // Assign start_pt using current_particles' position
+            start_pt.x() = init_particles.particles[i].position.x;
+            start_pt.y() = init_particles.particles[i].position.y;
+            start_pt.z() = init_particles.particles[i].position.z;
 
+            // Find the matching particle in particles_goal based on the index
+            int current_index = init_particles.particles[i].index;
+            for (const auto& goal_particle : particles_goal.particles) {
+            if (goal_particle.index == current_index) {
+                // Assign end_pt using goal_particle's position
+                    end_pt.x() = goal_particle.position.x;
+                    end_pt.y() = goal_particle.position.y;
+                    end_pt.z() = goal_particle.position.z;
+                    break;
+                }
+            }
+
+            // Eigen::Vector3d diff = end_pt - start_pt;
+            // std::cout << "Start Point: [" << start_pt.x() << ", " << start_pt.y() << ", " << start_pt.z() << "]" << std::endl;
+            // std::cout << "End Point: [" << end_pt.x() << ", " << end_pt.y() << ", " << end_pt.z() << "]" << std::endl;
+            // std::cout << "Difference (End - Start): [" << diff.x() << ", " << diff.y() << ", " << diff.z() << "]" << std::endl;
+            
+            swarmParticlesManager[i].geo_path_finder_->reset();
+            swarmParticlesManager[i].geo_path_finder_->search(start_pt,end_pt,false,-1.0);
+            
+
+        }
     }
 
     void plan_manager::parallelInit(ros::NodeHandle &nh) {
@@ -237,11 +267,21 @@ namespace FLAG_Race
                     auto spline_ = std::make_shared<UniformBspline>();
                     spline_->init(nh);
 
-                    sdf_maps.push_back(sdf_map_);
-                    edt_environments.push_back(edt_environment_);
-                    swarm_astar.push_back(geo_path_finder_);
-                    swarm_opt.push_back(bspline_opt_);
-                    swarm_bspline.push_back(spline_);
+                    // sdf_maps.push_back(sdf_map_);
+                    // edt_environments.push_back(edt_environment_);
+                    // swarm_astar.push_back(geo_path_finder_);
+                    // swarm_opt.push_back(bspline_opt_);
+                    // swarm_bspline.push_back(spline_);
+                    particleManager pm {
+                        particle_index,
+                        sdf_map_,
+                        edt_environment_,
+                        geo_path_finder_,
+                        bspline_opt_,
+                        spline_
+                    };
+
+                    swarmParticlesManager.push_back(pm);  // 将实例存入向量
 
                     std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
 

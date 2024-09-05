@@ -9,7 +9,7 @@
       "stopAtEntry": false,
       "externalConsole": false,
       "cwd": "/home/uav/water_swarm/src/water_swarm/src",
-      "program": "/home/uav/water_swarm/src/water_swarm/src/build/Debug/outDebug",
+      "program": "/home/uav/water_swarm",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

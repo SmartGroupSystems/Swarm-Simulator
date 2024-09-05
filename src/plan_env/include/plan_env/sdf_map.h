@@ -181,7 +181,8 @@ public:
   inline int toAddress(int& x, int& y, int& z);
   inline bool isInMap(const Eigen::Vector3d& pos);
   inline bool isInMap(const Eigen::Vector3i& idx);
-
+  inline bool isInBox(const Eigen::Vector3i& id);
+  inline bool isInBox(const Eigen::Vector3d& pos);
   inline void setOccupancy(Eigen::Vector3d pos, double occ = 1);
   inline void setOccupied(Eigen::Vector3d pos);
   inline int getOccupancy(Eigen::Vector3d pos);
@@ -478,6 +479,24 @@ inline void SDFMap::posToIndex(const Eigen::Vector3d& pos, Eigen::Vector3i& id) 
 inline void SDFMap::indexToPos(const Eigen::Vector3i& id, Eigen::Vector3d& pos) {
   for (int i = 0; i < 3; ++i) pos(i) = (id(i) + 0.5) * mp_.resolution_ + mp_.map_origin_(i);
 }
+
+// inline bool SDFMap::isInBox(const Eigen::Vector3i& id) {
+//   for (int i = 0; i < 3; ++i) {
+//     if (id[i] < mp_.box_min_[i] || id[i] >= mp_.box_max_[i]) {
+//       return false;
+//     }
+//   }
+//   return true;
+// }
+
+// inline bool SDFMap::isInBox(const Eigen::Vector3d& pos) {
+//   for (int i = 0; i < 3; ++i) {
+//     if (pos[i] <= mp_.box_mind_[i] || pos[i] >= mp_.box_maxd_[i]) {
+//       return false;
+//     }
+//   }
+//   return true;
+// }
 
 inline void SDFMap::inflatePoint(const Eigen::Vector3i& pt, int step, vector<Eigen::Vector3i>& pts) {
   int num = 0;
