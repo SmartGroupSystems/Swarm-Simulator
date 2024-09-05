@@ -7,7 +7,7 @@ Panels:
         - /PointCloud22
         - /PointCloud23
       Splitter Ratio: 0.5176470875740051
-    Tree Height: 722
+    Tree Height: 363
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -244,9 +244,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5347959995269775
+      Pitch: 1.5447959899902344
       Target Frame: world
-      Yaw: 4.688169956207275
+      Yaw: 4.698170185089111
     Saved: ~
 Window Geometry:
   Displays:

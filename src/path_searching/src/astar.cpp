@@ -43,8 +43,7 @@ int Astar::search(Eigen::Vector3d start_pt, Eigen::Vector3d end_pt, bool dynamic
   cur_node->position = start_pt;
   cur_node->index = posToIndex(start_pt);
   cur_node->g_score = 0.0;
-
-  Eigen::Vector3d end_state(6);
+  // Eigen::Vector3d end_state(6);
   Eigen::Vector3i end_index;
   double time_to_goal;
 
@@ -126,11 +125,12 @@ int Astar::search(Eigen::Vector3d start_pt, Eigen::Vector3d end_pt, bool dynamic
             // cout << "outside map" << endl;
             continue;
           }
-
+// std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
           /* not in close set */
           Eigen::Vector3i pro_id = posToIndex(pro_pos);
-          int pro_t_id = timeToIndex(pro_t);
-
+          // int pro_t_id = timeToIndex(pro_t);
+          int pro_t_id;
+// std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
           NodePtr pro_node =
               dynamic ? expanded_nodes_.find(pro_id, pro_t_id) : expanded_nodes_.find(pro_id);
 
@@ -138,7 +138,7 @@ int Astar::search(Eigen::Vector3d start_pt, Eigen::Vector3d end_pt, bool dynamic
             // cout << "in closeset" << endl;
             continue;
           }
-
+// std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
           /* collision free */
           // double dist = dynamic ?
           // edt_environment_->evaluateCoarseEDT(pro_pos, cur_node->time + dt) :
