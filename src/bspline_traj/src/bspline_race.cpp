@@ -18,7 +18,8 @@ namespace FLAG_Race
         traj_timer = nh.createTimer(ros::Duration(0.01), &plan_manager::timerCallback,this);
         traj_puber = nh.advertise<common_msgs::Swarm_traj>("/swarm_traj", 10, true);
         goal_sub = nh.subscribe("/move_base_simple/goal", 1000, &plan_manager::goalCallback, this);
-
+        path_vis = nh.advertise<visualization_msgs::Marker>("/path_vis", 10);
+        traj_vis = nh.advertise<visualization_msgs::Marker>("/traj_vis", 10);
         lastPlanTime = ros::Time::now();
         lastWaitOutputTime = ros::Time::now(); 
     }
@@ -195,41 +196,90 @@ namespace FLAG_Race
     {
         current_particles = particles;  
     }
+    
+   
+    void plan_manager::processParticle(size_t index, const common_msgs::Swarm_particles& init_particles, 
+                                       const common_msgs::Swarm_particles& particles_goal, 
+                        std::vector<particleManager>& swarmParticlesManager, 
+                        ros::Publisher& path_vis, std::mutex& mtx) {
+        Eigen::Vector3d start_pt, end_pt;
+
+        // Assign start_pt using current_particles' position
+        start_pt.x() = init_particles.particles[index].position.x;
+        start_pt.y() = init_particles.particles[index].position.y;
+        start_pt.z() = init_particles.particles[index].position.z;
+
+        // Find the matching particle in particles_goal based on the index
+        int current_index = init_particles.particles[index].index;
+        for (const auto& goal_particle : particles_goal.particles) {
+            if (goal_particle.index == current_index) {
+                // Assign end_pt using goal_particle's position
+                end_pt.x() = goal_particle.position.x;
+                end_pt.y() = goal_particle.position.y;
+                end_pt.z() = goal_particle.position.z;
+                break;
+            }
+        }
+
+        // Reset pathfinder and search for the path
+        swarmParticlesManager[index].geo_path_finder_->reset();
+        swarmParticlesManager[index].geo_path_finder_->search(start_pt, end_pt, false, -1.0);
+        std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[index].geo_path_finder_->getprunePath();
+
+        // // Lock the mutex to safely visualize the path
+        // std::lock_guard<std::mutex> lock(mtx);
+        visualizePath(path_points, path_vis, swarmParticlesManager[index].particle_index);
+    }
 
     void plan_manager::optTraj()
     {
-        for (size_t i = 0; i < init_particles.particles.size(); i++)
-        {
-            Eigen::Vector3d start_pt, end_pt;
-            // Assign start_pt using current_particles' position
-            start_pt.x() = init_particles.particles[i].position.x;
-            start_pt.y() = init_particles.particles[i].position.y;
-            start_pt.z() = init_particles.particles[i].position.z;
+        size_t num_particles = init_particles.particles.size();
+        std::vector<std::thread> threads;
+        std::mutex mtx;
 
-            // Find the matching particle in particles_goal based on the index
-            int current_index = init_particles.particles[i].index;
-            for (const auto& goal_particle : particles_goal.particles) {
-            if (goal_particle.index == current_index) {
-                // Assign end_pt using goal_particle's position
-                    end_pt.x() = goal_particle.position.x;
-                    end_pt.y() = goal_particle.position.y;
-                    end_pt.z() = goal_particle.position.z;
-                    break;
-                }
-            }
+        // Create a thread for each particle
+        for (size_t i = 0; i < num_particles; ++i) {
+            threads.emplace_back(std::bind(&plan_manager::processParticle, this, i, 
+                                            std::cref(init_particles), std::cref(particles_goal),
+                                            std::ref(swarmParticlesManager), std::ref(path_vis), std::ref(mtx)));
+        }
 
-            // Eigen::Vector3d diff = end_pt - start_pt;
-            // std::cout << "Start Point: [" << start_pt.x() << ", " << start_pt.y() << ", " << start_pt.z() << "]" << std::endl;
-            // std::cout << "End Point: [" << end_pt.x() << ", " << end_pt.y() << ", " << end_pt.z() << "]" << std::endl;
-            // std::cout << "Difference (End - Start): [" << diff.x() << ", " << diff.y() << ", " << diff.z() << "]" << std::endl;
-            
-            swarmParticlesManager[i].geo_path_finder_->reset();
-            swarmParticlesManager[i].geo_path_finder_->search(start_pt,end_pt,false,-1.0);
-
-
-
+        // Join all threads
+        for (auto& thread : threads) {
+            thread.join();
         }
     }
+
+    // void plan_manager::optTraj()
+    // {
+    //     for (size_t i = 0; i < init_particles.particles.size(); i++)
+    //     {
+    //         Eigen::Vector3d start_pt, end_pt;
+    //         // Assign start_pt using current_particles' position
+    //         start_pt.x() = init_particles.particles[i].position.x;
+    //         start_pt.y() = init_particles.particles[i].position.y;
+    //         start_pt.z() = init_particles.particles[i].position.z;
+
+    //         // Find the matching particle in particles_goal based on the index
+    //         int current_index = init_particles.particles[i].index;
+    //         for (const auto& goal_particle : particles_goal.particles) {
+    //         if (goal_particle.index == current_index) {
+    //             // Assign end_pt using goal_particle's position
+    //                 end_pt.x() = goal_particle.position.x;
+    //                 end_pt.y() = goal_particle.position.y;
+    //                 end_pt.z() = goal_particle.position.z;
+    //                 break;
+    //             }
+    //         }
+
+    //         swarmParticlesManager[i].geo_path_finder_->reset();
+    //         swarmParticlesManager[i].geo_path_finder_->search(start_pt,end_pt,false,-1.0);
+    //         std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[i].geo_path_finder_->getprunePath();
+    //         visualizePath(path_points, path_vis, swarmParticlesManager[i].particle_index);
+
+
+    //     }
+    // }
 
     void plan_manager::parallelInit(ros::NodeHandle &nh) {
         ros::master::V_TopicInfo topic_list;
@@ -294,6 +344,58 @@ namespace FLAG_Race
             }
         }
     }
+
+    void plan_manager::visualizePath(const std::vector<Eigen::Vector3d>& path_points, ros::Publisher& marker_pub, const std::string& particle_index) {
+        
+        std::lock_guard<std::mutex> lock(mtx);  // 锁定
+        // 定义一个Marker消息
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "world";  // 根据实际使用的坐标系
+        marker.header.stamp = ros::Time::now();
+        marker.ns = "path_visualization";
+        
+        // 使用 particle_index 作为 marker 的唯一 ID
+        std::hash<std::string> hash_fn;
+        marker.id = static_cast<int>(hash_fn(particle_index));
+        
+        // 使用POINTS类型以便可以设置每个点的颜色
+        marker.type = visualization_msgs::Marker::POINTS; 
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.scale.x = 0.1; 
+        marker.scale.y = 0.1;
+
+        // 遍历路径点并将其添加到Marker中
+        for (size_t i = 0; i < path_points.size(); ++i) {
+            geometry_msgs::Point p;
+            p.x = path_points[i].x();
+            p.y = path_points[i].y();
+            p.z = path_points[i].z();
+
+            // 将当前点添加到Marker
+            marker.points.push_back(p);
+
+            // 设置每个点的颜色
+            std_msgs::ColorRGBA color;
+            if (i == path_points.size() - 1) {
+                color.r = 0.0;
+                color.g = 1.0;
+                color.b = 0.0;
+                color.a = 1.0;
+
+            } else {
+                color.r = 1.0;
+                color.g = 0.0;
+                color.b = 0.0;
+                color.a = 1.0;
+            }
+            // 将颜色添加到Marker中
+            marker.colors.push_back(color);
+        }
+
+        // 发布Marker消息
+        marker_pub.publish(marker);
+    }
+
 
     void plan_manager::testInit(ros::NodeHandle& nh)
     {

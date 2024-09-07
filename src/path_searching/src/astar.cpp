@@ -233,6 +233,22 @@ std::vector<Eigen::Vector3d> Astar::getPath() {
   return path;
 }
 
+std::vector<Eigen::Vector3d> Astar::getprunePath() {
+    
+    std::vector<Eigen::Vector3d> path = getPath();
+    std::vector<Eigen::Vector3d> pruned_path;
+    
+    for (int i = 0; i < path.size(); i += 5) {
+        pruned_path.push_back(path[i]);
+    }
+  
+    if (!path.empty() && (path.size() - 1) % 5 != 0) {
+        pruned_path.push_back(path.back());
+    }
+
+    return pruned_path;
+}
+
 double Astar::getDiagHeu(Eigen::Vector3d x1, Eigen::Vector3d x2) {
   double dx = fabs(x1(0) - x2(0));
   double dy = fabs(x1(1) - x2(1));

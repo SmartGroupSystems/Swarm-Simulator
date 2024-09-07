@@ -168,6 +168,7 @@ public:
 
   void setEnvironment(const EDTEnvironment::Ptr& env);
   std::vector<Eigen::Vector3d> getPath();
+  std::vector<Eigen::Vector3d> getprunePath();
   std::vector<NodePtr> getVisitedNodes();
 
   typedef shared_ptr<Astar> Ptr;

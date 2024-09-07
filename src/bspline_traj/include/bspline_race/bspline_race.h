@@ -5,14 +5,15 @@
 #include <fstream>
 #include <string>
 #include <regex>
-#include <boost/thread/thread.hpp>
 #include <algorithm>
 #include <iostream>
 #include <math.h>
 #include <numeric>
 #include <memory>
 #include <thread>
+#include <mutex>
 #include <vector>
+#include <Eigen/Dense>
 //ros
 #include <ros/ros.h>
 #include <tf/tf.h>
@@ -64,6 +65,7 @@ namespace FLAG_Race
             Eigen::MatrixXd A_ini, A_ter;
             double lambda1_,lambda2_,lambda3_;
             double planInterval;
+            std::mutex mtx;
 
             //智能类指针struct
             std::shared_ptr<UniformBspline> u;
@@ -100,6 +102,7 @@ namespace FLAG_Race
             ros::Publisher  waypoint_vis;  
             ros::Timer      traj_timer;
             ros::Subscriber goal_sub;
+            ros::Publisher  path_vis;
             ros::Time       lastPlanTime;
             ros::Time       lastWaitOutputTime;
 
@@ -119,6 +122,11 @@ namespace FLAG_Race
             void particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
             void timerCallback(const ros::TimerEvent&);
             void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
+            void visualizePath(const std::vector<Eigen::Vector3d>& path_points, ros::Publisher& marker_pub, const std::string& particle_index);
+            void processParticle(size_t index, const common_msgs::Swarm_particles& init_particles, 
+                                       const common_msgs::Swarm_particles& particles_goal, 
+                        std::vector<particleManager>& swarmParticlesManager, 
+                        ros::Publisher& path_vis, std::mutex& mtx); 
     };
 
 }
