@@ -59,7 +59,7 @@ namespace FLAG_Race
             int variable_num;//变量个数
             std::vector<double> best_variable_;  //nlopt最终输出
             double safe_distance_;//安全距离
-            
+            std::mutex mtx;
             double min_cost_;       //
             int    algorithm1_ = 15;             // optimization algorithms for quadratic cost
             int    algorithm2_ = 11;             // optimization algorithms for general cost
@@ -98,6 +98,17 @@ namespace FLAG_Race
                 path_.clear();
                 path_ = path;
                 cps_num_ = path.size() + 2*p_order_ -2;
+            }
+
+            inline void set3DPath(const std::vector<Eigen::Vector3d> &path) {
+                path_.clear(); 
+
+                for (const auto& point : path) {
+                    path_.emplace_back(point.x(), point.y()); 
+                }
+                
+                // 更新 cps_num_
+                cps_num_ = path_.size() + 2 * p_order_ - 2;
             }
 
             //nlopt相关

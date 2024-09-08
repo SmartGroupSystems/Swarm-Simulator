@@ -468,16 +468,19 @@ namespace FLAG_Race
 
     void bspline_optimizer::optimize()
     {
+            std::lock_guard<std::mutex> lock(mtx);  // 锁定
             /* initialize solver */
-            // cout << "/* initialize solver */"<<endl;
+            cout << "/* initialize solver */"<<endl;
             iter_num_        = 0;
             min_cost_        = std::numeric_limits<double>::max();
+             std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
             variable_num = (cps_num_-2*p_order_)*Dim_;
             nlopt::opt opt(nlopt::algorithm(nlopt::LD_LBFGS),variable_num);
             opt.set_min_objective(bspline_optimizer::costFunction,this);
             opt.set_maxeval(200);
             opt.set_maxtime(0.02);
             opt.set_xtol_rel(1e-5);
+             std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
             vector<double> lb(variable_num), ub(variable_num);
             vector<double> q(variable_num); 
             for (size_t j = 0; j < cps_num_-2*p_order_; j++)
@@ -487,7 +490,7 @@ namespace FLAG_Race
                     q[j*Dim_+i] = control_points_(j+p_order_,i);
                 }
             }
-
+ std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
             const double  bound = 10.0;
             for (size_t i = 0; i <variable_num; i++)
             {
@@ -513,9 +516,10 @@ namespace FLAG_Race
             } 
         }
         // cout<< "optimize successfully~"<<endl;
-            // cout << "iner:\n"<<control_points_<<endl;
-            // cout<<"iter num :"<<iter_num_<<endl;
+        //     cout << "iner:\n"<<control_points_<<endl;
+        //     cout<<"iter num :"<<iter_num_<<endl;
     }
+
     void bspline_optimizer::optimizesmooth()
     {
             iter_num_        = 0;

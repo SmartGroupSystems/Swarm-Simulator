@@ -119,6 +119,7 @@ pair<double, Eigen::Vector3d> EDTEnvironment::evaluateEDTWithGrad(const Eigen::V
 
 double EDTEnvironment::evaluateCoarseEDT(Eigen::Vector3d& pos, double time) {
   double d1 = sdf_map_->getDistance(pos);
+  // cout<< "dist: "<<d1 <<endl;
   if (time < 0.0) {
     return d1;
   } else {

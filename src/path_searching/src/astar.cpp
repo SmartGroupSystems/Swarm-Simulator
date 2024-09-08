@@ -119,6 +119,7 @@ int Astar::search(Eigen::Vector3d start_pt, Eigen::Vector3d end_pt, bool dynamic
 
           /* ---------- check if in feasible space ---------- */
           /* inside map range */
+          // cout<< "pro_pos:  "<< pro_pos.transpose()<<endl;
           if (pro_pos(0) <= origin_(0) || pro_pos(0) >= map_size_3d_(0) || pro_pos(1) <= origin_(1) ||
               pro_pos(1) >= map_size_3d_(1) || pro_pos(2) <= origin_(2) ||
               pro_pos(2) >= map_size_3d_(2)) {
@@ -290,8 +291,8 @@ void Astar::init() {
   inv_time_resolution_ = 1.0 / time_resolution_;
   edt_environment_->getMapRegion(origin_, map_size_3d_);
 
-  // cout << "origin_: " << origin_.transpose() << endl;
-  // cout << "map size: " << map_size_3d_.transpose() << endl;
+  cout << "origin_: " << origin_.transpose() << endl;
+  cout << "map size: " << map_size_3d_.transpose() << endl;
   std::cout << "\033[1;32m" << "success init Astar module" << "\033[0m" << std::endl;
   /* ---------- pre-allocated node ---------- */
   path_node_pool_.resize(allocate_num_);

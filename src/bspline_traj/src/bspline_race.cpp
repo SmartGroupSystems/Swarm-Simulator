@@ -198,19 +198,27 @@ namespace FLAG_Race
     }
     
    
-    void plan_manager::processParticle(size_t index, const common_msgs::Swarm_particles& init_particles, 
+    void plan_manager::processParticle(size_t index, const common_msgs::Swarm_particles& particles, 
                                        const common_msgs::Swarm_particles& particles_goal, 
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx) {
-        Eigen::Vector3d start_pt, end_pt;
+        initial_state.resize(3,2);
+        terminal_state.resize(3,2);
+        Eigen::Vector3d start_pt, end_pt, start_v, start_a;
 
         // Assign start_pt using current_particles' position
-        start_pt.x() = init_particles.particles[index].position.x;
-        start_pt.y() = init_particles.particles[index].position.y;
-        start_pt.z() = init_particles.particles[index].position.z;
+        start_pt.x() = particles.particles[index].position.x;
+        start_pt.y() = particles.particles[index].position.y;
+        start_pt.z() = particles.particles[index].position.z;
+        start_v.x()  = particles.particles[index].velocity.x;
+        start_v.y()  = particles.particles[index].velocity.y;
+        start_v.z()  = particles.particles[index].velocity.z;
+        start_a.x()  = particles.particles[index].acceleration.x;
+        start_a.y()  = particles.particles[index].acceleration.y;
+        start_a.z()  = particles.particles[index].acceleration.z;
 
         // Find the matching particle in particles_goal based on the index
-        int current_index = init_particles.particles[index].index;
+        int current_index = particles.particles[index].index;
         for (const auto& goal_particle : particles_goal.particles) {
             if (goal_particle.index == current_index) {
                 // Assign end_pt using goal_particle's position
@@ -221,26 +229,49 @@ namespace FLAG_Race
             }
         }
 
+        initial_state <<    start_pt(0), start_pt(1),
+                            start_v(0),  start_v(1),
+                            start_a(0),  start_a(1);
+
+        terminal_state <<   end_pt(0), end_pt(1),
+                            0.0, 0.0,
+                            0.0, 0.0;
+
         // Reset pathfinder and search for the path
         swarmParticlesManager[index].geo_path_finder_->reset();
         swarmParticlesManager[index].geo_path_finder_->search(start_pt, end_pt, false, -1.0);
         std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[index].geo_path_finder_->getprunePath();
+            visualizePath(path_points, path_vis, swarmParticlesManager[index].particle_index);
+        if (path_points.size()==0)
+        {
+           return;
+        }
+        swarmParticlesManager[index].bspline_opt_->set3DPath(path_points);
 
-        // // Lock the mutex to safely visualize the path
-        // std::lock_guard<std::mutex> lock(mtx);
-        visualizePath(path_points, path_vis, swarmParticlesManager[index].particle_index);
+        swarmParticlesManager[index].spline_->setIniandTerandCpsnum(initial_state,terminal_state,
+                                                            swarmParticlesManager[index].bspline_opt_->cps_num_);
+        if(swarmParticlesManager[index].bspline_opt_->cps_num_ == 2*swarmParticlesManager[index].spline_->p_)
+        {
+            return;
+        }
+        UniformBspline spline = *swarmParticlesManager[index].spline_;
+        swarmParticlesManager[index].bspline_opt_->setSplineParam(spline);
+        // swarmParticlesManager[index].bspline_opt_->optimize();
+
+
+   
     }
 
     void plan_manager::optTraj()
     {
-        size_t num_particles = init_particles.particles.size();
+        size_t num_particles = current_particles.particles.size();
         std::vector<std::thread> threads;
         std::mutex mtx;
 
         // Create a thread for each particle
         for (size_t i = 0; i < num_particles; ++i) {
             threads.emplace_back(std::bind(&plan_manager::processParticle, this, i, 
-                                            std::cref(init_particles), std::cref(particles_goal),
+                                            std::cref(current_particles), std::cref(particles_goal),
                                             std::ref(swarmParticlesManager), std::ref(path_vis), std::ref(mtx)));
         }
 
@@ -346,7 +377,7 @@ namespace FLAG_Race
     }
 
     void plan_manager::visualizePath(const std::vector<Eigen::Vector3d>& path_points, ros::Publisher& marker_pub, const std::string& particle_index) {
-        
+        // Lock the mutex to safely visualize the path
         std::lock_guard<std::mutex> lock(mtx);  // 锁定
         // 定义一个Marker消息
         visualization_msgs::Marker marker;
