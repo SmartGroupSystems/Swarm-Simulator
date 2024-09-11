@@ -190,19 +190,19 @@ Visualization Manager:
       Use rainbow: true
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /path_vis
       Name: particlepath
       Namespaces:
         {}
       Queue Size: 1000
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /traj_vis
       Name: swarm_traj
       Namespaces:
-        {}
+        traj_visualization: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -245,7 +245,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 37.042510986328125
+      Distance: 40.11846160888672
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -253,17 +253,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 10.65395736694336
-        Y: 1.2290176153182983
-        Z: -3.8023431301116943
+        X: 10.945079803466797
+        Y: 2.135366439819336
+        Z: -3.801419973373413
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4997962713241577
+      Pitch: 1.5697963237762451
       Target Frame: world
-      Yaw: 4.693178653717041
+      Yaw: 4.648176193237305
     Saved: ~
 Window Geometry:
   Displays:

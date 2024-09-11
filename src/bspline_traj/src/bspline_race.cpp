@@ -100,8 +100,7 @@ namespace FLAG_Race
                                        const common_msgs::Swarm_particles& particles_goal, 
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx) {
-        initial_state.resize(3,2);
-        terminal_state.resize(3,2);
+        Eigen::MatrixXd initial_state(3,2),terminal_state(3,2);//初始，结束P V A
         Eigen::Vector3d start_pt, end_pt, start_v, start_a;
 
         // Assign start_pt using current_particles' position
@@ -127,7 +126,7 @@ namespace FLAG_Race
             }
         }
 
-        //  cout<< "start: "<<start_pt.x()<< " "<< start_pt.y()<<" "<< start_pt.z()<<endl;
+        // cout<< "start: "<< swarmParticlesManager[index].particle_index <<"  "<<start_pt.x()<< " "<< start_pt.y()<<" "<< start_pt.z()<<endl;
 
         initial_state <<    start_pt(0), start_pt(1),
                             start_v(0),  start_v(1),
@@ -147,7 +146,7 @@ namespace FLAG_Race
            return;
         }
         swarmParticlesManager[index].bspline_opt_->set3DPath(path_points);
-            std::cout << "First row of initial_state: " << initial_state.row(0) << std::endl;
+            // std::cout << "First row of initial_state: " << swarmParticlesManager[index].particle_index <<"  "<< initial_state.row(0) << std::endl;
         swarmParticlesManager[index].spline_->setIniandTerandCpsnum(initial_state,terminal_state,
                                                             swarmParticlesManager[index].bspline_opt_->cps_num_);
         if(swarmParticlesManager[index].bspline_opt_->cps_num_ == 2*swarmParticlesManager[index].spline_->p_)

@@ -52,7 +52,6 @@ namespace FLAG_Race
     class plan_manager
     {
         public:
-            Eigen::MatrixXd initial_state,terminal_state;//初始，结束P V A
             double planInterval;
             std::mutex mtx;
 
