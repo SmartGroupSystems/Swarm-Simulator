@@ -207,8 +207,8 @@ namespace FLAG_Race
         Eigen::Vector3d start_pt, end_pt, start_v, start_a;
 
         // Assign start_pt using current_particles' position
-        start_pt.x() = particles.particles[index].position.x;
-        start_pt.y() = particles.particles[index].position.y;
+        start_pt.x() = particles.particles[index].position.x+0.000001;//if start is zero, a_star bug
+        start_pt.y() = particles.particles[index].position.y+0.000001;//
         start_pt.z() = particles.particles[index].position.z;
         start_v.x()  = particles.particles[index].velocity.x;
         start_v.y()  = particles.particles[index].velocity.y;
@@ -228,6 +228,8 @@ namespace FLAG_Race
                 break;
             }
         }
+
+        //  cout<< start_pt.transpose()<< "     "<< end_pt.transpose()<<endl;
 
         initial_state <<    start_pt(0), start_pt(1),
                             start_v(0),  start_v(1),

@@ -66,6 +66,7 @@ int Astar::search(Eigen::Vector3d start_pt, Eigen::Vector3d end_pt, bool dynamic
   NodePtr neighbor = NULL;
   NodePtr terminate_node = NULL;
 
+  // cout<< "open set size: "<< open_set_.size()<<endl;
   /* ---------- search loop ---------- */
   while (!open_set_.empty()) {
     /* ---------- get lowest f_score node ---------- */

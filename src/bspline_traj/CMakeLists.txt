@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(bspline_race)
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+
 # add_definitions(-std=c++11 -g -Og -ftree-vectorize -ffast-math -march=native -lpthread)
 
 find_package(NLopt REQUIRED)
