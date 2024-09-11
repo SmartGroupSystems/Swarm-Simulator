@@ -17,6 +17,7 @@ namespace FLAG_Race
         nh.param("planning/dimension", D_, -1);
         nh.param("planning/dist_p",dist_p,0.5);
         nh.param("planning/max_vel", max_vel_, -1.0);
+        nh.param("planning/TrajSampleRate", TrajSampleRate, 1);
         
         beta_ = max_vel_/dist_p;
 
@@ -127,8 +128,9 @@ namespace FLAG_Race
         interval_ = (u_(1) - u_(0))/beta_;
     }
 
-    void UniformBspline::getT(const int &trajSampleRate)
+    void UniformBspline::getT()
     {
+        int trajSampleRate = TrajSampleRate;
         time_.resize((t_range(1)-t_range(0))*trajSampleRate+1);
         
         for (size_t i = 0; i < time_.size(); i++)

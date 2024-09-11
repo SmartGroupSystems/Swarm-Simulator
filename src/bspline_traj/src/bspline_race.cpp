@@ -90,108 +90,6 @@ namespace FLAG_Race
         }
     }
 
-    common_msgs::BsplineTraj plan_manager::getSmoothTraj(const std::vector<Point> waypoints)
-    {
-        common_msgs::BsplineTraj traj;
-        std::vector<Eigen::Vector2d> control_points_;
-        initial_state.resize(3,2);
-        terminal_state.resize(3,2);
-        A_ini.resize(3,3);
-        A_ter.resize(3,3);
-        initial_state <<        waypoints.front().x, waypoints.front().y,
-                                0.0,                 0.0,
-                                0.0,                 0.0;
-        terminal_state<<        waypoints.back().x,  waypoints.back().y,
-                                0.0,                 0.0,
-                                0.0,                 0.0;
-        A_ini <<                1.0/6,              2.0/3,                  1.0/6,
-                                -1.0/2*beta,        0.0*beta,               1.0/2*beta,
-                                1.0*beta*beta,      -2.0*beta*beta,         1.0*beta*beta;
-        A_ter<<                 1.0/6,              2.0/3,                  1.0/6,
-                                -1.0/2*beta,        0.0*beta,               1.0/2*beta,
-                                1.0*beta*beta,      -2.0*beta*beta,         1.0*beta*beta;
-
-        Eigen::MatrixXd tmp1(3,2);//前三个控制点的值
-        Eigen::MatrixXd tmp2(3,2);//末尾三个控制点的值
-        // solve Ax = b
-        tmp1 = A_ini.colPivHouseholderQr().solve(initial_state);
-        tmp2 = A_ter.colPivHouseholderQr().solve(terminal_state);
-
-        // 将 tmp1 的值添加到 control_points_
-        for (int i = 0; i < tmp1.rows(); ++i) {
-            control_points_.push_back(Eigen::Vector2d(tmp1(i, 0), tmp1(i, 1)));
-        }
-
-        // 处理 waypoints
-        Eigen::Vector2d last_point = control_points_.back();
-        for (size_t i = 1; i < waypoints.size(); ++i) {
-            Eigen::Vector2d current_point(waypoints[i].x, waypoints[i].y);
-            double distance = (current_point - last_point).norm();
-
-            if (distance < 0.5) {
-                // 如果当前 waypoint 与 last_point 的距离小于0.5，直接存储
-                control_points_.push_back(current_point);
-            } else {
-                // 否则，计算新的控制点
-                Eigen::Vector2d direction = (current_point - last_point).normalized();
-                Eigen::Vector2d new_control_point = last_point + 0.5 * direction;
-                control_points_.push_back(new_control_point);
-                i--; // 保持在当前 waypoint 上，以便再次检查
-            }
-
-            last_point = control_points_.back(); // 更新最后一个点
-        }
-
-        // 将 tmp2 的值添加到 control_points_
-        for (int i = 0; i < tmp2.rows(); ++i) {
-            control_points_.push_back(Eigen::Vector2d(tmp2(i, 0), tmp2(i, 1)));
-        }
-
-        // 创建一个大小适当的 Eigen::MatrixXd 矩阵
-        Eigen::MatrixXd control_points_matrix(control_points_.size(), 2);
-
-        // 将数据从 vector 复制到矩阵
-        for (size_t i = 0; i < control_points_.size(); ++i) {
-            control_points_matrix(i, 0) = control_points_[i](0); // x 坐标
-            control_points_matrix(i, 1) = control_points_[i](1); // y 坐标
-        } 
-
-        cps_num = control_points_.size();
-        u.reset(new UniformBspline(p_order_,cps_num,beta,Dim_,initial_state,terminal_state));
-        u->setControlPoints(control_points_matrix);
-        u->getT(TrajSampleRate);
-        UniformBspline p = *u;
-        UniformBspline v = p.getDerivative();
-        UniformBspline a = v.getDerivative();
-        UniformBspline j = a.getDerivative();
-        p_ = p.getTrajectory(p.time_);
-        v_ = v.getTrajectory(p.time_);
-        a_ = a.getTrajectory(p.time_);
-        j_ = j.getTrajectory(p.time_);
-
-        traj.position.clear();
-        traj.velocity.clear();
-        traj.acceleration.clear();
-
-        geometry_msgs::PoseStamped tmp_p,tmp_v,tmp_a,tmp_j;
-        //traj : px py vx vy ax ay
-        for (size_t i = 0; i < p_.rows(); i++)
-        {    
-            tmp_p.pose.position.x   = p_(i,0);tmp_p.pose.position.y   = p_(i,1); tmp_p.pose.position.z   = 0;
-            tmp_v.pose.position.x   = v_(i,0); tmp_v.pose.position.y  = v_(i,1); tmp_v.pose.position.z   = 0;
-            tmp_a.pose.position.x   = a_(i,0); tmp_a.pose.position.y  = a_(i,1); tmp_a.pose.position.z   = 0; 
-            tmp_j.pose.position.x   = j_(i,0); tmp_j.pose.position.y  = j_(i,1); tmp_j.pose.position.z   = 0;
-            traj.position.push_back(tmp_p) ;
-            traj.velocity.push_back(tmp_v) ;
-            traj.acceleration.push_back(tmp_a);
-            traj.jerk.push_back(tmp_j);
-        } 
-        traj.header.frame_id = "world";
-        traj.header.stamp = ros::Time::now();  
-        traj.header.seq = 1;
-        return traj;
-    }
-
     void plan_manager::update(const common_msgs::Swarm_particles& particles) 
     {
         current_particles = particles;  
@@ -229,7 +127,7 @@ namespace FLAG_Race
             }
         }
 
-        //  cout<< start_pt.transpose()<< "     "<< end_pt.transpose()<<endl;
+        //  cout<< "start: "<<start_pt.x()<< " "<< start_pt.y()<<" "<< start_pt.z()<<endl;
 
         initial_state <<    start_pt(0), start_pt(1),
                             start_v(0),  start_v(1),
@@ -249,7 +147,7 @@ namespace FLAG_Race
            return;
         }
         swarmParticlesManager[index].bspline_opt_->set3DPath(path_points);
-
+            std::cout << "First row of initial_state: " << initial_state.row(0) << std::endl;
         swarmParticlesManager[index].spline_->setIniandTerandCpsnum(initial_state,terminal_state,
                                                             swarmParticlesManager[index].bspline_opt_->cps_num_);
         if(swarmParticlesManager[index].bspline_opt_->cps_num_ == 2*swarmParticlesManager[index].spline_->p_)
@@ -258,9 +156,65 @@ namespace FLAG_Race
         }
         UniformBspline spline = *swarmParticlesManager[index].spline_;
         swarmParticlesManager[index].bspline_opt_->setSplineParam(spline);
-        // swarmParticlesManager[index].bspline_opt_->optimize();
+        swarmParticlesManager[index].bspline_opt_->optimize();
 
+        swarmParticlesManager[index].spline_->setControlPoints(swarmParticlesManager[index].bspline_opt_->control_points_);
+        swarmParticlesManager[index].spline_->getT();
+        UniformBspline p = *swarmParticlesManager[index].spline_;
+        UniformBspline v = p.getDerivative();
+        UniformBspline a = v.getDerivative();
+        UniformBspline j = a.getDerivative();
 
+        //traj
+        Eigen::MatrixXd p_ = p.getTrajectory(p.time_);
+        Eigen::MatrixXd v_ = v.getTrajectory(p.time_);
+        Eigen::MatrixXd a_ = a.getTrajectory(p.time_);
+        Eigen::MatrixXd j_ = j.getTrajectory(p.time_);
+
+        common_msgs::BsplineTraj traj_;
+        std::vector<Eigen::Vector3d> vis_traj;
+        traj_.traj_id = std::stoi(swarmParticlesManager[index].particle_index);
+        int N = p_.rows();  
+        traj_.position.resize(N);
+        traj_.velocity.resize(N);
+        traj_.acceleration.resize(N);
+        traj_.jerk.resize(N);
+        vis_traj.resize(N);
+
+        for (int i = 0; i < N; ++i) {
+
+            geometry_msgs::Point pos;
+            pos.x = p_(i, 0);  
+            pos.y = p_(i, 1);  
+            pos.z = 0.0;       
+            traj_.position[i] = pos;
+
+            vis_traj[i].x() = p_(i, 0);
+            vis_traj[i].y() = p_(i, 1);
+            vis_traj[i].z() = 1.0;
+
+            geometry_msgs::Point vel;
+            vel.x = v_(i, 0); 
+            vel.y = v_(i, 1); 
+            vel.z = 0.0;       
+            traj_.velocity[i] = vel;
+
+            geometry_msgs::Point acc;
+            acc.x = a_(i, 0);  
+            acc.y = a_(i, 1);  
+            acc.z = 0.0;      
+            traj_.acceleration[i] = acc;
+
+            geometry_msgs::Point jerk;
+            jerk.x = j_(i, 0);  
+            jerk.y = j_(i, 1);  
+            jerk.z = 0.0;       
+            traj_.jerk[i] = jerk;
+        }
+
+        visualizeTraj(vis_traj, traj_vis, swarmParticlesManager[index].particle_index);
+
+        swarm_traj.traj.push_back(traj_);
    
     }
 
@@ -270,6 +224,7 @@ namespace FLAG_Race
         std::vector<std::thread> threads;
         std::mutex mtx;
 
+        swarm_traj.traj.clear();
         // Create a thread for each particle
         for (size_t i = 0; i < num_particles; ++i) {
             threads.emplace_back(std::bind(&plan_manager::processParticle, this, i, 
@@ -281,6 +236,8 @@ namespace FLAG_Race
         for (auto& thread : threads) {
             thread.join();
         }
+
+        traj_puber.publish(swarm_traj);
     }
 
     // void plan_manager::optTraj()
@@ -429,6 +386,53 @@ namespace FLAG_Race
         marker_pub.publish(marker);
     }
 
+    void plan_manager::visualizeTraj(const std::vector<Eigen::Vector3d>& traj, ros::Publisher& marker_pub, const std::string& particle_index)
+    {
+        // Lock the mutex to safely visualize the traj
+        std::lock_guard<std::mutex> lock(mtx);  // 锁定
+
+        // 定义一个Marker消息
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "world";
+        marker.header.stamp = ros::Time::now();
+        marker.ns = "traj_visualization";
+        
+        // 使用 particle_index 作为 marker 的唯一 ID
+        std::hash<std::string> hash_fn;
+        marker.id = static_cast<int>(hash_fn(particle_index));
+        
+        // 使用POINTS类型以便可以设置每个点的颜色
+        marker.type = visualization_msgs::Marker::POINTS; 
+        marker.action = visualization_msgs::Marker::ADD;
+
+        // 修改 marker 的大小为 0.2
+        marker.scale.x = 0.1; 
+        marker.scale.y = 0.1;
+
+        // 遍历路径点并将其添加到Marker中
+        for (size_t i = 0; i < traj.size(); ++i) {
+            geometry_msgs::Point p;
+            p.x = traj[i].x();
+            p.y = traj[i].y();
+            p.z = traj[i].z();
+
+            // 将当前点添加到Marker
+            marker.points.push_back(p);
+
+            // 设置每个点的颜色为紫色 (红 + 蓝)
+            std_msgs::ColorRGBA color;
+            color.r = 1.0;  // 红色
+            color.g = 0.0;  // 绿色
+            color.b = 1.0;  // 蓝色
+            color.a = 1.0;  // 不透明度
+            
+            // 将颜色添加到Marker中
+            marker.colors.push_back(color);
+        }
+
+        // 发布Marker消息
+        marker_pub.publish(marker);
+    }
 
     void plan_manager::testInit(ros::NodeHandle& nh)
     {

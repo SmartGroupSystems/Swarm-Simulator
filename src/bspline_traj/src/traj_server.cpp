@@ -35,87 +35,11 @@ ros::Publisher  cmd_pub;
 ros::Subscriber cmd_sub;
 
 void run()
-{
-  if(BTraj.size() != 0)
-    {
-      bs_traj BT_ptr = *(BTraj.begin());
-      BTraj.erase(BTraj.begin());
-
-      // CAL_YAW
-      double arg_    = atan2(-BT_ptr.vel_[0],BT_ptr.vel_[1]) + (PI/2.0f);
-      double vel_len = sqrt(pow(BT_ptr.vel_[0],2)+pow(BT_ptr.vel_[1],2));
-      if(vel_len<=0.1) arg_ = last_yaw;
-      std::pair<double, double> yaw_all = calculate_yaw(last_yaw,arg_);
-      geometry_msgs::Quaternion geo_q = tf::createQuaternionMsgFromYaw(yaw_all.first);
-
-      // POSE
-      pva_msg.position.x = BT_ptr.pos_[0];
-      pva_msg.position.y = BT_ptr.pos_[1];
-      pva_msg.position.z = set_height;
-      // VEL
-      // pva_msg.velocity.x = BT_ptr.vel_[0];
-      // pva_msg.velocity.y = BT_ptr.vel_[1];
-      // pva_msg.velocity.z = 0;
-      // // ACC
-      // pva_msg.acceleration.x = BT_ptr.acc_[0];
-      // pva_msg.acceleration.y = BT_ptr.acc_[1];
-      // pva_msg.acceleration.z = 0;
-      // //JERK
-      // pva_msg.jerk.x = BT_ptr.jerk_[0];
-      // pva_msg.jerk.y = BT_ptr.jerk_[1];
-      // pva_msg.jerk.z = 0;
-      // YAW
-      pva_msg.yaw      = yaw_all.first;
-      pva_msg.yaw_dot  = yaw_all.second;
-
-      // TIME
-      pva_msg.header.stamp = ros::Time::now();
-      cmd_pub.publish(pva_msg);
-      cout<<"[cmd] Pub traj [x y z vx vy vz]: " <<   pva_msg.position.x  << "  "
-                                                <<   pva_msg.position.y  << "  "
-                                                <<   pva_msg.position.z  << "  "
-                                                <<   pva_msg.velocity.x  << "  "
-                                                <<   pva_msg.velocity.y  << "  "                                                
-                                                <<   pva_msg.velocity.z  << "  "                                       
-                                                << endl;
-    }
-
-  else
-    {
-      cout <<"[cmd] Arrived!"<< endl;
-    }
-}
+{}
 
 
 void traj_cb(const common_msgs::BsplineTrajConstPtr &msg)
-{
-  ROS_INFO("RECEIVED TRAJ, SIZE: %d",msg->position.size());
-  // 收到新轨迹
-  if(first_bs)
-  {
-    // 直接放到BTraj里
-    for (size_t i = 0; i < msg->position.size(); i++)
-    {    
-        bs_traj BT_ptr;
-        BT_ptr.pos_ << msg->position[i].pose.position.x, 
-                       msg->position[i].pose.position.y,
-                       msg->position[i].pose.position.z;
-        BT_ptr.vel_ << msg->velocity[i].pose.position.x, 
-                       msg->velocity[i].pose.position.y,
-                       msg->velocity[i].pose.position.z;
-        BT_ptr.acc_ << msg->acceleration[i].pose.position.x, 
-                       msg->acceleration[i].pose.position.y,
-                       msg->acceleration[i].pose.position.z;           
-        BT_ptr.jerk_<< msg->jerk[i].pose.position.x,
-                       msg->jerk[i].pose.position.y,
-                       msg->jerk[i].pose.position.z;      
-
-        BTraj.push_back(BT_ptr);
-    }
-
-    first_bs = false;
-  }
-}
+{}
 
 
 std::pair<double, double> cal_yaw( double current_yaw,double aim_yaw)

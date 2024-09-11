@@ -29,7 +29,7 @@ namespace FLAG_Race
         int D_;// Dimension of control points
         double dist_p;
         double max_vel_;
-
+        int TrajSampleRate;
         public://变量
             Eigen::MatrixXd control_points_;
             Eigen::MatrixXd A_ini, A_ter; // A_ini*[cp1, cp2, cp3] = [p0, v0, a0] ,similarly A_ter; DIM: 3*3
@@ -58,6 +58,7 @@ namespace FLAG_Race
             }
             inline void setIniandTerandCpsnum(const Eigen::MatrixXd &s_ini, const Eigen::MatrixXd &s_ter,const int &n)
             {
+                
                 s_ini_ = s_ini;
                 s_ter_ = s_ter;
                 n_ = n-1;
@@ -78,7 +79,7 @@ namespace FLAG_Race
             void getAvailableSrange();
             void getAvailableTrange();
             void getInterval();
-            void getT(const int &trajSampleRate);//轨迹采样点的时间序列
+            void getT();//轨迹采样点的时间序列
             UniformBspline getDerivative();//返回b样条的导数类
             Eigen::VectorXd getBoundConstraintb();//得到边界
     };

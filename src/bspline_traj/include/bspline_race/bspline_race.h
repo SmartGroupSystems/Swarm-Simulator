@@ -52,18 +52,7 @@ namespace FLAG_Race
     class plan_manager
     {
         public:
-            //从launch读取的参数
-            int p_order_;// order of bspline
-            int N_;// number of control points
-            int Dim_;// dimension of traj
-            int TrajSampleRate;// 轨迹采样频率
-            int cps_num;  
-            double beta;
-            double max_vel_,max_acc_;//最大速度，加速度
             Eigen::MatrixXd initial_state,terminal_state;//初始，结束P V A
-            Eigen::MatrixXd p_,v_,a_,j_;//轨迹buffer
-            Eigen::MatrixXd A_ini, A_ter;
-            double lambda1_,lambda2_,lambda3_;
             double planInterval;
             std::mutex mtx;
 
@@ -86,7 +75,7 @@ namespace FLAG_Race
 
             
             //Traj
-            common_msgs::BsplineTraj traj_;//执行轨迹
+            common_msgs::Swarm_traj swarm_traj;
 
             //Particles
             bool isFirstCall = true; 
@@ -123,6 +112,7 @@ namespace FLAG_Race
             void timerCallback(const ros::TimerEvent&);
             void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
             void visualizePath(const std::vector<Eigen::Vector3d>& path_points, ros::Publisher& marker_pub, const std::string& particle_index);
+            void visualizeTraj(const std::vector<Eigen::Vector3d>& traj, ros::Publisher& marker_pub, const std::string& particle_index);
             void processParticle(size_t index, const common_msgs::Swarm_particles& init_particles, 
                                        const common_msgs::Swarm_particles& particles_goal, 
                         std::vector<particleManager>& swarmParticlesManager, 

@@ -6,7 +6,7 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="1"/>       <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="4"/>       <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.5"/>  <!-- 粒子可视化尺寸 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长 -->
@@ -113,7 +113,7 @@
         <!-- bspline opt -->
         <param name="planning/traj_order" value="3"/>
         <param name="planning/dimension" value="2" />
-        <param name="planning/TrajSampleRate" value="$50" />
+        <param name="planning/TrajSampleRate" value="50" />
         <param name="planning/max_vel" value="$(arg v_max)" />
         <param name="planning/max_acc" value="$(arg a_max)" />
         <param name="planning/lambda1" value="5.0" />
