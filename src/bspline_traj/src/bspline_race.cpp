@@ -7,6 +7,7 @@ namespace FLAG_Race
     {
         // testInit(nh);
         nh.param("fsm/planInterval", planInterval, -1.0);
+        nh.param<std::string>("fsm/cloud_topic", cloud_topic_, "click_map");
         initCallback(nh);
         parallelInit(nh);
     }
@@ -243,10 +244,11 @@ namespace FLAG_Race
     // {
     //     for (size_t i = 0; i < init_particles.particles.size(); i++)
     //     {
+    //         Eigen::MatrixXd initial_state(3,2),terminal_state(3,2);//初始，结束P V A
     //         Eigen::Vector3d start_pt, end_pt;
     //         // Assign start_pt using current_particles' position
-    //         start_pt.x() = init_particles.particles[i].position.x;
-    //         start_pt.y() = init_particles.particles[i].position.y;
+    //         start_pt.x() = init_particles.particles[i].position.x+0.000001;
+    //         start_pt.y() = init_particles.particles[i].position.y+0.000001;
     //         start_pt.z() = init_particles.particles[i].position.z;
 
     //         // Find the matching particle in particles_goal based on the index
@@ -266,7 +268,79 @@ namespace FLAG_Race
     //         std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[i].geo_path_finder_->getprunePath();
     //         visualizePath(path_points, path_vis, swarmParticlesManager[i].particle_index);
 
+    //         if (path_points.size()==0)
+    //         {
+    //             return;
+    //         }
+    //         swarmParticlesManager[i].bspline_opt_->set3DPath(path_points);
+    //             // std::cout << "First row of initial_state: " << swarmParticlesManager[i].particle_index <<"  "<< initial_state.row(0) << std::endl;
+    //         swarmParticlesManager[i].spline_->setIniandTerandCpsnum(initial_state,terminal_state,
+    //                                                             swarmParticlesManager[i].bspline_opt_->cps_num_);
+    //         if(swarmParticlesManager[i].bspline_opt_->cps_num_ == 2*swarmParticlesManager[i].spline_->p_)
+    //         {
+    //             return;
+    //         }
+    //         UniformBspline spline = *swarmParticlesManager[i].spline_;
+    //         swarmParticlesManager[i].bspline_opt_->setSplineParam(spline);
+    //         swarmParticlesManager[i].bspline_opt_->optimize();
 
+    //         swarmParticlesManager[i].spline_->setControlPoints(swarmParticlesManager[i].bspline_opt_->control_points_);
+    //         swarmParticlesManager[i].spline_->getT();
+    //         UniformBspline p = *swarmParticlesManager[i].spline_;
+    //         UniformBspline v = p.getDerivative();
+    //         UniformBspline a = v.getDerivative();
+    //         UniformBspline j = a.getDerivative();
+
+    //         //traj
+    //         Eigen::MatrixXd p_ = p.getTrajectory(p.time_);
+    //         Eigen::MatrixXd v_ = v.getTrajectory(p.time_);
+    //         Eigen::MatrixXd a_ = a.getTrajectory(p.time_);
+    //         Eigen::MatrixXd j_ = j.getTrajectory(p.time_);
+
+    //         common_msgs::BsplineTraj traj_;
+    //         std::vector<Eigen::Vector3d> vis_traj;
+    //         traj_.traj_id = std::stoi(swarmParticlesManager[i].particle_index);
+    //         int N = p_.rows();  
+    //         traj_.position.resize(N);
+    //         traj_.velocity.resize(N);
+    //         traj_.acceleration.resize(N);
+    //         traj_.jerk.resize(N);
+    //         vis_traj.resize(N);
+
+    //         for (int i = 0; i < N; ++i) {
+
+    //             geometry_msgs::Point pos;
+    //             pos.x = p_(i, 0);  
+    //             pos.y = p_(i, 1);  
+    //             pos.z = 0.0;       
+    //             traj_.position[i] = pos;
+
+    //             vis_traj[i].x() = p_(i, 0);
+    //             vis_traj[i].y() = p_(i, 1);
+    //             vis_traj[i].z() = 1.0;
+
+    //             geometry_msgs::Point vel;
+    //             vel.x = v_(i, 0); 
+    //             vel.y = v_(i, 1); 
+    //             vel.z = 0.0;       
+    //             traj_.velocity[i] = vel;
+
+    //             geometry_msgs::Point acc;
+    //             acc.x = a_(i, 0);  
+    //             acc.y = a_(i, 1);  
+    //             acc.z = 0.0;      
+    //             traj_.acceleration[i] = acc;
+
+    //             geometry_msgs::Point jerk;
+    //             jerk.x = j_(i, 0);  
+    //             jerk.y = j_(i, 1);  
+    //             jerk.z = 0.0;       
+    //             traj_.jerk[i] = jerk;
+    //         }
+
+    //         visualizeTraj(vis_traj, traj_vis, swarmParticlesManager[i].particle_index);
+
+    //         swarm_traj.traj.push_back(traj_);
     //     }
     // }
 
@@ -282,7 +356,7 @@ namespace FLAG_Race
                     std::string particle_index = match[1];
                     std::string particle_base = "/particle" + particle_index;
                     std::string odom_topic = particle_base + "/odom";
-                    std::string cloud_topic = "/map_generator/global_cloud";
+                    std::string cloud_topic = cloud_topic_;
 
                     std::cout << "\033[1;33m" << particle_base << "  init: "<< "\033[0m" << std::endl;
 

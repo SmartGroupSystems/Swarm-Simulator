@@ -65,7 +65,7 @@ void clickCallback(const geometry_msgs::PoseStamped& msg) {
     Eigen::Vector3d tmp1 = p1 + l1 * dir1;
     for (double l2 = -len2_; l2 <= len2_ + 1e-3; l2 += 0.1) {
       Eigen::Vector3d tmp2 = tmp1 + l2 * dir2;
-      for (double h = -0.5; h < 2.5; h += 0.1) {
+      for (double h = -0.5; h < 7.5; h += 0.1) {
         pt_random.x = tmp2[0];
         pt_random.y = tmp2[1];
         pt_random.z = h;

@@ -76,8 +76,6 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "bit": "cpp",
-        "eigen": "cpp",
-        "csignal": "cpp"
+        "bit": "cpp"
     }
 }

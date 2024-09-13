@@ -30,7 +30,7 @@ namespace FLAG_Race
         nh.param("planning/lambda1",lambda1_,-1.0);
         nh.param("planning/lambda2",lambda2_,-1.0);
         nh.param("planning/lambda3",lambda3_,-1.0);
-        nh.param("planning/safe_dist",safe_distance_,-1.0);
+        nh.param("planning/safe_distance",safe_distance_,-1.0);
 
         std::cout << "\033[1;32m" << "success init Opt module" << "\033[0m" << std::endl;
     }
@@ -246,10 +246,11 @@ namespace FLAG_Race
         {
             // dist = calcDistance(q.col(i));
             // dist_grad = calcGrad(q.col(i));
-            
+        
             q_3d << q(0,i), q(1,i) , 1.0; 
+      
             edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
-            cout << "dist_grad_3d is "<< dist_grad_3d.transpose()<<endl;
+            // cout << "dist_grad_3d is "<< dist_grad_3d.transpose()<<endl;
             dist_grad << dist_grad_3d(0), dist_grad_3d(1);
 
             if (dist_grad.norm() > 1e-4) dist_grad.normalize();
@@ -259,102 +260,6 @@ namespace FLAG_Race
                 gradient.col(i) += 2.0 * (dist - safe_distance_) * dist_grad;     
             }
         }   
-    }
-
-    double bspline_optimizer::calcDistance(const Eigen::MatrixXd &q)
-    {
-        double dist;
-        Eigen::Vector2d p(q(0,0),q(1,0));//存入两个控制点
-        Eigen::Vector2d diff;
-        Eigen::Vector2d sur_pts[2][2];//4个邻居点
-        getSurroundPts(p,sur_pts, diff);
-        double dists[2][2];
-        getSurroundDistance(sur_pts, dists);
-        interpolateBilinearDist(dists, diff, dist);
-        return dist;
-    }
-
-    void bspline_optimizer::interpolateBilinearDist(double values[2][2], const Eigen::Vector2d& diff, 
-                                                                                                                                                                double& dist)
-    {
-        //二线性插值
-        double c00 = values[0][0];
-        double c01 = values[0][1];
-        double c10 = values[1][0];
-        double c11 = values[1][1];
-        double tx = diff(0);
-        double ty = diff(1);
-        
-        double nx0 = lerp(c00,c10,ty);
-        double nx1 = lerp(c01,c11,ty);
-        double ny0 = lerp(c00,c01,tx);
-        double ny1 = lerp(c10,c11,tx);
-
-        dist = lerp(ny0,ny1,ty);
-    }
-    Eigen::Vector2d bspline_optimizer::calcGrad(const Eigen::MatrixXd &q)
-    {
-        Eigen::Vector2d p(q(0,0),q(1,0));//存入两个控制点
-        Eigen::Vector2d dist_grad;
-        Eigen::Vector2d diff;
-        Eigen::Vector2d sur_pts[2][2];//4个邻居点
-        getSurroundPts(p,sur_pts, diff);
-
-        double dists[2][2];
-        getSurroundDistance(sur_pts, dists);
-
-        interpolateBilinear(dists, diff, dist_grad);
-
-        return dist_grad;
-    }
-
-    void bspline_optimizer::getSurroundPts(const Eigen::Vector2d& pos, Eigen::Vector2d pts[2][2], Eigen::Vector2d& diff)
-    {
-        double dist_x = pos(0) - startPoint_x;
-        double dist_y = startPoint_y - pos(1);
-        diff(0) = fmod(dist_x,map_resolution_);
-        diff(1) = fmod(dist_y,map_resolution_);
-
-        Eigen::Vector2d curr_index;//用这个索引找到最左上角的点，并记为 p(0,0);
-        curr_index<< floor(dist_y/map_resolution_),floor(dist_x/map_resolution_);
-        for (size_t i = 0; i < 2; i++)
-        {
-            for (size_t j = 0; j < 2; j++)
-            {       
-                Eigen::Vector2d tmp_index(curr_index(0)+i,curr_index(1)+j);
-                pts[i][j] = tmp_index;
-            }
-        }
-    }
-    void bspline_optimizer::getSurroundDistance(Eigen::Vector2d pts[2][2], double dists[2][2])
-    {
-        for (size_t i = 0; i < 2; i++)
-        {
-            for (size_t j = 0; j < 2; j++)
-            {
-              Eigen::Vector2d tmp_index = pts[i][j];
-              dists[i][j] = esdf_map_(tmp_index(0),tmp_index(1));  
-            }
-        }
-    }
-
-    void bspline_optimizer::interpolateBilinear(double values[2][2], const Eigen::Vector2d& diff, Eigen::Vector2d& grad)
-    {
-        //二线性插值
-        double c00 = values[0][0];
-        double c01 = values[0][1];
-        double c10 = values[1][0];
-        double c11 = values[1][1];
-        double tx = diff(0);
-        double ty = diff(1);
-        
-        double nx0 = lerp(c00,c10,ty);
-        double nx1 = lerp(c01,c11,ty);
-        double ny0 = lerp(c00,c01,tx);
-        double ny1 = lerp(c10,c11,tx);
-
-        grad(0) = (nx1- nx0)/map_resolution_;
-        grad(1) = (ny0- ny1)/map_resolution_;
     }
 
     void bspline_optimizer::combineCost( const std::vector<double>& x,Eigen::MatrixXd &grad,double &f_combine)
@@ -382,36 +287,17 @@ namespace FLAG_Race
     // cout<<"====================calcSmoothnessCost"<<endl;
         calcFeasibilityCost(control_points,f_feasibility,g_feasibility_);
     // cout<<"====================calcFeasibilityCost"<<endl;
-        // calcEsdfCost(control_points,f_distance,g_distance_);
+        calcEsdfCost(control_points,f_distance,g_distance_);
     // cout<<"====================calcEsdfCost"<<endl;
+
+        std::cout << "f_combine = " << f_combine
+          << ", lambda1_ = " << lambda1_ << ", f_smoothness = " << f_smoothness
+          << ", lambda2_ = " << lambda2_ << ", f_feasibility = " << f_feasibility
+          << ", lambda3_ = " << lambda3_ << ", f_distance = " << f_distance
+          << std::endl;
 
         f_combine = lambda1_ * f_smoothness + lambda2_*f_feasibility + lambda3_*f_distance;
         grad2D = lambda1_*g_smoothness_ + lambda2_ * g_feasibility_ +lambda3_ * g_distance_ ;
-        grad = grad2D.block(0,p_order_,Dim_,cps_num_-2*p_order_);//起点  块大小
-    }
-    void bspline_optimizer::combineCostSmooth( const std::vector<double>& x,Eigen::MatrixXd &grad,double &f_combine)
-    {
-        Eigen::MatrixXd control_points = control_points_.transpose();
-        //cout<<control_points<<endl;
-        for (size_t j = 0; j < cps_num_-2*p_order_; j++)
-            {
-              for (size_t i = 0; i < Dim_; i++)
-                {
-                    control_points(i,j+p_order_) = x[j*Dim_+i];
-                } 
-            }
-        f_combine = 0.0;
-        Eigen::MatrixXd grad2D; 
-        grad2D.resize(Dim_,cps_num_);
-        grad2D.setZero(Dim_,cps_num_);//初始化梯度矩阵
-
-        double f_smoothness, f_waypoint;
-        Eigen::MatrixXd g_smoothness_ = Eigen::MatrixXd::Zero(Dim_, cps_num_);
-        Eigen::MatrixXd g_waypoint_ = Eigen::MatrixXd::Zero(Dim_, cps_num_);
-        f_smoothness  =  0.0, f_waypoint = 0.0;
-        calcSmoothnessCost(control_points, f_smoothness, g_smoothness_);
-        // calcWaypointCost(control_points, f_waypoint, g_waypoint_);
-        grad2D = lambda1_*g_smoothness_  + lambda2_ *g_waypoint_;
         grad = grad2D.block(0,p_order_,Dim_,cps_num_-2*p_order_);//起点  块大小
     }
 
@@ -440,47 +326,20 @@ namespace FLAG_Race
         return cost;
     }
 
-    double bspline_optimizer::costFunctionSmooth(const std::vector<double>& x, std::vector<double>& grad,
-                                                                                         void* func_data)
-    {
-        bspline_optimizer* opt = reinterpret_cast<bspline_optimizer*>(func_data);
-        Eigen::MatrixXd grad_matrix;
-        double cost;
-        opt->combineCostSmooth(x,grad_matrix,cost);
-        opt->iter_num_++;
-
-        for (size_t i = 0; i < grad_matrix.cols(); i++)
-            {
-                for (size_t j = 0; j <opt->Dim_; j++)
-                {
-                    // grad.push_back(grad_matrix(j,i)) ;
-                    grad[i*opt->Dim_+j] = grad_matrix(j,i);
-                }    
-            } 
-        /* save the min cost result */
-        if (cost < opt->min_cost_) {
-                opt->min_cost_     = cost;
-                opt->best_variable_ = x;
-            }
-        return cost;
-    }
-
-
     void bspline_optimizer::optimize()
     {
-            std::lock_guard<std::mutex> lock(mtx);  // 锁定
             /* initialize solver */
             // cout << "/* initialize solver */"<<endl;
             iter_num_        = 0;
             min_cost_        = std::numeric_limits<double>::max();
-            //  std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
+            
             variable_num = (cps_num_-2*p_order_)*Dim_;
             nlopt::opt opt(nlopt::algorithm(nlopt::LD_LBFGS),variable_num);
             opt.set_min_objective(bspline_optimizer::costFunction,this);
             opt.set_maxeval(200);
             opt.set_maxtime(0.02);
             opt.set_xtol_rel(1e-5);
-            //  std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
+          
             vector<double> lb(variable_num), ub(variable_num);
             vector<double> q(variable_num); 
             for (size_t j = 0; j < cps_num_-2*p_order_; j++)
@@ -490,7 +349,7 @@ namespace FLAG_Race
                     q[j*Dim_+i] = control_points_(j+p_order_,i);
                 }
             }
-//  std::cout << "\033[1;33m" << "-----------------------------------------" << "\033[0m" << std::endl;
+
             const double  bound = 10.0;
             for (size_t i = 0; i <variable_num; i++)
             {
@@ -515,110 +374,9 @@ namespace FLAG_Race
                 control_points_(j+p_order_,i) = best_variable_[j*Dim_+i];
             } 
         }
-        // cout<< "optimize successfully~"<<endl;
-        //     cout << "iner:\n"<<control_points_<<endl;
-        //     cout<<"iter num :"<<iter_num_<<endl;
-    }
-
-    void bspline_optimizer::optimizesmooth()
-    {
-            iter_num_        = 0;
-            min_cost_        = std::numeric_limits<double>::max();
-            variable_num = (cps_num_-2*p_order_)*Dim_;
-            nlopt::opt opt(nlopt::algorithm(nlopt::LD_LBFGS),variable_num);
-            opt.set_min_objective(bspline_optimizer::costFunctionSmooth,this);
-            opt.set_maxeval(200);
-            opt.set_maxtime(0.02);
-            opt.set_xtol_rel(1e-5);
-            vector<double> lb(variable_num), ub(variable_num);
-            vector<double> q(variable_num);
-
-            for (size_t j = 0; j < cps_num_-2*p_order_; j++)
-            {
-               for (size_t i = 0; i < Dim_; i++)
-                {
-                    q[j*Dim_+i] = control_points_(j+p_order_,i);
-                }
-            }
-
-            const double  bound = 5.0;
-            for (size_t i = 0; i <variable_num; i++)
-            {
-                    lb[i]  = q[i]-bound;
-                    ub[i] = q[i]+bound;      
-            }
-            opt.set_lower_bounds(lb);
-            opt.set_upper_bounds(ub);
-        try
-        {
-            double final_cost;
-            nlopt::result result = opt.optimize(q, final_cost);    
-        }
-        catch(std::exception &e)
-         {
-            std::cout << "nlopt failed: " << e.what() << std::endl;
-        }
-
-          for (size_t j = 0; j < cps_num_-2*p_order_; j++)
-            {
-              for (size_t i = 0; i < Dim_; i++)
-                {
-                    control_points_(j+p_order_,i) = best_variable_[j*Dim_+i];
-                } 
-            }
-            cout<< "optimize successfully~"<<endl;
-    }
-
-    void bspline_optimizer::optimize_withoutesdf()
-    {
-           double intial_lambda3 = lambda3_;
-            lambda3_  = 0;
-            /* initialize solver */
-            iter_num_        = 0;
-            min_cost_        = std::numeric_limits<double>::max();
-            variable_num = (cps_num_-2*p_order_)*Dim_;
-            nlopt::opt opt(nlopt::algorithm(nlopt::LD_LBFGS),variable_num);
-            opt.set_min_objective(bspline_optimizer::costFunction,this);
-            opt.set_maxeval(200);
-            opt.set_maxtime(0.02);
-            opt.set_xtol_rel(1e-5);
-            vector<double> lb(variable_num), ub(variable_num);
-            vector<double> q(variable_num);
-
-            for (size_t j = 0; j < cps_num_-2*p_order_; j++)
-            {
-               for (size_t i = 0; i < Dim_; i++)
-                {
-                    q[j*Dim_+i] = control_points_(j+p_order_,i);
-                }
-            }
-
-            const double  bound = 10.0;
-            for (size_t i = 0; i <variable_num; i++)
-            {
-                    lb[i]  = q[i]-bound;
-                    ub[i] = q[i]+bound;      
-            }
-            opt.set_lower_bounds(lb);
-            opt.set_upper_bounds(ub);
-        try
-        {
-            double final_cost;
-            nlopt::result result = opt.optimize(q, final_cost);    
-        }
-        catch(std::exception &e)
-         {
-            std::cout << "nlopt failed: " << e.what() << std::endl;
-        }
-
-          for (size_t j = 0; j < cps_num_-2*p_order_; j++)
-            {
-              for (size_t i = 0; i < Dim_; i++)
-                {
-                    control_points_(j+p_order_,i) = best_variable_[j*Dim_+i];
-                } 
-            }
-            lambda3_  = intial_lambda3;
+            // cout<< "optimize successfully~"<<endl;
+            // cout << "iner:\n"<<control_points_<<endl;
+            // cout<<"iter num :"<<iter_num_<<endl;
     }
 
 }

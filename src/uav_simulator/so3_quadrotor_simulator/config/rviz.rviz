@@ -3,7 +3,9 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /PointCloud21
+        - /PointCloud22
       Splitter Ratio: 0.5176470875740051
     Tree Height: 722
   - Class: rviz/Selection
@@ -33,13 +35,13 @@ Visualization Manager:
   Displays:
     - Alpha: 1
       Class: rviz/Axes
-      Enabled: false
+      Enabled: true
       Length: 1
       Name: Axes
       Radius: 0.10000000149011612
       Reference Frame: world
       Show Trail: false
-      Value: false
+      Value: true
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
@@ -871,7 +873,7 @@ Visualization Manager:
       Marker Topic: /sph_zhang/particles_vis
       Name: particles
       Namespaces:
-        particles: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -898,6 +900,34 @@ Visualization Manager:
       Size (m): 0.10000000149011612
       Style: Flat Squares
       Topic: /map_generator/global_cloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 114; 159; 207
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 52; 101; 164
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.10000000149011612
+      Style: Flat Squares
+      Topic: /map_generator/click_map
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -942,7 +972,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 39.82175064086914
+      Distance: 44.60036087036133
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -950,17 +980,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 12.886652946472168
-        Y: 0.37370678782463074
-        Z: -1.6720775365829468
+        X: 14.656238555908203
+        Y: 0.765837550163269
+        Z: -1.671656608581543
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 1.0697965621948242
       Target Frame: world
-      Yaw: 4.698171615600586
+      Yaw: 4.703167915344238
     Saved: ~
 Window Geometry:
   Displays:

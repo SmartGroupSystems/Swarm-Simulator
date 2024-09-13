@@ -11,6 +11,8 @@ int main(int argc, char ** argv)
 
     ros::Duration(sphInitTime_).sleep();
     
+    ROS_INFO("\033[1;32mSwarm planner initialization complete.\033[0m");
+
     plan_manager manager(nh);
 
     ros::AsyncSpinner spinner(8); // Use 8 threads

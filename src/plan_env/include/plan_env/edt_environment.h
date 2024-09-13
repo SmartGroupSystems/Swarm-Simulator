@@ -75,6 +75,28 @@ public:
     sdf_map_->getRegion(ori, size);
   }
 
+  inline void printArrays(const Eigen::Vector3d sur_pts[2][2][2], const double dists[2][2][2]) {
+    std::cout << "Printing sur_pts:" << std::endl;
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            for (int k = 0; k < 2; ++k) {
+                std::cout << "sur_pts[" << i << "][" << j << "][" << k << "] = "
+                          << sur_pts[i][j][k].transpose() << std::endl;
+            }
+        }
+    }
+
+    std::cout << "\nPrinting dists:" << std::endl;
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            for (int k = 0; k < 2; ++k) {
+                std::cout << "dists[" << i << "][" << j << "][" << k << "] = "
+                          << dists[i][j][k] << std::endl;
+            }
+        }
+    }
+};
+
   typedef shared_ptr<EDTEnvironment> Ptr;
 };
 

@@ -53,6 +53,7 @@ namespace FLAG_Race
     {
         public:
             double planInterval;
+            std::string cloud_topic_;
             std::mutex mtx;
 
             //智能类指针struct
