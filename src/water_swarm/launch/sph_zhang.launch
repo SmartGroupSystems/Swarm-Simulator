@@ -6,7 +6,7 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="1"/>       <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="4"/>       <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.5"/>  <!-- 粒子可视化尺寸 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长 -->
@@ -54,14 +54,14 @@
     </node>
 
     <!-- Obs map-->
-    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/tmp.pcd"/> -->
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/office.pcd"/>
 
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
         <!-- Plan Manager -->
         <param name="fsm/sphInitTime"      value="5.0" /> 
-        <param name="fsm/cloud_topic"      type="string" value="/map_generator/click_map" />
-        <!-- <param name="fsm/planInterval"     value="0.05" />  -->
+        <!-- <param name="fsm/cloud_topic"      type="string" value="/map_generator/click_map" /> -->
+        <param name="fsm/cloud_topic"      type="string" value="/map_generator/global_cloud" />
 
         <!-- SDF Map -->
         <param name="sdf_map/resolution"   value="0.1" /> 
