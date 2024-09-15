@@ -45,7 +45,9 @@ int main(int argc, char **argv) {
 
 void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg)
 {
-    
+    common_msgs::Swarm_traj swarmTrajBuffer = *msg;
+    sph_planner->processTraj(swarmTrajBuffer);
+    ROS_INFO("\033[1;32m RECEIVE SWARM TRAJ. \033[0m");
 }
 
 void timerCallback(const ros::TimerEvent&) {
@@ -71,6 +73,19 @@ void timerCallback(const ros::TimerEvent&) {
 
         sph_planner->update(updateInterval);
     }
+}
+
+void SPHSystem::processTraj(const common_msgs::Swarm_traj& swarmtraj)
+{
+    swarmTrajBuffer_.clear();
+
+    for (const auto& traj : swarmtraj.traj)
+    {
+        swarmTrajBuffer_[traj.traj_id] = traj;
+    }
+
+    ROS_INFO("Swarm trajectory processed, %lu trajectories stored.", swarmTrajBuffer_.size());
+
 }
 
 void SPHSystem::initParticles()
@@ -120,12 +135,12 @@ void SPHSystem::initParticles()
     apex.x = -0.1; apex.y = -0.1; apex.z = 0;
     generateVirtualParticles(maxRange,static_cast<int>(std::sqrt(particleCount))*3,apex);
 
-    std::cout << "\033[32m粒子初始化成功！总计初始化 " << particles.size()
-                  << " 个粒子，在 [" << 0 << ", " << 0 << "] 到 [" << maxRange << ", " << maxRange 
-                  << "] 的正方形区域内。\033[0m" << std::endl;
+    // std::cout << "\033[32m粒子初始化成功！总计初始化 " << particles.size()
+    //               << " 个粒子，在 [" << 0 << ", " << 0 << "] 到 [" << maxRange << ", " << maxRange 
+    //               << "] 的正方形区域内。\033[0m" << std::endl;
 
-    std::cout << "\033[31m虚拟粒子初始化成功！总计初始化 " << virtual_particles.size()
-              << " 个粒子。\033[0m" << std::endl;
+    // std::cout << "\033[31m虚拟粒子初始化成功！总计初始化 " << virtual_particles.size()
+    //           << " 个粒子。\033[0m" << std::endl;
     
 }
 
@@ -335,42 +350,82 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
     for (size_t i = 0; i < particles.size(); i++) {
         Particle *p = &particles[i];
 
-        // 计算加速度 u_i = u_i^{den} + u_i^{rep} + u_i^{fri}
+        // 计算加速度 u_i = u_i^{den} + u_i^{rep} + u_i^{fri} + traj.a
         common_msgs::Acceleration acceleration;
         acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
         acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
         acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
 
+        // 获取对应的粒子轨迹的加速度
+        auto itt = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
+        if (itt != swarmTrajBuffer_.end()) {
+            // 获取加速度的第一个值并添加到当前加速度
+            const auto& traj_acceleration = itt->second.acceleration;
+            if (!traj_acceleration.empty()) {
+                acceleration.x += traj_acceleration[0].x;
+                acceleration.y += traj_acceleration[0].y;
+                acceleration.z += traj_acceleration[0].z;
+            }
+        }
+
+        //Updare traj
+        parallelUpdateParticleTraj();
+
         //加速度限制
         acceleration.x = clamp(acceleration.x, a_max);
         acceleration.y = clamp(acceleration.y, a_max);
-        acceleration.z = clamp(acceleration.z, a_max);      
+        acceleration.z = clamp(acceleration.z, a_max);  
 
         // 更新速度
         p->velocity.x += acceleration.x * deltaTime;
         p->velocity.y += acceleration.y * deltaTime;
         p->velocity.z += acceleration.z * deltaTime;
 
+        // // 获取对应的粒子轨迹的速度
+        // auto it = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
+        // if (it != swarmTrajBuffer_.end()) {
+        //     // 获取加速度的第一个值并添加到当前加速度
+        //     const auto& traj_velocity = it->second.velocity;
+        //     if (!traj_velocity.empty()) {
+        //         p->velocity.x += traj_velocity[0].x;
+        //         p->velocity.y += traj_velocity[0].y;
+        //         p->velocity.z += traj_velocity[0].z;
+        //     }
+        // }
+
         //速度限制
         p->velocity.x = clamp(p->velocity.x, v_max);
         p->velocity.y = clamp(p->velocity.y, v_max);
         p->velocity.z = clamp(p->velocity.z, v_max);
 
-        // 预计算新位置
-        double newX = p->position.x + p->velocity.x * deltaTime;
-        double newY = p->position.y + p->velocity.y * deltaTime;
-        double newZ = p->position.z + p->velocity.z * deltaTime;
-
-        // 检查是否触碰到虚拟粒子构成的墙
-        // if (isNearVirtualParticle(newX, newY, newZ)) {
-        //     p->velocity.x = -p->velocity.x;
-        //     p->velocity.y = -p->velocity.y;
-        // }
-
         // 更新位置
         p->position.x += p->velocity.x * deltaTime;
         p->position.y += p->velocity.y * deltaTime;
         p->position.z += p->velocity.z * deltaTime;
+
+        // // 获取对应的粒子轨迹的位置
+        // auto ittt = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
+        // if (ittt != swarmTrajBuffer_.end()) {
+        //     // 获取加速度的第一个值并添加到当前加速度
+        //     const auto& traj_position = ittt->second.position;
+        //     if (!traj_position.empty()) {
+        //         p->position.x += traj_position[0].x;
+        //         p->position.y += traj_position[0].y;
+        //         p->position.z += traj_position[0].z;
+        //     }
+        // }
+            std::cout << "Particle index: " << p->index 
+              << " | Acceleration: x=" << acceleration.x 
+              << ", y=" << acceleration.y 
+              << ", z=" << acceleration.z << std::endl;
+            std::cout << "Particle index: " << p->index 
+              << " | Velocity: x=" << p->velocity.x 
+              << ", y=" << p->velocity.y 
+              << ", z=" << p->velocity.z << std::endl;
+            std::cout << "Particle index: " << p->index 
+              << " | Position: x=" << p->position.x 
+              << ", y=" << p->position.y 
+              << ", z=" << p->position.z << std::endl;
     }
      
 }
@@ -476,6 +531,27 @@ void SPHSystem::calaDynamicBound()
 {
 
 }
+
+void SPHSystem::parallelUpdateParticleTraj() {
+    // 遍历所有的粒子轨迹
+    for (auto& entry : swarmTrajBuffer_) {
+        auto& traj = entry.second;
+
+        // 如果轨迹为空，返回
+        if (traj.position.empty() || traj.velocity.empty() ||
+            traj.acceleration.empty() || traj.jerk.empty()) {
+            continue;
+        }
+
+        // 弹出每条轨迹的第一个位置，速度，加速度，jerk量
+        traj.position.erase(traj.position.begin());
+        traj.velocity.erase(traj.velocity.begin());
+        traj.acceleration.erase(traj.acceleration.begin());
+        traj.jerk.erase(traj.jerk.begin());
+    }
+}
+
+
 
 // 生成边长为 l 的正方形边界上的虚拟粒子
 void SPHSystem::generateVirtualParticles(const double l, const int particlesPerSide, const common_msgs::Position& apex) {

@@ -14,6 +14,7 @@
 #include <map>
 #include <thread>
 #include <math.h>
+#include <unordered_map>
 
 #include "common_msgs/Position.h"
 #include "common_msgs/Velocity.h"
@@ -108,6 +109,8 @@ public:
     bool runOnGPU;
     bool isInitialReceived = false;  // 用于检查是否已经接收到第一个消息
 
+    std::unordered_map<int, common_msgs::BsplineTraj> swarmTrajBuffer_;
+
 public:
 	SPHSystem(
         size_t numParticles, const SPHSettings &settings,
@@ -144,13 +147,15 @@ public:
     void updateParticlesCPU(
         std::vector<Particle> particles, const size_t particleCount, const SPHSettings &settings,
         float deltaTime);
-    
+        
+    void processTraj(const common_msgs::Swarm_traj& swarmtraj);
     void calaDynamicBound();
     bool isNearVirtualParticle(double x, double y, double z);
     void generateVirtualParticles(const double l, const int particlesPerSide, const common_msgs::Position& apex);
     void parallelDensityAndPressures();
     void parallelForces();
     void parallelViscosity();
+    void parallelUpdateParticleTraj();
     void parallelUpdateParticlePositions(const float deltaTime);
     void pubroscmd();
     

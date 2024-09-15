@@ -6,7 +6,7 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="4"/>       <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="1"/>       <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.5"/>  <!-- 粒子可视化尺寸 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长 -->
@@ -54,7 +54,7 @@
     </node>
 
     <!-- Obs map-->
-    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/office.pcd"/>
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/>
 
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
@@ -69,14 +69,14 @@
         <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
         <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
 
-        <!-- <param name="sdf_map/local_update_range_x"  value="5.5" /> 
+        <param name="sdf_map/local_update_range_x"  value="5.5" /> 
         <param name="sdf_map/local_update_range_y"  value="5.5" /> 
-        <param name="sdf_map/local_update_range_z"  value="4.5" />  -->
+        <param name="sdf_map/local_update_range_z"  value="4.5" /> 
         
         <!--test param-->
-        <param name="sdf_map/local_update_range_x"  value="30.0" /> 
+        <!-- <param name="sdf_map/local_update_range_x"  value="30.0" /> 
         <param name="sdf_map/local_update_range_y"  value="30.0" /> 
-        <param name="sdf_map/local_update_range_z"  value="4.5" /> 
+        <param name="sdf_map/local_update_range_z"  value="4.5" />  -->
 
 
         <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
@@ -117,7 +117,7 @@
         <param name="astar/resolution_astar" value="0.1" type="double"/>
         <param name="astar/time_resolution" value="0.8" type="double"/>
         <param name="astar/margin" value="0.1" type="double"/>
-        <param name="astar/allocate_num" value="100000" type="int"/>\
+        <param name="astar/allocate_num" value="1000000" type="int"/>\
 
         <!-- bspline opt -->
         <param name="planning/traj_order" value="3"/>

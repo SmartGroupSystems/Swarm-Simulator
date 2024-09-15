@@ -98,6 +98,7 @@ namespace FLAG_Race
             //fsm
             bool receive_goal = false;
             bool exec_traj = false;
+            bool need_replan = false;
         public:
             plan_manager(){};  
             plan_manager(ros::NodeHandle& nh); 

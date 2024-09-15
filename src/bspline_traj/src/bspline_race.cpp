@@ -71,8 +71,17 @@ namespace FLAG_Race
             ROS_INFO("\033[1;32m OPTIMIZE_FINISH, TOTAL TIME COST: %Fs \033[0m",optcostTime);
             exec_traj = true;
         }
+
         else if (exec_traj)
         {
+            if (0)//need replan this func...
+            {
+               exec_traj = false;
+               need_replan = true;
+               ROS_INFO("\033[1;32m TRAJ NEED REPLAN, RETURN. \033[0m");
+               return;
+            }
+            
             double waitElapsedTime = (currentTime - lastWaitOutputTime).toSec();
             if (waitElapsedTime >= 1.0)
             {
@@ -80,6 +89,19 @@ namespace FLAG_Race
                 lastWaitOutputTime = currentTime;
             }
         }
+
+        else if (need_replan)
+        {
+            ROS_INFO("\033[1;32m REPLAN OPTIMIZE_TRAJ! \033[0m");
+            optTraj();
+            ros::Time optfinishTime = ros::Time::now(); 
+            double optcostTime = (optfinishTime - currentTime).toSec();
+            ROS_INFO("\033[1;32m OPTIMIZE_FINISH, TOTAL TIME COST: %Fs \033[0m",optcostTime);
+
+            exec_traj = true;
+            need_replan = false;
+        }
+
         else
         {
             double waitElapsedTime = (currentTime - lastWaitOutputTime).toSec();
@@ -214,6 +236,8 @@ namespace FLAG_Race
 
         visualizeTraj(vis_traj, traj_vis, swarmParticlesManager[index].particle_index);
 
+        traj_.header.frame_id = "world";
+        traj_.header.stamp = ros::Time::now();
         swarm_traj.traj.push_back(traj_);
    
     }
@@ -225,6 +249,8 @@ namespace FLAG_Race
         std::mutex mtx;
 
         swarm_traj.traj.clear();
+        swarm_traj.header.frame_id = "world";
+        swarm_traj.header.stamp = ros::Time::now();
         // Create a thread for each particle
         for (size_t i = 0; i < num_particles; ++i) {
             threads.emplace_back(std::bind(&plan_manager::processParticle, this, i, 

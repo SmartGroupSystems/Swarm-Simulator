@@ -111,7 +111,8 @@ int Astar::search(Eigen::Vector3d start_pt, Eigen::Vector3d end_pt, bool dynamic
     /* ---------- expansion loop ---------- */
     for (double dx = -resolution_; dx <= resolution_ + 1e-3; dx += resolution_)
       for (double dy = -resolution_; dy <= resolution_ + 1e-3; dy += resolution_)
-        for (double dz = -resolution_; dz <= resolution_ + 1e-3; dz += resolution_) {
+        for (double dz = -resolution_; dz <= resolution_ + 1e-3; dz += resolution_) 
+        {
           d_pos << dx, dy, dz;
 
           if (d_pos.norm() < 1e-3) continue;

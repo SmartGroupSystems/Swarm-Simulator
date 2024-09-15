@@ -290,11 +290,11 @@ namespace FLAG_Race
         calcEsdfCost(control_points,f_distance,g_distance_);
     // cout<<"====================calcEsdfCost"<<endl;
 
-        std::cout << "f_combine = " << f_combine
-          << ", lambda1_ = " << lambda1_ << ", f_smoothness = " << f_smoothness
-          << ", lambda2_ = " << lambda2_ << ", f_feasibility = " << f_feasibility
-          << ", lambda3_ = " << lambda3_ << ", f_distance = " << f_distance
-          << std::endl;
+        // std::cout << "f_combine = " << f_combine
+        //   << ", lambda1_ = " << lambda1_ << ", f_smoothness = " << f_smoothness
+        //   << ", lambda2_ = " << lambda2_ << ", f_feasibility = " << f_feasibility
+        //   << ", lambda3_ = " << lambda3_ << ", f_distance = " << f_distance
+        //   << std::endl;
 
         f_combine = lambda1_ * f_smoothness + lambda2_*f_feasibility + lambda3_*f_distance;
         grad2D = lambda1_*g_smoothness_ + lambda2_ * g_feasibility_ +lambda3_ * g_distance_ ;
