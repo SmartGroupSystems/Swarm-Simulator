@@ -356,6 +356,24 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
         acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
 
+        std::cout << "Acceleration: (" 
+                << acceleration.x << ", " 
+                << acceleration.y << ", " 
+                << acceleration.z << ")"
+                << " | u_den: (" 
+                << p->u_den.x << ", " 
+                << p->u_den.y << ", " 
+                << p->u_den.z << ")"
+                << " | u_rep: (" 
+                << p->u_rep.x << ", " 
+                << p->u_rep.y << ", " 
+                << p->u_rep.z << ")"
+                << " | u_fri: (" 
+                << p->u_fri.x << ", " 
+                << p->u_fri.y << ", " 
+                << p->u_fri.z << ")" 
+                << std::endl;
+
         // 获取对应的粒子轨迹的加速度
         auto itt = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
         if (itt != swarmTrajBuffer_.end()) {
@@ -366,8 +384,28 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
                 acceleration.y += traj_acceleration[0].y;
                 acceleration.z += traj_acceleration[0].z;
             }
-        }
+                // std::cout << "Particle index: " << p->index
+                //   << " | Traj Acceleration: ("
+                //   << traj_acceleration[0].x << ", "
+                //   << traj_acceleration[0].y << ", "
+                //   << traj_acceleration[0].z << ")"
+                //   << " | Updated Acceleration: ("
+                //   << acceleration.x << ", "
+                //   << acceleration.y << ", "
+                //   << acceleration.z << ")" << std::endl;
+std::cout << "\033[32m"  // 32m是绿色
+          << "Trajectory Acceleration: ("
+          << traj_acceleration[0].x << ", "
+          << traj_acceleration[0].y << ", "
+          << traj_acceleration[0].z << "), "
+          << "Trajectory Velocity: ("
+          << itt->second.velocity[0].x << ", "
+          << itt->second.velocity[0].y << ", "
+          << itt->second.velocity[0].z << ")"
+          << "\033[0m"  // 重置颜色
+          << std::endl;
 
+        }
         //Updare traj
         parallelUpdateParticleTraj();
 
@@ -381,6 +419,7 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         p->velocity.y += acceleration.y * deltaTime;
         p->velocity.z += acceleration.z * deltaTime;
 
+    // std::cout << "deltaTime: " << deltaTime << std::endl;
         // // 获取对应的粒子轨迹的速度
         // auto it = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
         // if (it != swarmTrajBuffer_.end()) {
@@ -398,6 +437,21 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         p->velocity.y = clamp(p->velocity.y, v_max);
         p->velocity.z = clamp(p->velocity.z, v_max);
 
+        // std::cout << "Particle Velocity: ("
+        //   << p->velocity.x << ", "
+        //   << p->velocity.y << ", "
+        //   << p->velocity.z << ")" << std::endl;
+
+std::cout << "Particle Acceleration: ("
+          << acceleration.x << ", "
+          << acceleration.y << ", "
+          << acceleration.z << ") | "
+          << "Particle Velocity: ("
+          << p->velocity.x << ", "
+          << p->velocity.y << ", "
+          << p->velocity.z << ")" 
+          << std::endl;
+
         // 更新位置
         p->position.x += p->velocity.x * deltaTime;
         p->position.y += p->velocity.y * deltaTime;
@@ -414,18 +468,18 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         //         p->position.z += traj_position[0].z;
         //     }
         // }
-            std::cout << "Particle index: " << p->index 
-              << " | Acceleration: x=" << acceleration.x 
-              << ", y=" << acceleration.y 
-              << ", z=" << acceleration.z << std::endl;
-            std::cout << "Particle index: " << p->index 
-              << " | Velocity: x=" << p->velocity.x 
-              << ", y=" << p->velocity.y 
-              << ", z=" << p->velocity.z << std::endl;
-            std::cout << "Particle index: " << p->index 
-              << " | Position: x=" << p->position.x 
-              << ", y=" << p->position.y 
-              << ", z=" << p->position.z << std::endl;
+            // std::cout << "Particle index: " << p->index 
+            //   << " | Acceleration: x=" << acceleration.x 
+            //   << ", y=" << acceleration.y 
+            //   << ", z=" << acceleration.z << std::endl;
+            // std::cout << "Particle index: " << p->index 
+            //   << " | Velocity: x=" << p->velocity.x 
+            //   << ", y=" << p->velocity.y 
+            //   << ", z=" << p->velocity.z << std::endl;
+            // std::cout << "Particle index: " << p->index 
+            //   << " | Position: x=" << p->position.x 
+            //   << ", y=" << p->position.y 
+            //   << ", z=" << p->position.z << std::endl;
     }
      
 }
