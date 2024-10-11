@@ -48,6 +48,7 @@ double updateInterval;
 double threshold_dist;
 float  mass, restDensity, h, g;
 double k_den, k_rep, k_fri;
+double r_1,r_2;
 double v_max, a_max;
 
 void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
@@ -84,6 +85,14 @@ struct SPHSettings
     float poly, polyGrad, mass, h2, selfDens, restDensity,  h, g;
 };
 
+enum ParticleState {
+    NULL_STATE,  // "NULL" 状态
+    TRAJ,        // "TRAJ" 状态
+    NEED_TRAJ,   // 需要重规划
+    ATTRACT,     // "吸引" 状态，对应英文 "attract"
+    REPEL        // "排斥" 状态，对应英文 "repel"
+};
+
 struct Particle
 {
     common_msgs::Position       position;
@@ -96,6 +105,7 @@ struct Particle
     common_msgs::Force          u_den, u_rep, u_fri;
     std_msgs::String            name;
     int                         index;
+    ParticleState               state = NULL_STATE;
 };
 
 class SPHSystem
@@ -121,11 +131,13 @@ public:
     std::vector<Particle>       particles;
     std::vector<Particle>       virtual_particles;
     std::map<const Particle*, std::vector<std::pair<const Particle*, float>>> particleNeighborsTable;
-    
+    std::map<const Particle*, double> nearestNeighborDistanceMap;
+
     //initializes the particles that will be used
 	void initParticles();
     void findNeighbors();
-    
+    void updateParticleStates();
+
     // Finite State Machine
     // updates the SPH system
 	void update(float deltaTime);
@@ -159,6 +171,17 @@ public:
     void parallelUpdateParticlePositions(const float deltaTime);
     void pubroscmd();
     
+
+    inline std::string stateToString(ParticleState state) {
+        switch (state) {
+            case NULL_STATE: return "NULL";
+            case TRAJ:      return "TRAJ";
+            case NEED_TRAJ: return "NEED";
+            case ATTRACT:   return "ATTRACT";
+            case REPEL:     return "REPEL";
+            default:        return "UNKNOWN"; // 处理未知状态
+        }
+    };
     inline double clamp(double value, double max_value) 
     {
         if (value > max_value) {

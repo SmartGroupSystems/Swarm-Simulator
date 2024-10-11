@@ -20,6 +20,8 @@ int main(int argc, char **argv) {
     nh.param("sph/k_fri", k_fri, -1.0);
     nh.param("sph/v_max", v_max, -1.0);
     nh.param("sph/a_max", a_max, -1.0);
+    nh.param("sph/r_1",   r_1, -1.0);
+    nh.param("sph/r_2",   r_2, -1.0);
 
     timer                 = nh.createTimer(ros::Duration(updateInterval),   timerCallback);
     particles_publisher   = nh.advertise<visualization_msgs::MarkerArray>("particles_vis", 10);
@@ -148,9 +150,11 @@ void SPHSystem::findNeighbors() {
 
     // 清空先前的邻居表
     particleNeighborsTable.clear();
+    nearestNeighborDistanceMap.clear();
 
     for (auto& particle : particles) {
         std::vector<std::pair<const Particle*, float>> neighbors;
+        double minDistance = std::numeric_limits<double>::max();
 
         for (auto& other : particles) {
             if (&particle == &other) continue;
@@ -163,12 +167,84 @@ void SPHSystem::findNeighbors() {
 
             if (dist2 < 4 * h2) {
                 neighbors.push_back(std::make_pair(&other, dist2));
+                minDistance = std::min(minDistance, static_cast<double>(dist2));
             }
         }
 
         particleNeighborsTable[&particle] = neighbors;
+
+        if (!neighbors.empty()) {
+            nearestNeighborDistanceMap[&particle] = std::sqrt(minDistance);  // 记录实际距离（平方根）
+        } else {
+            nearestNeighborDistanceMap[&particle] = -1.0;  // 没有邻居
+        }
     }
 
+}
+
+void SPHSystem::updateParticleStates()
+{
+    // 遍历每个粒子
+    for (auto& particle : particles) {
+        int particleIndex = particle.index;
+
+        // 检查粒子是否有轨迹（从swarmTrajBuffer_中查询）
+        if (swarmTrajBuffer_.find(particleIndex) != swarmTrajBuffer_.end() &&
+            !swarmTrajBuffer_[particleIndex].position.empty()) {
+            // 粒子进入TRAJ状态
+            particle.state = TRAJ;
+        } else {
+            // 如果轨迹为空，保持或进入NULL_STATE
+            particle.state = NULL_STATE;
+            continue;  // 如果是NULL_STATE，跳过剩余判断
+        }
+
+        // 获取最近邻居的距离
+        double nearestDistance = nearestNeighborDistanceMap[&particle];
+        float h = settings.h;  
+
+        // 检查粒子的状态变化逻辑
+        if (nearestDistance < r_1 * h && nearestDistance >= 0.0) {
+            // 距离小于 r1 * h，进入REPEL状态
+            particle.state = REPEL;
+            // 清空该粒子的轨迹向量
+            swarmTrajBuffer_[particleIndex].position.clear();
+            continue;  // 如果进入REPEL状态，跳过剩余判断
+        } 
+        else if (nearestDistance > r_2 * h) {
+            // 距离大于 r_2 * h，进入ATTRACT状态
+            particle.state = ATTRACT;
+            // 清空该粒子的轨迹向量
+            swarmTrajBuffer_[particleIndex].position.clear();
+            continue;  // 如果进入ATTRACT状态，跳过剩余判断
+        } 
+        else {
+            // 距离在 r1 * h 和 r_2 * h 之间，保持TRAJ状态
+            particle.state = TRAJ;
+            continue;  // 保持TRAJ状态后，跳过剩余判断
+        }
+
+        // 当从ATTRACT或REPEL状态脱离时，重新进入TRAJ状态
+        if ((particle.state == ATTRACT || particle.state == REPEL) &&
+            (nearestDistance >= r_1 * h && nearestDistance <= r_2 * h)) {
+            particle.state = NEED_TRAJ;
+            continue;  // 进入NEED_TRAJ状态后，跳过剩余判断
+        }
+
+        // 如果粒子已经执行完swarmTrajBuffer_中的轨迹
+        if (swarmTrajBuffer_[particleIndex].position.size() == 1) {
+            // 当粒子到达轨迹的末端，进入NULL_STATE
+            particle.state = NULL_STATE;
+            continue;  // 进入NULL_STATE后，跳过剩余判断
+        }
+    }
+
+    // 打印所有粒子的状态
+    std::cout << "\033[1;33m粒子状态: "; 
+    for (const auto& particle : particles) {
+        std::cout << stateToString(particle.state) << "  ";  
+    }
+    std::cout << "\033[0m" << std::endl;  
 }
 
 void SPHSystem::update(float deltaTime) {
@@ -209,6 +285,8 @@ void SPHSystem::updateParticlesCPU(
     float deltaTime)
 {   
     findNeighbors();
+
+    updateParticleStates();
 
     // Calculate densities and pressures
     parallelDensityAndPressures();
@@ -345,6 +423,7 @@ void SPHSystem::parallelForces()
     }   
 }
 
+
 void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 {
     for (size_t i = 0; i < particles.size(); i++) {
@@ -352,60 +431,62 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 
         // 计算加速度 u_i = u_i^{den} + u_i^{rep} + u_i^{fri} + traj.a
         common_msgs::Acceleration acceleration;
-        acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
-        acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
-        acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
+        acceleration.x = 0.0f;
+        acceleration.y = 0.0f;
+        acceleration.z = 0.0f;
 
-        std::cout << "Acceleration: (" 
-                << acceleration.x << ", " 
-                << acceleration.y << ", " 
-                << acceleration.z << ")"
-                << " | u_den: (" 
-                << p->u_den.x << ", " 
-                << p->u_den.y << ", " 
-                << p->u_den.z << ")"
-                << " | u_rep: (" 
-                << p->u_rep.x << ", " 
-                << p->u_rep.y << ", " 
-                << p->u_rep.z << ")"
-                << " | u_fri: (" 
-                << p->u_fri.x << ", " 
-                << p->u_fri.y << ", " 
-                << p->u_fri.z << ")" 
-                << std::endl;
+        auto itt = swarmTrajBuffer_.end(); // 初始化为无效的迭代器
+        bool traj_found = false;
 
-        // 获取对应的粒子轨迹的加速度
-        auto itt = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
-        if (itt != swarmTrajBuffer_.end()) {
-            // 获取加速度的第一个值并添加到当前加速度
-            const auto& traj_acceleration = itt->second.acceleration;
-            if (!traj_acceleration.empty()) {
-                acceleration.x += traj_acceleration[0].x;
-                acceleration.y += traj_acceleration[0].y;
-                acceleration.z += traj_acceleration[0].z;
+        // 查找粒子的轨迹
+        if (p->state == TRAJ || p->state == NEED_TRAJ) {
+            itt = swarmTrajBuffer_.find(p->index);
+            if (itt != swarmTrajBuffer_.end()) {
+                traj_found = true;
             }
-                // std::cout << "Particle index: " << p->index
-                //   << " | Traj Acceleration: ("
-                //   << traj_acceleration[0].x << ", "
-                //   << traj_acceleration[0].y << ", "
-                //   << traj_acceleration[0].z << ")"
-                //   << " | Updated Acceleration: ("
-                //   << acceleration.x << ", "
-                //   << acceleration.y << ", "
-                //   << acceleration.z << ")" << std::endl;
-std::cout << "\033[32m"  // 32m是绿色
-          << "Trajectory Acceleration: ("
-          << traj_acceleration[0].x << ", "
-          << traj_acceleration[0].y << ", "
-          << traj_acceleration[0].z << "), "
-          << "Trajectory Velocity: ("
-          << itt->second.velocity[0].x << ", "
-          << itt->second.velocity[0].y << ", "
-          << itt->second.velocity[0].z << ")"
-          << "\033[0m"  // 重置颜色
-          << std::endl;
-
         }
+        
+        // 根据粒子的状态来计算加速度
+        switch (p->state) {
+            case NULL_STATE:
+                // NULL_STATE 加速度计算
+                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
+                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
+                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
+                break;
+
+            case ATTRACT:
+                // ATTRACT 状态 加速度计算
+                acceleration.x = p->u_den.x + p->u_fri.x;
+                acceleration.y = p->u_den.y + p->u_fri.y;
+                acceleration.z = p->u_den.z + p->u_fri.z;
+                break;
+
+            case REPEL:
+                // REPEL 状态 加速度计算
+                acceleration.x = p->u_den.x + p->u_rep.x;
+                acceleration.y = p->u_den.y + p->u_rep.y;
+                acceleration.z = p->u_den.z + p->u_rep.z;
+                break;
+
+            case TRAJ:
+            case NEED_TRAJ:
+                // TRAJ 或 NEED_TRAJ 状态 加速度计算
+                if (traj_found) {
+                    const auto& traj_acceleration = itt->second.acceleration;
+                    if (!traj_acceleration.empty()) {
+                        acceleration.x += traj_acceleration[0].x;
+                        acceleration.y += traj_acceleration[0].y;
+                        acceleration.z += traj_acceleration[0].z;
+                    }
+                }
+                break;
+            
+            default:
+                std::cerr << "Error: Unknown particle state!" << std::endl;
+                break;
+        }
+
         //Updare traj
         parallelUpdateParticleTraj();
 
@@ -414,75 +495,170 @@ std::cout << "\033[32m"  // 32m是绿色
         acceleration.y = clamp(acceleration.y, a_max);
         acceleration.z = clamp(acceleration.z, a_max);  
 
+        //update acc
+        p->acceleration.x = acceleration.x;
+        p->acceleration.y = acceleration.y;
+        p->acceleration.z = acceleration.z;
+
         // 更新速度
         p->velocity.x += acceleration.x * deltaTime;
         p->velocity.y += acceleration.y * deltaTime;
         p->velocity.z += acceleration.z * deltaTime;
-
-    // std::cout << "deltaTime: " << deltaTime << std::endl;
-        // // 获取对应的粒子轨迹的速度
-        // auto it = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
-        // if (it != swarmTrajBuffer_.end()) {
-        //     // 获取加速度的第一个值并添加到当前加速度
-        //     const auto& traj_velocity = it->second.velocity;
-        //     if (!traj_velocity.empty()) {
-        //         p->velocity.x += traj_velocity[0].x;
-        //         p->velocity.y += traj_velocity[0].y;
-        //         p->velocity.z += traj_velocity[0].z;
-        //     }
-        // }
 
         //速度限制
         p->velocity.x = clamp(p->velocity.x, v_max);
         p->velocity.y = clamp(p->velocity.y, v_max);
         p->velocity.z = clamp(p->velocity.z, v_max);
 
-        // std::cout << "Particle Velocity: ("
-        //   << p->velocity.x << ", "
-        //   << p->velocity.y << ", "
-        //   << p->velocity.z << ")" << std::endl;
-
-std::cout << "Particle Acceleration: ("
-          << acceleration.x << ", "
-          << acceleration.y << ", "
-          << acceleration.z << ") | "
-          << "Particle Velocity: ("
-          << p->velocity.x << ", "
-          << p->velocity.y << ", "
-          << p->velocity.z << ")" 
-          << std::endl;
 
         // 更新位置
         p->position.x += p->velocity.x * deltaTime;
         p->position.y += p->velocity.y * deltaTime;
         p->position.z += p->velocity.z * deltaTime;
 
-        // // 获取对应的粒子轨迹的位置
-        // auto ittt = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
-        // if (ittt != swarmTrajBuffer_.end()) {
-        //     // 获取加速度的第一个值并添加到当前加速度
-        //     const auto& traj_position = ittt->second.position;
-        //     if (!traj_position.empty()) {
-        //         p->position.x += traj_position[0].x;
-        //         p->position.y += traj_position[0].y;
-        //         p->position.z += traj_position[0].z;
-        //     }
-        // }
-            // std::cout << "Particle index: " << p->index 
-            //   << " | Acceleration: x=" << acceleration.x 
-            //   << ", y=" << acceleration.y 
-            //   << ", z=" << acceleration.z << std::endl;
-            // std::cout << "Particle index: " << p->index 
-            //   << " | Velocity: x=" << p->velocity.x 
-            //   << ", y=" << p->velocity.y 
-            //   << ", z=" << p->velocity.z << std::endl;
-            // std::cout << "Particle index: " << p->index 
-            //   << " | Position: x=" << p->position.x 
-            //   << ", y=" << p->position.y 
-            //   << ", z=" << p->position.z << std::endl;
     }
      
 }
+
+
+// void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
+// {
+//     for (size_t i = 0; i < particles.size(); i++) {
+//         Particle *p = &particles[i];
+
+//         // 计算加速度 u_i = u_i^{den} + u_i^{rep} + u_i^{fri} + traj.a
+//         common_msgs::Acceleration acceleration;
+//         acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
+//         acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
+//         acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
+
+//         std::cout << "Acceleration: (" 
+//                 << acceleration.x << ", " 
+//                 << acceleration.y << ", " 
+//                 << acceleration.z << ")"
+//                 << " | u_den: (" 
+//                 << p->u_den.x << ", " 
+//                 << p->u_den.y << ", " 
+//                 << p->u_den.z << ")"
+//                 << " | u_rep: (" 
+//                 << p->u_rep.x << ", " 
+//                 << p->u_rep.y << ", " 
+//                 << p->u_rep.z << ")"
+//                 << " | u_fri: (" 
+//                 << p->u_fri.x << ", " 
+//                 << p->u_fri.y << ", " 
+//                 << p->u_fri.z << ")" 
+//                 << std::endl;
+
+//         // 获取对应的粒子轨迹的加速度
+//         auto itt = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
+//         if (itt != swarmTrajBuffer_.end()) {
+//             // 获取加速度的第一个值并添加到当前加速度
+//             const auto& traj_acceleration = itt->second.acceleration;
+//             if (!traj_acceleration.empty()) {
+//                 acceleration.x += traj_acceleration[0].x;
+//                 acceleration.y += traj_acceleration[0].y;
+//                 acceleration.z += traj_acceleration[0].z;
+//             }
+//                 // std::cout << "Particle index: " << p->index
+//                 //   << " | Traj Acceleration: ("
+//                 //   << traj_acceleration[0].x << ", "
+//                 //   << traj_acceleration[0].y << ", "
+//                 //   << traj_acceleration[0].z << ")"
+//                 //   << " | Updated Acceleration: ("
+//                 //   << acceleration.x << ", "
+//                 //   << acceleration.y << ", "
+//                 //   << acceleration.z << ")" << std::endl;
+// std::cout << "\033[32m"  // 32m是绿色
+//           << "Trajectory Acceleration: ("
+//           << traj_acceleration[0].x << ", "
+//           << traj_acceleration[0].y << ", "
+//           << traj_acceleration[0].z << "), "
+//           << "Trajectory Velocity: ("
+//           << itt->second.velocity[0].x << ", "
+//           << itt->second.velocity[0].y << ", "
+//           << itt->second.velocity[0].z << ")"
+//           << "\033[0m"  // 重置颜色
+//           << std::endl;
+
+//         }
+//         //Updare traj
+//         parallelUpdateParticleTraj();
+
+//         //加速度限制
+//         acceleration.x = clamp(acceleration.x, a_max);
+//         acceleration.y = clamp(acceleration.y, a_max);
+//         acceleration.z = clamp(acceleration.z, a_max);  
+
+//         // 更新速度
+//         p->velocity.x += acceleration.x * deltaTime;
+//         p->velocity.y += acceleration.y * deltaTime;
+//         p->velocity.z += acceleration.z * deltaTime;
+
+//     // std::cout << "deltaTime: " << deltaTime << std::endl;
+//         // // 获取对应的粒子轨迹的速度
+//         // auto it = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
+//         // if (it != swarmTrajBuffer_.end()) {
+//         //     // 获取加速度的第一个值并添加到当前加速度
+//         //     const auto& traj_velocity = it->second.velocity;
+//         //     if (!traj_velocity.empty()) {
+//         //         p->velocity.x += traj_velocity[0].x;
+//         //         p->velocity.y += traj_velocity[0].y;
+//         //         p->velocity.z += traj_velocity[0].z;
+//         //     }
+//         // }
+
+//         //速度限制
+//         p->velocity.x = clamp(p->velocity.x, v_max);
+//         p->velocity.y = clamp(p->velocity.y, v_max);
+//         p->velocity.z = clamp(p->velocity.z, v_max);
+
+//         // std::cout << "Particle Velocity: ("
+//         //   << p->velocity.x << ", "
+//         //   << p->velocity.y << ", "
+//         //   << p->velocity.z << ")" << std::endl;
+
+// std::cout << "Particle Acceleration: ("
+//           << acceleration.x << ", "
+//           << acceleration.y << ", "
+//           << acceleration.z << ") | "
+//           << "Particle Velocity: ("
+//           << p->velocity.x << ", "
+//           << p->velocity.y << ", "
+//           << p->velocity.z << ")" 
+//           << std::endl;
+
+//         // 更新位置
+//         p->position.x += p->velocity.x * deltaTime;
+//         p->position.y += p->velocity.y * deltaTime;
+//         p->position.z += p->velocity.z * deltaTime;
+
+//         // // 获取对应的粒子轨迹的位置
+//         // auto ittt = swarmTrajBuffer_.find(p->index); // 根据粒子索引查找轨迹
+//         // if (ittt != swarmTrajBuffer_.end()) {
+//         //     // 获取加速度的第一个值并添加到当前加速度
+//         //     const auto& traj_position = ittt->second.position;
+//         //     if (!traj_position.empty()) {
+//         //         p->position.x += traj_position[0].x;
+//         //         p->position.y += traj_position[0].y;
+//         //         p->position.z += traj_position[0].z;
+//         //     }
+//         // }
+//             // std::cout << "Particle index: " << p->index 
+//             //   << " | Acceleration: x=" << acceleration.x 
+//             //   << ", y=" << acceleration.y 
+//             //   << ", z=" << acceleration.z << std::endl;
+//             // std::cout << "Particle index: " << p->index 
+//             //   << " | Velocity: x=" << p->velocity.x 
+//             //   << ", y=" << p->velocity.y 
+//             //   << ", z=" << p->velocity.z << std::endl;
+//             // std::cout << "Particle index: " << p->index 
+//             //   << " | Position: x=" << p->position.x 
+//             //   << ", y=" << p->position.y 
+//             //   << ", z=" << p->position.z << std::endl;
+//     }
+     
+// }
 
 void SPHSystem::pubroscmd() 
 {
@@ -522,6 +698,7 @@ void SPHSystem::pubroscmd()
         swarm_particle.density = particle.density;
         swarm_particle.pressure = particle.pressure;
         swarm_particle.index = particle.index;
+        swarm_particle.state = particle.state;
         swarm_msg.particles.push_back(swarm_particle);
     }
 

@@ -47,6 +47,14 @@ using namespace std;
 
 struct Point { double x, y, z;};
 
+enum ParticleState {
+    NULL_STATE,  // "NULL" 状态
+    TRAJ,        // "TRAJ" 状态
+    NEED_TRAJ,   // 需要重规划
+    ATTRACT,     // "吸引" 状态，对应英文 "attract"
+    REPEL        // "排斥" 状态，对应英文 "repel"
+};
+
 namespace FLAG_Race
 {
     class plan_manager

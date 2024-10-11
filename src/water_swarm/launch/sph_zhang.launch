@@ -13,11 +13,13 @@
     <arg name="h" value="10.0"/>                <!-- kernel function radius -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
     <arg name="threshold_dist" value="0.03"/>   <!-- 粒子与虚拟粒子的碰撞检测距离 -->
-    <arg name="k_den" value="1.0"/>           <!-- k_den -->
-    <arg name="k_rep" value="1.0"/>           <!-- k_rep -->
-    <arg name="k_fri" value="0.2"/>           <!-- k_fri -->
+    <arg name="k_den" value="100.0"/>           <!-- k_den -->
+    <arg name="k_rep" value="100.0"/>           <!-- k_rep -->
+    <arg name="k_fri" value="50.0"/>            <!-- k_fri -->
     <arg name="v_max" value="2.0"/>             <!-- v_max -->
     <arg name="a_max" value="1.5"/>             <!-- a_max -->
+    <arg name="r_1"   value="0.05"/>            <!-- r_1 -->
+    <arg name="r_2"   value="0.5"/>             <!-- r_2 -->
     <arg name="planv_max" value="1.0"/>             <!-- v_max -->
     <arg name="plana_max" value="1.0"/>             <!-- a_max -->
     <arg name="restDensity" value="1000000.0"/> <!-- \rho0 -->
@@ -53,6 +55,8 @@
         <param name="sph/k_fri"             value="$(arg k_fri)"/> 
         <param name="sph/v_max"             value="$(arg v_max)"/>
         <param name="sph/a_max"             value="$(arg a_max)"/>
+        <param name="sph/r_1"               value="$(arg r_1)"/>
+        <param name="sph/r_2"               value="$(arg r_2)"/>
     </node>
 
     <!-- Obs map-->

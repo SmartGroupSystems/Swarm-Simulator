@@ -60,10 +60,19 @@ namespace FLAG_Race
     {
         ros::Time currentTime = ros::Time::now(); 
 
+        // Check if any particle is in NEED_TRAJ state
+        bool needReplan = false;
+        for (const auto& particle : current_particles.particles) {
+            if (particle.state == NEED_TRAJ) {
+                needReplan = true;
+                break;
+            }
+        }
+
         if (receive_goal)
         {   
             receive_goal = false;
-            //this func...
+            // Start optimization
             ROS_INFO("\033[1;32m START OPTIMIZE_TRAJ! \033[0m");
             optTraj();
             ros::Time optfinishTime = ros::Time::now(); 
@@ -74,14 +83,18 @@ namespace FLAG_Race
 
         else if (exec_traj)
         {
-            if (0)//need replan this func...
+            double elapsedTime = (currentTime - lastPlanTime).toSec();
+
+            // Check if it's time to replan (every 0.5s or particle NEED_TRAJ)
+            if (elapsedTime >= 0.5 || needReplan)
             {
-               exec_traj = false;
-               need_replan = true;
-               ROS_INFO("\033[1;32m TRAJ NEED REPLAN, RETURN. \033[0m");
-               return;
+                exec_traj = false;
+                need_replan = true;
+                ROS_INFO("\033[1;32m TRAJ NEED REPLAN, RETURN. \033[0m");
+                lastPlanTime = currentTime;
+                return;
             }
-            
+
             double waitElapsedTime = (currentTime - lastWaitOutputTime).toSec();
             if (waitElapsedTime >= 1.0)
             {
@@ -113,6 +126,7 @@ namespace FLAG_Race
         }
     }
 
+
     void plan_manager::update(const common_msgs::Swarm_particles& particles) 
     {
         current_particles = particles;  
@@ -123,6 +137,12 @@ namespace FLAG_Race
                                        const common_msgs::Swarm_particles& particles_goal, 
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx) {
+        // Check if the particle is in ATTRACT or REPEL state
+        if (particles.particles[index].state == ATTRACT || particles.particles[index].state == REPEL) {
+            ROS_INFO("Particle %d is in ATTRACT or REPEL state, skipping process.", particles.particles[index].index);
+            return;  // Exit the function early if in ATTRACT or REPEL state
+        }
+        
         Eigen::MatrixXd initial_state(3,2),terminal_state(3,2);//初始，结束P V A
         Eigen::Vector3d start_pt, end_pt, start_v, start_a;
 
