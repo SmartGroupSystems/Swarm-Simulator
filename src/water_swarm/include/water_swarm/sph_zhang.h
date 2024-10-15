@@ -94,7 +94,8 @@ enum ParticleState {
     TRAJ,        // "TRAJ" 状态
     NEED_TRAJ,   // 需要重规划
     ATTRACT,     // "吸引" 状态，对应英文 "attract"
-    REPEL        // "排斥" 状态，对应英文 "repel"
+    REPEL,        // "排斥" 状态，对应英文 "repel"
+    NEAR_TARGET  // 靠近目标状态
 };
 
 struct Particle
@@ -180,10 +181,11 @@ public:
     inline std::string stateToString(ParticleState state) {
         switch (state) {
             case NULL_STATE: return "SPH";
-            case TRAJ:      return "TRAJ";
-            case NEED_TRAJ: return "NEED";
-            case ATTRACT:   return "ATTRACT";
-            case REPEL:     return "REPEL";
+            case TRAJ:       return "TRAJ";
+            case NEED_TRAJ:  return "NEED";
+            case ATTRACT:    return "ATTRACT";
+            case REPEL:      return "REPEL";
+            case NEAR_TARGET:return "NEAR";
             default:        return "UNKNOWN"; // 处理未知状态
         }
     };

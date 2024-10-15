@@ -6,7 +6,7 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="4"/>       <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="9"/>       <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.3"/> <!-- 粒子可视化尺寸 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长 -->
@@ -16,10 +16,10 @@
     <arg name="k_den" value="2.0"/>           <!-- k_den -->
     <arg name="k_rep" value="2.0"/>           <!-- k_rep -->
     <arg name="k_fri" value="5.0"/>            <!-- k_fri -->
-    <arg name="k_force" value="100.0"/>          <!-- k_force -->
+    <arg name="k_force" value="1000.0"/>          <!-- k_force -->
     <arg name="v_max" value="2.0"/>             <!-- v_max -->
     <arg name="a_max" value="1.5"/>             <!-- a_max -->
-    <arg name="r_1"   value="0.05"/>            <!-- r_1 -->
+    <arg name="r_1"   value="0.06"/>            <!-- r_1 -->
     <arg name="r_2"   value="0.5"/>             <!-- r_2 -->
     <arg name="planv_max" value="1.0"/>             <!-- v_max -->
     <arg name="plana_max" value="1.0"/>             <!-- a_max -->
@@ -69,6 +69,7 @@
         <param name="fsm/sphInitTime"      value="5.0" /> 
         <!-- <param name="fsm/cloud_topic"      type="string" value="/map_generator/click_map" /> -->
         <param name="fsm/cloud_topic"      type="string" value="/map_generator/global_cloud" />
+        <param name="fsm/planInterval"     value="0.1" /> 
         <param name="fsm/trajVisParam"     value="0.3" /> 
 
         <!-- SDF Map -->

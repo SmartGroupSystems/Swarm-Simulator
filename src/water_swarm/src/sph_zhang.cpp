@@ -218,6 +218,11 @@ void SPHSystem::updateParticleStates()
             std::pow(particle.position.z - targetPosition.z, 2)
         );
 
+        if (distanceToTarget < 1.0) {
+            particle.state = NEAR_TARGET;
+            continue;  //
+        }
+        
         // 检查粒子是否有轨迹（从swarmTrajBuffer_中查询）
         if (swarmTrajBuffer_.find(particleIndex) != swarmTrajBuffer_.end() &&
             !swarmTrajBuffer_[particleIndex].position.empty()) {
@@ -261,13 +266,6 @@ void SPHSystem::updateParticleStates()
             continue;  // 进入NEED_TRAJ状态后，跳过剩余判断
         }
 
-        // 如果粒子已经执行完swarmTrajBuffer_中的轨迹,near target
-        //------------！靠近终点的时候粒子仍然不太配合，这里可能需要一个新的目标分配来修正，后期完善这个部分----------！
-        if (distanceToTarget < 1.5) {
-            // 当粒子到达轨迹的末端，进入NULL_STATE
-            particle.state = NULL_STATE;
-            continue;  // 进入NULL_STATE后，跳过剩余判断
-        }
     }
 
     // // 打印所有粒子的状态
@@ -480,6 +478,13 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         // 根据粒子的状态来计算加速度
         switch (p->state) {
             case NULL_STATE:
+                // NULL_STATE 加速度计算
+                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
+                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
+                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
+                break;
+
+            case NEAR_TARGET:
                 // NULL_STATE 加速度计算
                 acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
                 acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;

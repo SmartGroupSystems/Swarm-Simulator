@@ -177,6 +177,14 @@ namespace FLAG_Race
                 break;
             }
         }
+        
+        near_target = true;
+        for (const auto& particle : current_particles.particles) {
+            if (particle.state != NEAR_TARGET) {
+                near_target = false;  // If any particle is not in NEAR_TARGET, set to false
+                break;
+            }
+        }
 
         if (receive_goal)
         {   
@@ -204,7 +212,7 @@ namespace FLAG_Race
             double elapsedTime = (currentTime - lastPlanTime).toSec();
 
             // Check if it's time to replan (every 0.5s or particle NEED_TRAJ)
-            if (elapsedTime >= 0.5 || needReplan)
+            if (elapsedTime >= planInterval || needReplan)
             {
                 exec_traj = false;
                 need_replan = true;
@@ -336,7 +344,7 @@ namespace FLAG_Race
 
         if (distance < 1.0) {
             ROS_INFO("Start and goal are too close (distance: %f). Stopping planning.", distance);
-            near_target = true;
+            // particles.particles[index].state = ParticleState::NEAR_TARGET;
             return;  // Stop planning if the distance is less than 1.0
         }
 

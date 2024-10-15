@@ -52,7 +52,8 @@ enum ParticleState {
     TRAJ,        // "TRAJ" 状态
     NEED_TRAJ,   // 需要重规划
     ATTRACT,     // "吸引" 状态，对应英文 "attract"
-    REPEL        // "排斥" 状态，对应英文 "repel"
+    REPEL,        // "排斥" 状态，对应英文 "repel"
+    NEAR_TARGET  // 靠近目标状态
 };
 
 namespace FLAG_Race
