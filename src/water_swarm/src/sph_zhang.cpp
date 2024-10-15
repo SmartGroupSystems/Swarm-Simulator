@@ -28,6 +28,8 @@ int main(int argc, char **argv) {
     virtual_particles_publisher = nh.advertise<visualization_msgs::MarkerArray>("virtual_particles_vis", 10);
     swarm_pub             = nh.advertise<common_msgs::Swarm_particles>("/swarm_particles", 10);
     swarm_traj_sub        = nh.subscribe("/swarm_traj", 1000, swarmTrajCallback);
+    target_sub            = nh.subscribe("/particle_target", 10,targetCallback);
+    force_sub             = nh.subscribe("/particle_force", 10,forceCallback);
     odom_publishers.resize(particleCount);
     for (int i = 0; i < particleCount; ++i) {
         std::stringstream ss;
@@ -75,6 +77,25 @@ void timerCallback(const ros::TimerEvent&) {
 
         sph_planner->update(updateInterval);
     }
+}
+
+void targetCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
+{
+    for (const auto& particle : msg->particles) {
+        sph_planner-> targetMap[particle.index] = particle.position;
+
+        ROS_INFO("Stored particle with index %d: [%f, %f, %f]", 
+                particle.index, particle.position.x, particle.position.y, particle.position.z);
+    }
+}
+
+void forceCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
+{
+    sph_planner->forceMap.clear();
+    for (const auto& particle : msg->particles) {
+        sph_planner-> forceMap[particle.index] = particle.force;
+    }
+    // ROS_INFO("Received forces for %lu particles.", msg->particles.size());
 }
 
 void SPHSystem::processTraj(const common_msgs::Swarm_traj& swarmtraj)
@@ -188,6 +209,15 @@ void SPHSystem::updateParticleStates()
     for (auto& particle : particles) {
         int particleIndex = particle.index;
 
+        const auto& targetPosition = targetMap[particleIndex];
+    
+        // 计算粒子当前位置与目标点的距离
+        double distanceToTarget = std::sqrt(
+            std::pow(particle.position.x - targetPosition.x, 2) +
+            std::pow(particle.position.y - targetPosition.y, 2) +
+            std::pow(particle.position.z - targetPosition.z, 2)
+        );
+
         // 检查粒子是否有轨迹（从swarmTrajBuffer_中查询）
         if (swarmTrajBuffer_.find(particleIndex) != swarmTrajBuffer_.end() &&
             !swarmTrajBuffer_[particleIndex].position.empty()) {
@@ -231,20 +261,21 @@ void SPHSystem::updateParticleStates()
             continue;  // 进入NEED_TRAJ状态后，跳过剩余判断
         }
 
-        // 如果粒子已经执行完swarmTrajBuffer_中的轨迹
-        if (swarmTrajBuffer_[particleIndex].position.size() == 1) {
+        // 如果粒子已经执行完swarmTrajBuffer_中的轨迹,near target
+        //------------！靠近终点的时候粒子仍然不太配合，这里可能需要一个新的目标分配来修正，后期完善这个部分----------！
+        if (distanceToTarget < 1.5) {
             // 当粒子到达轨迹的末端，进入NULL_STATE
             particle.state = NULL_STATE;
             continue;  // 进入NULL_STATE后，跳过剩余判断
         }
     }
 
-    // 打印所有粒子的状态
-    std::cout << "\033[1;33m粒子状态: "; 
-    for (const auto& particle : particles) {
-        std::cout << stateToString(particle.state) << "  ";  
-    }
-    std::cout << "\033[0m" << std::endl;  
+    // // 打印所有粒子的状态
+    // std::cout << "\033[1;33m粒子状态: "; 
+    // for (const auto& particle : particles) {
+    //     std::cout << stateToString(particle.state) << "  ";  
+    // }
+    // std::cout << "\033[0m" << std::endl;  
 }
 
 void SPHSystem::update(float deltaTime) {
@@ -450,23 +481,23 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         switch (p->state) {
             case NULL_STATE:
                 // NULL_STATE 加速度计算
-                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
-                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
-                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
+                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
+                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
+                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
                 break;
 
             case ATTRACT:
                 // ATTRACT 状态 加速度计算
-                acceleration.x = p->u_den.x + p->u_fri.x;
-                acceleration.y = p->u_den.y + p->u_fri.y;
-                acceleration.z = p->u_den.z + p->u_fri.z;
+                acceleration.x = p->u_den.x + p->u_fri.x + forceMap[p->index].x;
+                acceleration.y = p->u_den.y + p->u_fri.y + forceMap[p->index].y;
+                acceleration.z = p->u_den.z + p->u_fri.z + forceMap[p->index].z;
                 break;
 
             case REPEL:
                 // REPEL 状态 加速度计算
-                acceleration.x = p->u_den.x + p->u_rep.x;
-                acceleration.y = p->u_den.y + p->u_rep.y;
-                acceleration.z = p->u_den.z + p->u_rep.z;
+                acceleration.x = p->u_den.x + p->u_rep.x + forceMap[p->index].x;
+                acceleration.y = p->u_den.y + p->u_rep.y + forceMap[p->index].y;
+                acceleration.z = p->u_den.z + p->u_rep.z + forceMap[p->index].z;
                 break;
 
             case TRAJ:
@@ -664,6 +695,7 @@ void SPHSystem::pubroscmd()
 {
     visualization_msgs::MarkerArray particles_markers;
     visualization_msgs::MarkerArray virtual_particles_markers;
+    visualization_msgs::MarkerArray state_text_markers; 
     common_msgs::Swarm_particles swarm_msg;  
 
     // 为每个实际粒子设置 Marker 并填充 Swarm_particles 消息
@@ -688,6 +720,28 @@ void SPHSystem::pubroscmd()
         marker.color.g = 1.0;
         marker.color.b = 0.0;
         particles_markers.markers.push_back(marker);
+
+         // 创建状态文本标记
+        visualization_msgs::Marker state_marker;
+        state_marker.header.frame_id = "world";
+        state_marker.header.stamp = ros::Time::now();
+        state_marker.ns = "state_texts";
+        state_marker.action = visualization_msgs::Marker::ADD;
+        state_marker.pose.position.x = particle.position.x;
+        state_marker.pose.position.y = particle.position.y; // 让文本稍微高于粒子
+        state_marker.pose.position.z = particle.position.z + particleVisScale + 0.4;
+        state_marker.pose.orientation.w = 1.0;
+        state_marker.id = particle.index + particles.size(); // 确保 ID 唯一
+        state_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING; // 使用文本视图标记
+        state_marker.scale.z = 0.5; // 字体大小，与你的粒子大小适配
+        state_marker.color.a = 1.0;
+        state_marker.color.r = 0.0; // 黑色
+        state_marker.color.g = 0.0;
+        state_marker.color.b = 0.0;
+
+        // 设置状态文本
+        state_marker.text = stateToString(particle.state);
+        state_text_markers.markers.push_back(state_marker);
 
         // 同时将粒子信息添加到 Swarm_particles 消息中
         common_msgs::Particle swarm_particle;
@@ -751,6 +805,7 @@ void SPHSystem::pubroscmd()
     // 发布所有粒子
     particles_publisher.publish(particles_markers);
     virtual_particles_publisher.publish(virtual_particles_markers);
+    particles_publisher.publish(state_text_markers);
 
     // 发布 Swarm_particles 消息
     swarm_msg.header.stamp = ros::Time::now();  // 设置时间戳

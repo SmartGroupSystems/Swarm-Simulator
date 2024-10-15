@@ -31,6 +31,7 @@ namespace FLAG_Race
         nh.param("planning/lambda2",lambda2_,-1.0);
         nh.param("planning/lambda3",lambda3_,-1.0);
         nh.param("planning/safe_distance",safe_distance_,-1.0);
+        nh.param("planning/k_force",k_force,-1.0);
 
         std::cout << "\033[1;32m" << "success init Opt module" << "\033[0m" << std::endl;
     }
@@ -260,6 +261,32 @@ namespace FLAG_Race
                 gradient.col(i) += 2.0 * (dist - safe_distance_) * dist_grad;     
             }
         }   
+    }
+
+    common_msgs::Force bspline_optimizer::calcGradForce(const Eigen::Vector3d& q_3d)
+    {
+        common_msgs::Force force; 
+        double dist; 
+        Eigen::Vector3d dist_grad_3d; 
+
+        edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
+
+        if (dist > safe_distance_) {
+            force.x = 0.0;
+            force.y = 0.0;
+            force.z = 0.0;
+            return force;
+        }
+
+        double force_magnitude = k_force * std::pow((dist - safe_distance_), 2);        
+        Eigen::Vector3d grad_normalized = dist_grad_3d.normalized();
+
+        // 按照归一化梯度方向分配力
+        force.x = force_magnitude * grad_normalized.x();
+        force.y = force_magnitude * grad_normalized.y();
+        force.z = force_magnitude * grad_normalized.z();
+
+        return force;
     }
 
     void bspline_optimizer::combineCost( const std::vector<double>& x,Eigen::MatrixXd &grad,double &f_combine)

@@ -8,6 +8,7 @@ namespace FLAG_Race
         // testInit(nh);
         nh.param("fsm/planInterval", planInterval, -1.0);
         nh.param<std::string>("fsm/cloud_topic", cloud_topic_, "click_map");
+        nh.param("fsm/trajVisParam", trajVisParam, -1.0);
         initCallback(nh);
         parallelInit(nh);
     }
@@ -17,7 +18,10 @@ namespace FLAG_Race
     {
         particles_sub = nh.subscribe("/swarm_particles", 1000, &plan_manager::particlesCallback,this);
         traj_timer = nh.createTimer(ros::Duration(0.01), &plan_manager::timerCallback,this);
+        realloca_timer = nh.createTimer(ros::Duration(0.05), &plan_manager::realloca_timerCallback, this);
         traj_puber = nh.advertise<common_msgs::Swarm_traj>("/swarm_traj", 10, true);
+        target_pub = nh.advertise<common_msgs::Swarm_particles>("/particle_target", 10);
+        force_pub  = nh.advertise<common_msgs::Swarm_particles>("/particle_force", 10);
         goal_sub = nh.subscribe("/move_base_simple/goal", 1000, &plan_manager::goalCallback, this);
         path_vis = nh.advertise<visualization_msgs::Marker>("/path_vis", 10);
         traj_vis = nh.advertise<visualization_msgs::Marker>("/traj_vis", 10);
@@ -36,6 +40,104 @@ namespace FLAG_Race
         }
     }
 
+    // void plan_manager::realloca_timerCallback(const ros::TimerEvent&)
+    // {
+    //     int nParticles = current_particles.particles.size();
+    //     int nTargets = particles_goal.particles.size();
+
+    //     // Step 1: 构建代价矩阵
+    //     Eigen::MatrixXd costMatrix(nParticles, nTargets);
+    //     for (int i = 0; i < nParticles; ++i) {
+    //         for (int j = 0; j < nTargets; ++j) {
+    //             Eigen::Vector3d currentPos(current_particles.particles[i].position.x,
+    //                                     current_particles.particles[i].position.y,
+    //                                     current_particles.particles[i].position.z);
+    //             Eigen::Vector3d targetPos(particles_goal.particles[j].position.x,
+    //                                     particles_goal.particles[j].position.y,
+    //                                     particles_goal.particles[j].position.z);
+    //             costMatrix(i, j) = (currentPos - targetPos).norm();  // 使用距离作为代价
+    //         }
+    //     }
+
+    //     // Step 2: 使用匈牙利算法进行匹配
+    //     std::vector<int> assignment = hungarianAlgorithm(costMatrix);
+
+    //     // Step 3: 更新粒子的目标点
+    //     for (size_t i = 0; i < assignment.size(); ++i) {
+    //         int targetIndex = assignment[i];
+    //         particles_goal.particles[i].position = particles_goal.particles[targetIndex].position;
+    //         ROS_INFO("Particle %d reassigned to target %d", i, targetIndex);
+    //     }
+
+    //     target_pub.publish(particles_goal);
+
+    // }
+
+    void plan_manager::realloca_timerCallback(const ros::TimerEvent&)
+    {
+        // // 遍历所有当前粒子，检查是否到达目标点附近
+        // bool reallocation_needed = false;
+        // for (size_t i = 0; i < current_particles.particles.size(); ++i) {
+        //     Eigen::Vector3d currentPos(current_particles.particles[i].position.x,
+        //                             current_particles.particles[i].position.y,
+        //                             current_particles.particles[i].position.z);
+            
+        //     Eigen::Vector3d targetPos(particles_goal.particles[i].position.x,
+        //                             particles_goal.particles[i].position.y,
+        //                             particles_goal.particles[i].position.z);
+            
+        //     // 判断当前粒子是否接近目标点
+        //     double distance = (currentPos - targetPos).norm();
+        //     if (distance < 2.0) {
+        //         reallocation_needed = true;
+        //         break;  // 如果有一个粒子到达目标点附近，触发重新分配
+        //     }
+        // }
+
+        // // 如果需要重新分配目标点
+        // if (reallocation_needed) {
+        // ROS_INFO("Reallocating targets for all particles...");
+
+        // std::vector<bool> targetAssigned(particles_goal.particles.size(), false);  // 记录每个目标是否已分配
+        // for (size_t i = 0; i < current_particles.particles.size(); ++i) {
+        //     Eigen::Vector3d currentPos(current_particles.particles[i].position.x,
+        //                                current_particles.particles[i].position.y,
+        //                                current_particles.particles[i].position.z);
+
+        //     // 为每个粒子找到最近的未分配目标点
+        //     double minDistance = std::numeric_limits<double>::max();
+        //     int bestTargetIndex = -1;
+
+        //     for (size_t j = 0; j < particles_goal.particles.size(); ++j) {
+        //         if (!targetAssigned[j]) {  // 只考虑未分配的目标点
+        //             Eigen::Vector3d potentialTarget(particles_goal.particles[j].position.x,
+        //                                             particles_goal.particles[j].position.y,
+        //                                             particles_goal.particles[j].position.z);
+        //             double distance = (currentPos - potentialTarget).norm();
+
+        //             // 寻找最近的目标点
+        //             if (distance < minDistance) {
+        //                 minDistance = distance;
+        //                 bestTargetIndex = j;
+        //             }
+        //         }
+        //     }
+
+        //     // 将粒子分配到最佳的目标点
+        //     if (bestTargetIndex != -1) {
+        //         targetAssigned[bestTargetIndex] = true;  // 标记此目标点已被分配
+        //         particles_goal.particles[i].position = particles_goal.particles[bestTargetIndex].position;
+        //         ROS_INFO("Particle %d reassigned to target %d", (int)i, bestTargetIndex);
+        //     }
+        // }
+
+        // // 发布重新分配后的目标点
+        // target_pub.publish(particles_goal);
+
+        // }
+        
+    }
+
     void plan_manager::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
     {
         ROS_INFO("Received goal: [%f, %f, %f]", msg->pose.position.x, 
@@ -47,18 +149,25 @@ namespace FLAG_Race
             particles_goal.particles[i].position.x += msg->pose.position.x;
             particles_goal.particles[i].position.y += msg->pose.position.y;
             particles_goal.particles[i].position.z += msg->pose.position.z;
+            particles_goal.particles[i].index = init_particles.particles[i].index;
+
             ROS_INFO("Particle %d's goal: %f, %f,  %f",particles_goal.particles[i].index,
                                                        particles_goal.particles[i].position.x,
                                                        particles_goal.particles[i].position.y,
                                                        particles_goal.particles[i].position.z);
         }
         
+        target_pub.publish(particles_goal);
+
         receive_goal = true;
     }
 
     void plan_manager::timerCallback(const ros::TimerEvent&) 
     {
         ros::Time currentTime = ros::Time::now(); 
+
+        //calc force
+        pubEsdfForce();
 
         // Check if any particle is in NEED_TRAJ state
         bool needReplan = false;
@@ -71,6 +180,7 @@ namespace FLAG_Race
 
         if (receive_goal)
         {   
+            wait_target = false;
             receive_goal = false;
             // Start optimization
             ROS_INFO("\033[1;32m START OPTIMIZE_TRAJ! \033[0m");
@@ -79,6 +189,14 @@ namespace FLAG_Race
             double optcostTime = (optfinishTime - currentTime).toSec();
             ROS_INFO("\033[1;32m OPTIMIZE_FINISH, TOTAL TIME COST: %Fs \033[0m",optcostTime);
             exec_traj = true;
+        }
+
+        else if (near_target)
+        {
+            near_target = false;
+            need_replan = false;
+            exec_traj = false;
+            wait_target = true;
         }
 
         else if (exec_traj)
@@ -115,7 +233,7 @@ namespace FLAG_Race
             need_replan = false;
         }
 
-        else
+        else if (wait_target)
         {
             double waitElapsedTime = (currentTime - lastWaitOutputTime).toSec();
             if (waitElapsedTime >= 1.0)
@@ -126,25 +244,69 @@ namespace FLAG_Race
         }
     }
 
-
     void plan_manager::update(const common_msgs::Swarm_particles& particles) 
     {
         current_particles = particles;  
     }
     
-   
+    void plan_manager::pubEsdfForce()
+    {
+        particles_force.particles.clear();
+
+         // 遍历当前所有粒子
+        for (const auto& particle : current_particles.particles) {
+            int particleIndex = particle.index;
+
+            // 找到对应的粒子管理器
+            auto it = std::find_if(swarmParticlesManager.begin(), swarmParticlesManager.end(),
+                                [&particleIndex](const particleManager& manager) {
+                                    return manager.particle_index == std::to_string(particleIndex);
+                                });
+
+            // 如果找不到对应的粒子管理器，跳过该粒子
+            if (it == swarmParticlesManager.end()) {
+                ROS_WARN("Particle manager not found for particle index: %d", particleIndex);
+                continue;
+            }
+
+            // 获取粒子管理器的bspline_opt_成员
+            std::shared_ptr<bspline_optimizer> bspline_opt_ = it->bspline_opt_;
+
+            // 将粒子的位置转换为Eigen::Vector3d类型
+            Eigen::Vector3d particle_position;
+            particle_position.x() = particle.position.x;
+            particle_position.y() = particle.position.y;
+            particle_position.z() = particle.position.z;
+
+            // 调用calcGradForce计算粒子的力
+            common_msgs::Force esdf_force = bspline_opt_->calcGradForce(particle_position);
+
+            // 创建一个新的粒子对象，将其index和力值存入
+            common_msgs::Particle particle_with_force;
+            particle_with_force.index = particleIndex;
+            particle_with_force.force = esdf_force;
+
+            // 将该粒子添加到particles_force中
+            particles_force.particles.push_back(particle_with_force);
+        }
+
+        // 发布esdf的力消息
+        force_pub.publish(particles_force);
+    }
+
     void plan_manager::processParticle(size_t index, const common_msgs::Swarm_particles& particles, 
                                        const common_msgs::Swarm_particles& particles_goal, 
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx) {
         // Check if the particle is in ATTRACT or REPEL state
         if (particles.particles[index].state == ATTRACT || particles.particles[index].state == REPEL) {
-            ROS_INFO("Particle %d is in ATTRACT or REPEL state, skipping process.", particles.particles[index].index);
+            ROS_INFO("Particle %d is in ATTRACT,REPEL or NULL state, skipping process.", particles.particles[index].index);
             return;  // Exit the function early if in ATTRACT or REPEL state
         }
         
         Eigen::MatrixXd initial_state(3,2),terminal_state(3,2);//初始，结束P V A
         Eigen::Vector3d start_pt, end_pt, start_v, start_a;
+        common_msgs::Force particle_force;
 
         // Assign start_pt using current_particles' position
         start_pt.x() = particles.particles[index].position.x+0.000001;//if start is zero, a_star bug
@@ -167,6 +329,15 @@ namespace FLAG_Race
                 end_pt.z() = goal_particle.position.z;
                 break;
             }
+        }
+
+        // Check if the distance between start_pt and end_pt is less than 0.2
+        double distance = (start_pt - end_pt).norm();
+
+        if (distance < 1.0) {
+            ROS_INFO("Start and goal are too close (distance: %f). Stopping planning.", distance);
+            near_target = true;
+            return;  // Stop planning if the distance is less than 1.0
         }
 
         // cout<< "start: "<< swarmParticlesManager[index].particle_index <<"  "<<start_pt.x()<< " "<< start_pt.y()<<" "<< start_pt.z()<<endl;
@@ -529,7 +700,7 @@ namespace FLAG_Race
         marker.scale.y = 0.1;
 
         // 遍历路径点并将其添加到Marker中
-        for (size_t i = 0; i < traj.size(); ++i) {
+        for (size_t i = 0; i < static_cast<size_t>(trajVisParam * traj.size()); ++i) {
             geometry_msgs::Point p;
             p.x = traj[i].x();
             p.y = traj[i].y();
@@ -551,6 +722,86 @@ namespace FLAG_Race
 
         // 发布Marker消息
         marker_pub.publish(marker);
+    }
+
+    //匈牙利算法，本来想基于此进行多目标分配，但是好像有bug，所以先这么带着，有空再回来看，这个函数需要配合realloca_timer进行使用
+    std::vector<int> plan_manager::hungarianAlgorithm(const Eigen::MatrixXd& costMatrix)
+    {
+        int n = costMatrix.rows();  // 任务数
+        int m = costMatrix.cols();  // n == m
+
+        // Step 1: 行减法
+        Eigen::MatrixXd cost = costMatrix;
+        for (int i = 0; i < n; ++i) {
+            double rowMin = cost.row(i).minCoeff();
+            cost.row(i) -= Eigen::VectorXd::Constant(m, rowMin);
+        }
+
+        // Step 2: 列减法
+        for (int j = 0; j < m; ++j) {
+            double colMin = cost.col(j).minCoeff();
+            cost.col(j) -= Eigen::VectorXd::Constant(n, colMin);
+        }
+
+        // Step 3: 尝试找到最优匹配
+        std::vector<int> rowAssignment(n, -1);  // 每一行分配的列
+        std::vector<int> colAssignment(m, -1);  // 每一列分配的行
+
+        while (true) {
+            std::vector<bool> rowCovered(n, false); // 记录行是否被覆盖
+            std::vector<bool> colCovered(m, false); // 记录列是否被覆盖
+            std::vector<std::vector<bool>> marked(n, std::vector<bool>(m, false)); // 记录哪些零被标记为可能匹配
+
+            // Step 4: 标记所有零值元素，并尝试分配
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < m; ++j) {
+                    if (cost(i, j) == 0 && !rowCovered[i] && !colCovered[j]) {
+                        marked[i][j] = true;
+                        rowAssignment[i] = j;
+                        colAssignment[j] = i;
+                        rowCovered[i] = true;
+                        colCovered[j] = true;
+                    }
+                }
+            }
+
+            // Step 5: 检查是否找到所有的匹配
+            int matched = std::count_if(rowAssignment.begin(), rowAssignment.end(), [](int x) { return x != -1; });
+            if (matched == n) {
+                // 已找到匹配，返回结果
+                return rowAssignment;
+            }
+
+            // Step 6: 找到未覆盖的最小元素，并调整矩阵
+            double minUncovered = std::numeric_limits<double>::infinity();
+            for (int i = 0; i < n; ++i) {
+                if (!rowCovered[i]) {
+                    for (int j = 0; j < m; ++j) {
+                        if (!colCovered[j]) {
+                            minUncovered = std::min(minUncovered, cost(i, j));
+                        }
+                    }
+                }
+            }
+
+            // Step 7: 调整矩阵
+            for (int i = 0; i < n; ++i) {
+                if (!rowCovered[i]) {
+                    for (int j = 0; j < m; ++j) {
+                        cost(i, j) -= minUncovered;
+                    }
+                }
+            }
+
+            for (int j = 0; j < m; ++j) {
+                if (colCovered[j]) {
+                    for (int i = 0; i < n; ++i) {
+                        cost(i, j) += minUncovered;
+                    }
+                }
+            }
+        }
+
     }
 
     void plan_manager::testInit(ros::NodeHandle& nh)

@@ -76,6 +76,7 @@ Visualization Manager:
       Name: particles
       Namespaces:
         particles: true
+        state_texts: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -274,7 +275,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 29.240922927856445
+      Distance: 24.629337310791016
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -282,17 +283,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.4225737750530243
-        Y: 0.9739787578582764
-        Z: 1.1765764951705933
+        X: -0.266655296087265
+        Y: 0.34502917528152466
+        Z: 1.0755189657211304
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4047960042953491
+      Pitch: 1.0097960233688354
       Target Frame: world
-      Yaw: 6.273185729980469
+      Yaw: 6.273186206817627
     Saved: ~
 Window Geometry:
   Displays:

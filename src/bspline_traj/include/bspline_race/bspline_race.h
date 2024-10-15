@@ -61,6 +61,7 @@ namespace FLAG_Race
     {
         public:
             double planInterval;
+            double trajVisParam;
             std::string cloud_topic_;
             std::mutex mtx;
 
@@ -90,6 +91,7 @@ namespace FLAG_Race
             common_msgs::Swarm_particles current_particles;
             common_msgs::Swarm_particles init_particles;
             common_msgs::Swarm_particles particles_goal;
+            common_msgs::Swarm_particles particles_force;
 
         public:
             //ROS
@@ -97,7 +99,10 @@ namespace FLAG_Race
             ros::Publisher  traj_vis;
             ros::Publisher  traj_puber;
             ros::Publisher  waypoint_vis;  
+            ros::Publisher  target_pub;
+            ros::Publisher  force_pub;
             ros::Timer      traj_timer;
+            ros::Timer      realloca_timer;
             ros::Subscriber goal_sub;
             ros::Publisher  path_vis;
             ros::Time       lastPlanTime;
@@ -107,6 +112,8 @@ namespace FLAG_Race
             bool receive_goal = false;
             bool exec_traj = false;
             bool need_replan = false;
+            bool near_target = false;
+            bool wait_target = true;
         public:
             plan_manager(){};  
             plan_manager(ros::NodeHandle& nh); 
@@ -119,6 +126,7 @@ namespace FLAG_Race
             void update(const common_msgs::Swarm_particles& particles);
             void particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
             void timerCallback(const ros::TimerEvent&);
+            void realloca_timerCallback(const ros::TimerEvent&);
             void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
             void visualizePath(const std::vector<Eigen::Vector3d>& path_points, ros::Publisher& marker_pub, const std::string& particle_index);
             void visualizeTraj(const std::vector<Eigen::Vector3d>& traj, ros::Publisher& marker_pub, const std::string& particle_index);
@@ -126,6 +134,8 @@ namespace FLAG_Race
                                        const common_msgs::Swarm_particles& particles_goal, 
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx); 
+            void pubEsdfForce();
+            std::vector<int> hungarianAlgorithm(const Eigen::MatrixXd& costMatrix);
     };
 
 }

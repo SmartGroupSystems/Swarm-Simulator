@@ -35,6 +35,8 @@ ros::Publisher                                          particles_publisher;
 ros::Publisher                                          virtual_particles_publisher;
 ros::Publisher                                          swarm_pub;
 ros::Subscriber                                         swarm_traj_sub;
+ros::Subscriber                                         target_sub;
+ros::Subscriber                                         force_sub;
 std::vector<ros::Publisher>                             odom_publishers;
 
 ros::Time last_time;//控制时间loop
@@ -55,6 +57,8 @@ void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
 void timerCallback(const ros::TimerEvent&);
 void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg);
+void targetCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
+void forceCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
 
 struct SPHSettings
 {   
@@ -120,6 +124,8 @@ public:
     bool isInitialReceived = false;  // 用于检查是否已经接收到第一个消息
 
     std::unordered_map<int, common_msgs::BsplineTraj> swarmTrajBuffer_;
+    std::unordered_map<int, common_msgs::Position> targetMap;
+    std::unordered_map<int, common_msgs::Force> forceMap;
 
 public:
 	SPHSystem(
@@ -170,11 +176,10 @@ public:
     void parallelUpdateParticleTraj();
     void parallelUpdateParticlePositions(const float deltaTime);
     void pubroscmd();
-    
 
     inline std::string stateToString(ParticleState state) {
         switch (state) {
-            case NULL_STATE: return "NULL";
+            case NULL_STATE: return "SPH";
             case TRAJ:      return "TRAJ";
             case NEED_TRAJ: return "NEED";
             case ATTRACT:   return "ATTRACT";
