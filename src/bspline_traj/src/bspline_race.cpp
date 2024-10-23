@@ -147,7 +147,7 @@ namespace FLAG_Race
         for (size_t i = 0; i < particles_goal.particles.size(); i++)
         {
             particles_goal.particles[i].position.x += msg->pose.position.x;
-            particles_goal.particles[i].position.y += msg->pose.position.y;
+            particles_goal.particles[i].position.y += msg->pose.position.y + 17.0;
             particles_goal.particles[i].position.z += msg->pose.position.z;
             particles_goal.particles[i].index = init_particles.particles[i].index;
 
@@ -177,7 +177,7 @@ namespace FLAG_Race
                 break;
             }
         }
-        
+
         near_target = true;
         for (const auto& particle : current_particles.particles) {
             if (particle.state != NEAR_TARGET) {

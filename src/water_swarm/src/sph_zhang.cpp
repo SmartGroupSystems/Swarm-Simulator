@@ -129,7 +129,7 @@ void SPHSystem::initParticles()
             // 初始化每个粒子
             Particle p;
             p.position.x = col * particleInterval;
-            p.position.y = row * particleInterval;
+            p.position.y = row * particleInterval-17.0;
             p.position.z = 1.0; // 默认z值为1
             p.velocity.x = 0.0;
             p.velocity.y = 0.0;
@@ -222,7 +222,7 @@ void SPHSystem::updateParticleStates()
             particle.state = NEAR_TARGET;
             continue;  //
         }
-        
+
         // 检查粒子是否有轨迹（从swarmTrajBuffer_中查询）
         if (swarmTrajBuffer_.find(particleIndex) != swarmTrajBuffer_.end() &&
             !swarmTrajBuffer_[particleIndex].position.empty()) {

@@ -46,3 +46,5 @@ include_directories(
 
 add_executable(sph_zhang src/sph_zhang.cpp)
 target_link_libraries(sph_zhang ${catkin_LIBRARIES})
+add_executable(sph_vis src/sph_vis.cpp)
+target_link_libraries(sph_vis ${catkin_LIBRARIES})
