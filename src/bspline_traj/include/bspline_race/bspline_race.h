@@ -85,6 +85,7 @@ namespace FLAG_Race
 
             
             //Traj
+            std::mutex muxSwarm_traj;
             common_msgs::Swarm_traj swarm_traj;
 
             //Particles

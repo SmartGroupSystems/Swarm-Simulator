@@ -437,7 +437,11 @@ namespace FLAG_Race
 
         traj_.header.frame_id = "world";
         traj_.header.stamp = ros::Time::now();
-        swarm_traj.traj.push_back(traj_);
+
+        {       
+             std::lock_guard<std::mutex> lk(muxSwarm_traj);
+            swarm_traj.traj.push_back(traj_);
+        }
    
     }
 
@@ -445,9 +449,11 @@ namespace FLAG_Race
     {
         size_t num_particles = current_particles.particles.size();
         std::vector<std::thread> threads;
-        std::mutex mtx;
 
-        swarm_traj.traj.clear();
+        {
+            std::lock_guard<std::mutex> lk(muxSwarm_traj);
+            swarm_traj.traj.clear();
+        }
         swarm_traj.header.frame_id = "world";
         swarm_traj.header.stamp = ros::Time::now();
         // Create a thread for each particle
