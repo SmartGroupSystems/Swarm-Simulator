@@ -22,7 +22,9 @@ int main(int argc, char **argv) {
     nh.param("sph/a_max", a_max, -1.0);
     nh.param("sph/r_1",   r_1, -1.0);
     nh.param("sph/r_2",   r_2, -1.0);
-
+    nh.param("sph/state_enabled", state_enabled, false);  // 默认值为 false
+    nh.param("sph/vis_role", vis_role, false);  // 默认值为 false
+    nh.param("sph/init_bias", init_bias, -1.0);  //
     timer                 = nh.createTimer(ros::Duration(updateInterval),   timerCallback);
     particles_publisher   = nh.advertise<visualization_msgs::MarkerArray>("particles_vis", 10);
     virtual_particles_publisher = nh.advertise<visualization_msgs::MarkerArray>("virtual_particles_vis", 10);
@@ -87,6 +89,7 @@ void targetCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
         ROS_INFO("Stored particle with index %d: [%f, %f, %f]", 
                 particle.index, particle.position.x, particle.position.y, particle.position.z);
     }
+    receive_target = true;
 }
 
 void forceCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
@@ -100,15 +103,17 @@ void forceCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
 
 void SPHSystem::processTraj(const common_msgs::Swarm_traj& swarmtraj)
 {
-    swarmTrajBuffer_.clear();
+    // swarmTrajBuffer_.clear();
 
     for (const auto& traj : swarmtraj.traj)
     {
-        swarmTrajBuffer_[traj.traj_id] = traj;
+        // 判断轨迹是否为空（基于 position 列表是否为空）
+        if (!traj.position.empty()) {
+            swarmTrajBuffer_[traj.traj_id] = traj;
+        }
     }
 
     ROS_INFO("Swarm trajectory processed, %lu trajectories stored.", swarmTrajBuffer_.size());
-
 }
 
 void SPHSystem::initParticles()
@@ -129,7 +134,7 @@ void SPHSystem::initParticles()
             // 初始化每个粒子
             Particle p;
             p.position.x = col * particleInterval;
-            p.position.y = row * particleInterval-17.0;
+            p.position.y = row * particleInterval-init_bias;
             p.position.z = 1.0; // 默认z值为1
             p.velocity.x = 0.0;
             p.velocity.y = 0.0;
@@ -203,12 +208,194 @@ void SPHSystem::findNeighbors() {
 
 }
 
+// void SPHSystem::updateParticleStates()
+// {
+//     // 遍历每个粒子
+//     for (auto& particle : particles) {
+//         int particleIndex = particle.index;
+
+//         const auto& targetPosition = targetMap[particleIndex];
+    
+//         // 计算粒子当前位置与目标点的距离
+//         double distanceToTarget = std::sqrt(
+//             std::pow(particle.position.x - targetPosition.x, 2) +
+//             std::pow(particle.position.y - targetPosition.y, 2) +
+//             std::pow(particle.position.z - targetPosition.z, 2)
+//         );
+
+//         if (distanceToTarget < 1.0) {
+//             particle.state = NEAR_TARGET;
+//             continue;  //
+//         }
+
+//         // 检查粒子是否有轨迹（从swarmTrajBuffer_中查询）
+//         if (swarmTrajBuffer_.find(particleIndex) != swarmTrajBuffer_.end() &&
+//             !swarmTrajBuffer_[particleIndex].position.empty()) {
+//             // 粒子进入TRAJ状态
+//             particle.state = TRAJ;
+//         } else {
+//             // 如果轨迹为空，保持或进入NULL_STATE
+//             particle.state = NULL_STATE;
+//             continue;  // 如果是NULL_STATE，跳过剩余判断
+//         }
+
+//         // 获取最近邻居的距离
+//         double nearestDistance = nearestNeighborDistanceMap[&particle];
+//         float h = settings.h;  
+
+//         // 检查粒子的状态变化逻辑
+//         if (nearestDistance < r_1 * h && nearestDistance >= 0.0) {
+//             // 距离小于 r1 * h，进入REPEL状态
+//             particle.state = REPEL;
+//             // 清空该粒子的轨迹向量
+//             swarmTrajBuffer_[particleIndex].position.clear();
+//             continue;  // 如果进入REPEL状态，跳过剩余判断
+//         } 
+//         else if (nearestDistance > r_2 * h) {
+//             // 距离大于 r_2 * h，进入ATTRACT状态
+//             particle.state = ATTRACT;
+//             // 清空该粒子的轨迹向量
+//             swarmTrajBuffer_[particleIndex].position.clear();
+//             continue;  // 如果进入ATTRACT状态，跳过剩余判断
+//         } 
+//         else {
+//             // 距离在 r1 * h 和 r_2 * h 之间，保持TRAJ状态
+//             particle.state = TRAJ;
+//             continue;  // 保持TRAJ状态后，跳过剩余判断
+//         }
+
+//         // 当从ATTRACT或REPEL状态脱离时，重新进入TRAJ状态
+//         if ((particle.state == ATTRACT || particle.state == REPEL) &&
+//             (nearestDistance >= r_1 * h && nearestDistance <= r_2 * h)) {
+//             particle.state = NEED_TRAJ;
+//             continue;  // 进入NEED_TRAJ状态后，跳过剩余判断
+//         }
+
+//     }
+
+//     // // 打印所有粒子的状态
+//     // std::cout << "\033[1;33m粒子状态: "; 
+//     // for (const auto& particle : particles) {
+//     //     std::cout << stateToString(particle.state) << "  ";  
+//     // }
+//     // std::cout << "\033[0m" << std::endl;  
+// }
+
+// void SPHSystem::updateParticleRole()
+// {
+//     for (auto& particle : particles)
+//     {
+//         // 获取目标点
+//         auto target_it = targetMap.find(particle.index);
+        
+//         // 如果没有收到目标点，将粒子的角色设为 FREE
+//         if (!receive_target) 
+//         {
+//             particle.role = FREE;
+//             continue;
+//         }
+
+//         // 如果收到目标点，获取目标点坐标
+//         const auto& target_position = target_it->second;
+
+//         // 计算前进方向
+//         Eigen::Vector3d forward_dir;
+//         forward_dir.x() = target_position.x - particle.position.x;
+//         forward_dir.y() = target_position.y - particle.position.y;
+//         forward_dir.z() = target_position.z - particle.position.z;
+//         forward_dir.normalize();
+
+//         // 检查邻居是否有位于前进方向上的粒子
+//         bool found_leader = false;
+//         if (particleNeighborsTable.count(&particle) > 0)
+//         {
+//             for (const auto& neighbor_pair : particleNeighborsTable[&particle])
+//             {
+//                 const Particle* neighbor = neighbor_pair.first;
+
+//                 // 计算邻居相对于当前粒子的方向
+//                 Eigen::Vector3d neighbor_dir(
+//                     neighbor->position.x - particle.position.x,
+//                     neighbor->position.y - particle.position.y,
+//                     neighbor->position.z - particle.position.z
+//                 );
+//                 neighbor_dir.normalize();
+
+//                 // 判断邻居是否在前进方向上
+//                 if (forward_dir.dot(neighbor_dir) > 0.5) // 
+//                 {
+//                     found_leader = true;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         // 根据是否找到前进方向上的邻居设置角色
+//         particle.role = found_leader ? FOLLOWER : LEADER;
+//     }
+// }
+
+void SPHSystem::updateParticleRole()
+{
+    for (auto& particle : particles)
+    {
+        // 获取目标点
+        // auto target_it = targetMap.find(particle.index);
+        
+        // 如果没有收到目标点，将粒子的角色设为 FREE
+        if (!receive_target||particle.state == NEAR_TARGET) 
+        {
+            particle.role = FREE;
+            continue;
+        }
+
+        // 记录四个象限的邻居情况
+        bool quadrant1 = false;  // x > 0, y > 0, z > 0
+        bool quadrant2 = false;  // x < 0, y > 0, z > 0
+        bool quadrant3 = false;  // x < 0, y < 0, z > 0
+        bool quadrant4 = false;  // x > 0, y < 0, z > 0
+
+        // 检查邻居是否分布在四个象限
+        if (particleNeighborsTable.count(&particle) > 0)
+        {
+            for (const auto& neighbor_pair : particleNeighborsTable[&particle])
+            {
+                const Particle* neighbor = neighbor_pair.first;
+
+                // 计算邻居相对于当前粒子的方向
+                Eigen::Vector3d relative_dir(
+                    neighbor->position.x - particle.position.x,
+                    neighbor->position.y - particle.position.y,
+                    neighbor->position.z - particle.position.z
+                );
+
+                // 判断邻居位于哪个象限
+                if (relative_dir.x() > 0 && relative_dir.y() > 0 )
+                    quadrant1 = true;
+                else if (relative_dir.x() < 0 && relative_dir.y() > 0 )
+                    quadrant2 = true;
+                else if (relative_dir.x() < 0 && relative_dir.y() < 0 )
+                    quadrant3 = true;
+                else if (relative_dir.x() > 0 && relative_dir.y() < 0 )
+                    quadrant4 = true;
+
+                // 如果四个象限都已有邻居，提前退出
+                if (quadrant1 && quadrant2 && quadrant3 && quadrant4)
+                    break;
+            }
+        }
+
+        // 根据象限分布设置角色
+        particle.role = (quadrant1 && quadrant2 && quadrant3 && quadrant4) ? FOLLOWER : LEADER;
+    }
+}
+
+
 void SPHSystem::updateParticleStates()
 {
     // 遍历每个粒子
     for (auto& particle : particles) {
         int particleIndex = particle.index;
-
         const auto& targetPosition = targetMap[particleIndex];
     
         // 计算粒子当前位置与目标点的距离
@@ -221,6 +408,12 @@ void SPHSystem::updateParticleStates()
         if (distanceToTarget < 1.0) {
             particle.state = NEAR_TARGET;
             continue;  //
+        }
+
+        if( particle.role == FOLLOWER ||particle.role == FREE)
+        {
+            particle.state = NULL_STATE;
+            continue;
         }
 
         // 检查粒子是否有轨迹（从swarmTrajBuffer_中查询）
@@ -236,8 +429,8 @@ void SPHSystem::updateParticleStates()
 
         // 获取最近邻居的距离
         double nearestDistance = nearestNeighborDistanceMap[&particle];
+        // ROS_INFO("Particle Index: %d, Nearest Distance: %.4f", particle.index, nearestDistance);
         float h = settings.h;  
-
         // 检查粒子的状态变化逻辑
         if (nearestDistance < r_1 * h && nearestDistance >= 0.0) {
             // 距离小于 r1 * h，进入REPEL状态
@@ -268,13 +461,8 @@ void SPHSystem::updateParticleStates()
 
     }
 
-    // // 打印所有粒子的状态
-    // std::cout << "\033[1;33m粒子状态: "; 
-    // for (const auto& particle : particles) {
-    //     std::cout << stateToString(particle.state) << "  ";  
-    // }
-    // std::cout << "\033[0m" << std::endl;  
 }
+
 
 void SPHSystem::update(float deltaTime) {
 	if (!started) return;
@@ -314,6 +502,8 @@ void SPHSystem::updateParticlesCPU(
     float deltaTime)
 {   
     findNeighbors();
+
+    updateParticleRole();
 
     updateParticleStates();
 
@@ -365,8 +555,14 @@ void SPHSystem::parallelDensityAndPressures()
         }
 
         particle.density = pDensity + settings.selfDens;
-        double p = -k_den * (1/particle.density) * (std::pow(particle.density/settings.restDensity,7) -1 );
-
+        // double k_den_coefficient = (forceMap.count(particle.index) > 0 && forceMap[particle.index].k_den != 0) ? forceMap[particle.index].k_den : 1.0;
+        // if (k_den_coefficient > 1.0)
+        // {
+        //     ROS_INFO("k_den_coefficient for particle %d: %f", particle.index, k_den_coefficient);
+        // }
+        
+        double p = -k_den  * (1/particle.density) * (std::pow(particle.density/settings.restDensity,7) -1 );
+        
         for (auto& neighbor_pair : neighbors)
         {
             const Particle* neighbor = neighbor_pair.first;
@@ -377,7 +573,7 @@ void SPHSystem::parallelDensityAndPressures()
             float dx = particle.position.x - neighbor->position.x;
             float dy = particle.position.y - neighbor->position.y;
             float dz = particle.position.z - neighbor->position.z;
-
+       
             // 归一化方向向量
             float dir_x = dx / dist;
             float dir_y = dy / dist;
@@ -434,7 +630,7 @@ void SPHSystem::parallelForces()
             float dx = particle.position.x - neighbor->position.x;
             float dy = particle.position.y - neighbor->position.y;
             float dz = particle.position.z - neighbor->position.z;
-
+            
             // 归一化方向向量
             float dir_x = dx / dist;
             float dir_y = dy / dist;
@@ -525,7 +721,7 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 
         //Updare traj
         parallelUpdateParticleTraj();
-
+        //  ROS_INFO("Acceleration - x: %f, y: %f, z: %f", acceleration.x, acceleration.y, acceleration.z);
         //加速度限制
         acceleration.x = clamp(acceleration.x, a_max);
         acceleration.y = clamp(acceleration.y, a_max);
@@ -720,34 +916,55 @@ void SPHSystem::pubroscmd()
         marker.scale.x = particleVisScale;
         marker.scale.y = particleVisScale;
         marker.scale.z = particleVisScale;
-        marker.color.a = 1.0;
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
+        if (particle.role == LEADER)
+        {
+            marker.color.a = 1.0;
+            marker.color.r = 1.0;
+            marker.color.g = 0.0;
+            marker.color.b = 0.0;
+        }
+        else
+        {
+            marker.color.a = 1.0;
+            marker.color.r = 0.0;
+            marker.color.g = 1.0;
+            marker.color.b = 0.0;
+        }
         particles_markers.markers.push_back(marker);
 
-         // 创建状态文本标记
-        visualization_msgs::Marker state_marker;
-        state_marker.header.frame_id = "world";
-        state_marker.header.stamp = ros::Time::now();
-        state_marker.ns = "state_texts";
-        state_marker.action = visualization_msgs::Marker::ADD;
-        state_marker.pose.position.x = particle.position.x;
-        state_marker.pose.position.y = particle.position.y; // 让文本稍微高于粒子
-        state_marker.pose.position.z = particle.position.z + particleVisScale + 0.4;
-        state_marker.pose.orientation.w = 1.0;
-        state_marker.id = particle.index + particles.size(); // 确保 ID 唯一
-        state_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING; // 使用文本视图标记
-        state_marker.scale.z = 0.5; // 字体大小，与你的粒子大小适配
-        state_marker.color.a = 1.0;
-        state_marker.color.r = 0.0; // 黑色
-        state_marker.color.g = 0.0;
-        state_marker.color.b = 0.0;
+        if (state_enabled)
+        {
+            // 创建状态文本标记
+            visualization_msgs::Marker state_marker;
+            state_marker.header.frame_id = "world";
+            state_marker.header.stamp = ros::Time::now();
+            state_marker.ns = "state_texts";
+            state_marker.action = visualization_msgs::Marker::ADD;
+            state_marker.pose.position.x = particle.position.x;
+            state_marker.pose.position.y = particle.position.y; // 让文本稍微高于粒子
+            state_marker.pose.position.z = particle.position.z + particleVisScale + 0.4;
+            state_marker.pose.orientation.w = 1.0;
+            state_marker.id = particle.index + particles.size(); // 确保 ID 唯一
+            state_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING; // 使用文本视图标记
+            state_marker.scale.z = 0.5; // 字体大小，与你的粒子大小适配
+            state_marker.color.a = 1.0;
+            state_marker.color.r = 0.0; // 黑色
+            state_marker.color.g = 0.0;
+            state_marker.color.b = 0.0;
 
-        // 设置状态文本
-        state_marker.text = stateToString(particle.state);
-        state_text_markers.markers.push_back(state_marker);
-
+            // 设置状态文本   
+            if (vis_role)
+            {
+                state_marker.text = roleToString(particle.role);
+            }
+            else
+            {
+                state_marker.text = stateToString(particle.state);
+            }
+            
+            state_text_markers.markers.push_back(state_marker);
+        }
+        
         // 同时将粒子信息添加到 Swarm_particles 消息中
         common_msgs::Particle swarm_particle;
         swarm_particle.position = particle.position;
@@ -758,6 +975,7 @@ void SPHSystem::pubroscmd()
         swarm_particle.pressure = particle.pressure;
         swarm_particle.index = particle.index;
         swarm_particle.state = particle.state;
+        swarm_particle.role  = particle.role;
         swarm_msg.particles.push_back(swarm_particle);
     }
 

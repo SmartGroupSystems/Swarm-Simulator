@@ -9,6 +9,7 @@ namespace FLAG_Race
         nh.param("fsm/planInterval", planInterval, -1.0);
         nh.param<std::string>("fsm/cloud_topic", cloud_topic_, "click_map");
         nh.param("fsm/trajVisParam", trajVisParam, -1.0);
+        nh.param("fsm/init_bias", init_bias, -1.0);
         initCallback(nh);
         parallelInit(nh);
     }
@@ -147,7 +148,7 @@ namespace FLAG_Race
         for (size_t i = 0; i < particles_goal.particles.size(); i++)
         {
             particles_goal.particles[i].position.x += msg->pose.position.x;
-            particles_goal.particles[i].position.y += msg->pose.position.y + 17.0;
+            particles_goal.particles[i].position.y += msg->pose.position.y + init_bias;
             particles_goal.particles[i].position.z += msg->pose.position.z;
             particles_goal.particles[i].index = init_particles.particles[i].index;
 
@@ -306,14 +307,41 @@ namespace FLAG_Race
                                        const common_msgs::Swarm_particles& particles_goal, 
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx) {
+        swarmParticlesManager[index].curr_time = ros::Time::now();
+        if (particles.particles[index].role == FOLLOWER || particles.particles[index].role == FREE)
+        {
+            // ROS_INFO("Particle %d is FOLLOWER, skipping process.", particles.particles[index].index);
+            return;  
+        }
         // Check if the particle is in ATTRACT or REPEL state
         if (particles.particles[index].state == ATTRACT || particles.particles[index].state == REPEL) {
             ROS_INFO("Particle %d is in ATTRACT,REPEL or NULL state, skipping process.", particles.particles[index].index);
             return;  // Exit the function early if in ATTRACT or REPEL state
         }
         
+        // if (particles.particles[index].state == TRAJ)
+        // {
+        //     //check traj collision
+        //     bool safe = swarmParticlesManager[index].bspline_opt_->checkTrajCollision(swarmParticlesManager[index].particle_traj);
+        //     if (safe)
+        //     {
+        //         ROS_INFO("NO RISK!");
+        //         if ((swarmParticlesManager[index].curr_time - swarmParticlesManager[index].last_time).toSec() > 0.5)
+        //         {
+        //             // 触发重规划逻辑
+        //             ROS_INFO("Replanning triggered!");
+        //             // 更新 last_time
+        //             swarmParticlesManager[index].last_time = swarmParticlesManager[index].curr_time;
+        //         }
+        //         else
+        //         {
+        //             return;
+        //         }
+        //     }
+        // }
+        
         Eigen::MatrixXd initial_state(3,2),terminal_state(3,2);//初始，结束P V A
-        Eigen::Vector3d start_pt, end_pt, start_v, start_a;
+        Eigen::Vector3d start_pt, end_pt, start_v, end_v, start_a;
         common_msgs::Force particle_force;
 
         // Assign start_pt using current_particles' position
@@ -326,6 +354,12 @@ namespace FLAG_Race
         start_a.x()  = particles.particles[index].acceleration.x;
         start_a.y()  = particles.particles[index].acceleration.y;
         start_a.z()  = particles.particles[index].acceleration.z;
+        // start_v.x()  = 0.0;
+        // start_v.y()  = 0.0;
+        // start_v.z()  = 0.0;
+        // start_a.x()  = 0.0;
+        // start_a.y()  = 0.0;
+        // start_a.z()  = 0.0;
 
         // Find the matching particle in particles_goal based on the index
         int current_index = particles.particles[index].index;
@@ -335,6 +369,9 @@ namespace FLAG_Race
                 end_pt.x() = goal_particle.position.x;
                 end_pt.y() = goal_particle.position.y;
                 end_pt.z() = goal_particle.position.z;
+                // end_v.x()  = 0.0;
+                // end_v.y()  = 0.0;
+                // end_v.z()  = 0.0;
                 break;
             }
         }
@@ -359,10 +396,26 @@ namespace FLAG_Race
                             0.0, 0.0;
 
         // Reset pathfinder and search for the path
+        // A*
         swarmParticlesManager[index].geo_path_finder_->reset();
         swarmParticlesManager[index].geo_path_finder_->search(start_pt, end_pt, false, -1.0);
         std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[index].geo_path_finder_->getprunePath();
             visualizePath(path_points, path_vis, swarmParticlesManager[index].particle_index);
+            
+        // // Dynamic A*
+        // swarmParticlesManager[index].kino_path_finder_->reset();
+        // bool  status = swarmParticlesManager[index].kino_path_finder_->search(start_pt, start_v, start_a, end_pt, end_v, false);
+        // if (status == KinodynamicAstar::NO_PATH) {
+        //     cout << "[kino replan]: Can't find path." << endl;
+        // } else {
+        // cout << "[kino replan]: Search success." << endl;
+        // }
+        // double ts = swarmParticlesManager[index].spline_->beta_;
+        // std::vector<Eigen::Vector3d> path_points, start_end_derivatives;
+        // // swarmParticlesManager[index].kino_path_finder_->getSamples(ts, path_points, start_end_derivatives);
+        // path_points = swarmParticlesManager[index].kino_path_finder_->getKinoTraj(ts);
+        //     visualizePath(path_points, path_vis, swarmParticlesManager[index].particle_index);
+
         if (path_points.size()==0)
         {
            return;
@@ -437,7 +490,8 @@ namespace FLAG_Race
 
         traj_.header.frame_id = "world";
         traj_.header.stamp = ros::Time::now();
-
+        
+        swarmParticlesManager[index].particle_traj = traj_;
         {       
              std::lock_guard<std::mutex> lk(muxSwarm_traj);
             swarm_traj.traj.push_back(traj_);
@@ -603,6 +657,12 @@ namespace FLAG_Race
                     geo_path_finder_->setEnvironment(edt_environment_);
                     geo_path_finder_->init();
 
+                    // dynamic a*
+                    auto kino_path_finder_ = std::make_shared<KinodynamicAstar>();
+                    // kino_path_finder_->setParam(nh);
+                    // kino_path_finder_->setEnvironment(edt_environment_);
+                    // kino_path_finder_->init();
+
                     //OPT
                     auto bspline_opt_ = std::make_shared<bspline_optimizer>();
                     bspline_opt_->init(nh);
@@ -622,6 +682,7 @@ namespace FLAG_Race
                         sdf_map_,
                         edt_environment_,
                         geo_path_finder_,
+                        kino_path_finder_,
                         bspline_opt_,
                         spline_
                     };

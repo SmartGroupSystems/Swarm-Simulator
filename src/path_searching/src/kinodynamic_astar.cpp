@@ -32,10 +32,10 @@ namespace FLAG_Race
 {
 KinodynamicAstar::~KinodynamicAstar()
 {
-  for (int i = 0; i < allocate_num_; i++)
-  {
-    delete path_node_pool_[i];
-  }
+  // for (int i = 0; i < allocate_num_; i++)
+  // {
+  //   delete path_node_pool_[i];
+  // }
 }
 
 int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, Eigen::Vector3d start_a,
@@ -74,7 +74,7 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
   else
     expanded_nodes_.insert(cur_node->index, cur_node);
 
-  PathNodePtr neighbor = NULL;
+  // PathNodePtr neighbor = NULL;
   PathNodePtr terminate_node = NULL;
   bool init_search = init;
   const int tolerance = ceil(1 / resolution_);
@@ -158,7 +158,7 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
     {
       for (double ax = -max_acc_; ax <= max_acc_ + 1e-3; ax += max_acc_ * res)
         for (double ay = -max_acc_; ay <= max_acc_ + 1e-3; ay += max_acc_ * res)
-          for (double az = -max_acc_; az <= max_acc_ + 1e-3; az += max_acc_ * res)
+          for (double az = 0; az <= 0 + 1e-3; az += max_acc_ * res)
           {
             um << ax, ay, az;
             inputs.push_back(um);
@@ -168,8 +168,8 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
     }
 
     // cout << "cur state:" << cur_state.head(3).transpose() << endl;
-    for (int i = 0; i < inputs.size(); ++i)
-      for (int j = 0; j < durations.size(); ++j)
+    for (size_t i = 0; i < inputs.size(); ++i)
+      for (size_t j = 0; j < durations.size(); ++j)
       {
         um = inputs[i];
         double tau = durations[j];
@@ -236,7 +236,7 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
 
         // Compare nodes expanded from the same parent
         bool prune = false;
-        for (int j = 0; j < tmp_expand_nodes.size(); ++j)
+        for (size_t j = 0; j < tmp_expand_nodes.size(); ++j)
         {
           PathNodePtr expand_node = tmp_expand_nodes[j];
           if ((pro_id - expand_node->index).norm() == 0 && ((!dynamic) || pro_t_id == expand_node->time_idx))
@@ -549,6 +549,7 @@ void KinodynamicAstar::init()
 
   cout << "origin_: " << origin_.transpose() << endl;
   cout << "map size: " << map_size_3d_.transpose() << endl;
+  std::cout << "\033[1;32m" << "success init Dynamic A* module" << "\033[0m" << std::endl;
 
   /* ---------- pre-allocated node ---------- */
   path_node_pool_.resize(allocate_num_);
@@ -765,6 +766,7 @@ Eigen::Vector3i KinodynamicAstar::posToIndex(Eigen::Vector3d pt)
 int KinodynamicAstar::timeToIndex(double time)
 {
   int idx = floor((time - time_origin_) * inv_time_resolution_);
+  return idx;
 }
 
 void KinodynamicAstar::stateTransit(Eigen::Matrix<double, 6, 1>& state0, Eigen::Matrix<double, 6, 1>& state1,

@@ -25,6 +25,7 @@
 #include <bspline_race/UniformBspline.h>
 #include <plan_env/edt_environment.h>
 #include "common_msgs/Force.h"
+#include "common_msgs/BsplineTraj.h"
 
 using namespace std;
 
@@ -146,6 +147,8 @@ namespace FLAG_Race
             template<typename T>  inline T lerp(const T &lo, const T &hi, float t)  { return (lo * (0.1 - t) + hi * t)*10; }
 
             common_msgs::Force calcGradForce(const Eigen::Vector3d& q_3d);
+            double mapForceToKDen(double force_magnitude);
+            bool checkTrajCollision(const common_msgs::BsplineTraj traj);
     };
 }
 

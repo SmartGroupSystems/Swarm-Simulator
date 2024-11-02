@@ -11,3 +11,4 @@ common_msgs/Force u_fri
 std_msgs/String name
 int32 index
 int32 state
+int32 role

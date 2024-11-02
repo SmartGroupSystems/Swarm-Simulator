@@ -271,10 +271,11 @@ namespace FLAG_Race
 
         edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
 
-        if (dist > safe_distance_) {
+        if (dist >  safe_distance_) {
             force.x = 0.0;
             force.y = 0.0;
             force.z = 0.0;
+            force.k_den = 1.0;
             return force;
         }
 
@@ -284,10 +285,55 @@ namespace FLAG_Race
         // 按照归一化梯度方向分配力
         force.x = force_magnitude * grad_normalized.x();
         force.y = force_magnitude * grad_normalized.y();
-        force.z = force_magnitude * grad_normalized.z();
+        force.z = force_magnitude * grad_normalized.z() * 0.0;//z轴不加力
+
+        //基于局部ESDF更新k_den系数
+        force.k_den = mapForceToKDen(force_magnitude);
 
         return force;
     }
+
+    bool bspline_optimizer::checkTrajCollision(const common_msgs::BsplineTraj traj)
+    {
+        // 获取轨迹的前30%的点数
+        size_t segment_length = static_cast<size_t>(traj.position.size() * 0.3);
+
+        // 遍历前0.3轨迹段
+        for (size_t i = 0; i < segment_length; ++i)
+        {
+            // 将当前轨迹点的位置转换成Eigen::Vector3d
+            const auto& pos = traj.position[i];
+            Eigen::Vector3d q_3d(pos.x, pos.y, pos.z);
+
+            // 评估EDT距离
+            double dist;
+            Eigen::Vector3d dist_grad_3d;
+            edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
+
+            // 判断是否小于安全距离
+            if (dist < safe_distance_)
+            {
+                // 轨迹不安全
+                return false;
+            }
+        }
+
+        // 如果前0.3段的轨迹全都安全，返回true
+        return true;
+    }
+
+    double bspline_optimizer::mapForceToKDen(double force_magnitude)
+    {
+        double min_force = 0.0;
+        double max_force = 1.0;
+
+        // 限制force_magnitude在[min_force, max_force]之间
+        force_magnitude = std::max(min_force, std::min(force_magnitude, max_force));
+
+        // 二次映射公式
+        return 4.0 - 2.0 * std::pow(force_magnitude, 2);
+    }
+
 
     void bspline_optimizer::combineCost( const std::vector<double>& x,Eigen::MatrixXd &grad,double &f_combine)
     {

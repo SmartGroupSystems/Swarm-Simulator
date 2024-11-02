@@ -42,6 +42,7 @@
 #include "common_msgs/common_msgs.h"
 #include <plan_env/edt_environment.h>
 #include <path_searching/astar.h>
+#include <path_searching/kinodynamic_astar.h>
 
 using namespace std;
 
@@ -56,6 +57,12 @@ enum ParticleState {
     NEAR_TARGET  // 靠近目标状态
 };
 
+enum ParticleRole {
+    LEADER,
+    FOLLOWER,
+    FREE
+};
+
 namespace FLAG_Race
 {
     class plan_manager
@@ -65,6 +72,7 @@ namespace FLAG_Race
             double trajVisParam;
             std::string cloud_topic_;
             std::mutex mtx;
+            double init_bias;
 
             //智能类指针struct
             std::shared_ptr<UniformBspline> u;
@@ -78,8 +86,12 @@ namespace FLAG_Race
                 std::shared_ptr<SDFMap> sdf_map_;
                 std::shared_ptr<EDTEnvironment> edt_environment_;
                 std::shared_ptr<Astar> geo_path_finder_;
+                std::shared_ptr<KinodynamicAstar> kino_path_finder_;
                 std::shared_ptr<bspline_optimizer> bspline_opt_;
                 std::shared_ptr<UniformBspline> spline_;
+                common_msgs::BsplineTraj particle_traj;
+                ros::Time curr_time;  // 当前时间定时器
+                ros::Time last_time;  // 上一次时间定时器
             };
             std::vector<particleManager> swarmParticlesManager;
 

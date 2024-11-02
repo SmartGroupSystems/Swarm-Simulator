@@ -16,6 +16,10 @@
 #include <math.h>
 #include <unordered_map>
 
+#include <eigen3/Eigen/Eigen>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Core>
+
 #include "common_msgs/Position.h"
 #include "common_msgs/Velocity.h"
 #include "common_msgs/Acceleration.h"
@@ -29,6 +33,7 @@
 #include "common_msgs/BsplineTraj.h"
 #include "common_msgs/Swarm_traj.h"
 
+using namespace std;
 
 ros::Timer                                              timer;
 ros::Publisher                                          particles_publisher;
@@ -52,6 +57,10 @@ float  mass, restDensity, h, g;
 double k_den, k_rep, k_fri;
 double r_1,r_2;
 double v_max, a_max;
+bool   state_enabled;//是否在rviz中显示粒子状态
+bool   vis_role;//是否显示角色，和state显示二选一
+bool   receive_target = false;
+double init_bias;
 
 void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
@@ -98,6 +107,12 @@ enum ParticleState {
     NEAR_TARGET  // 靠近目标状态
 };
 
+enum ParticleRole {
+    LEADER,
+    FOLLOWER,
+    FREE
+};
+
 struct Particle
 {
     common_msgs::Position       position;
@@ -111,6 +126,7 @@ struct Particle
     std_msgs::String            name;
     int                         index;
     ParticleState               state = NULL_STATE;
+    ParticleRole                role  = FREE;
 };
 
 class SPHSystem
@@ -144,7 +160,7 @@ public:
 	void initParticles();
     void findNeighbors();
     void updateParticleStates();
-
+    void updateParticleRole();
     // Finite State Machine
     // updates the SPH system
 	void update(float deltaTime);
@@ -189,6 +205,16 @@ public:
             default:        return "UNKNOWN"; // 处理未知状态
         }
     };
+
+    inline std::string roleToString(ParticleRole role) {
+        switch (role) {
+            case FREE: return "FREE";
+            case LEADER:       return "LEADER";
+            case FOLLOWER:  return "FOLLOWER";
+            default:        return "UNKNOWN"; // 处理未知状态
+        }
+    };
+
     inline double clamp(double value, double max_value) 
     {
         if (value > max_value) {
