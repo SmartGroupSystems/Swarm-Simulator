@@ -106,6 +106,7 @@ namespace FLAG_Race
             common_msgs::Swarm_particles init_particles;
             common_msgs::Swarm_particles particles_goal;
             common_msgs::Swarm_particles particles_force;
+            std::shared_ptr<ros::AsyncSpinner> force_spinner;
 
         public:
             //ROS
@@ -117,6 +118,7 @@ namespace FLAG_Race
             ros::Publisher  force_pub;
             ros::Timer      traj_timer;
             ros::Timer      realloca_timer;
+            ros::Timer      force_timer;
             ros::Subscriber goal_sub;
             ros::Publisher  path_vis;
             ros::Time       lastPlanTime;
@@ -139,7 +141,8 @@ namespace FLAG_Race
             void parallelInit(ros::NodeHandle &nh);
             void update(const common_msgs::Swarm_particles& particles);
             void particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
-            void timerCallback(const ros::TimerEvent&);
+            void timerCallback(const ros::TimerEvent& event);
+            void forceCallback(const ros::TimerEvent& event);
             void realloca_timerCallback(const ros::TimerEvent&);
             void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
             void visualizePath(const std::vector<Eigen::Vector3d>& path_points, ros::Publisher& marker_pub, const std::string& particle_index);

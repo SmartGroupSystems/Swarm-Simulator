@@ -719,6 +719,11 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
                 break;
         }
 
+        // ROS_INFO("Acceleration - x: %f, y: %f, z: %f", acceleration.x, acceleration.y, acceleration.z);
+        // if (std::abs(acceleration.x) > a_max || std::abs(acceleration.y) > a_max || std::abs(acceleration.z) > a_max) {
+        //     ROS_ERROR("Unreasonable acceleration!");
+        // }
+
         //Updare traj
         parallelUpdateParticleTraj();
         //  ROS_INFO("Acceleration - x: %f, y: %f, z: %f", acceleration.x, acceleration.y, acceleration.z);

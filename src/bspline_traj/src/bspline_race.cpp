@@ -18,8 +18,9 @@ namespace FLAG_Race
     void plan_manager::initCallback(ros::NodeHandle &nh)
     {
         particles_sub = nh.subscribe("/swarm_particles", 1000, &plan_manager::particlesCallback,this);
-        traj_timer = nh.createTimer(ros::Duration(0.01), &plan_manager::timerCallback,this);
+        traj_timer = nh.createTimer(ros::Duration(0.1), &plan_manager::timerCallback,this);
         realloca_timer = nh.createTimer(ros::Duration(0.05), &plan_manager::realloca_timerCallback, this);
+        force_timer = nh.createTimer(ros::Duration(0.05), &plan_manager::forceCallback, this);
         traj_puber = nh.advertise<common_msgs::Swarm_traj>("/swarm_traj", 10, true);
         target_pub = nh.advertise<common_msgs::Swarm_particles>("/particle_target", 10);
         force_pub  = nh.advertise<common_msgs::Swarm_particles>("/particle_force", 10);
@@ -28,7 +29,11 @@ namespace FLAG_Race
         traj_vis = nh.advertise<visualization_msgs::Marker>("/traj_vis", 10);
         lastPlanTime = ros::Time::now();
         lastWaitOutputTime = ros::Time::now(); 
-    }
+
+        // force_spinner = std::make_shared<ros::AsyncSpinner>(2);  // 创建一个单独线程的 spinner
+        // force_spinner->start();  // 启动线程
+        // ROS_INFO("Force timer spinner started in a separate thread for high-frequency callback.");
+    }   
 
     void plan_manager::particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
     {
@@ -163,12 +168,20 @@ namespace FLAG_Race
         receive_goal = true;
     }
 
-    void plan_manager::timerCallback(const ros::TimerEvent&) 
+    void plan_manager::forceCallback(const ros::TimerEvent& event) 
+    {
+        ros::Duration time_diff = event.current_real - event.last_real;
+        if (time_diff.toSec() > 0.053) {
+            ROS_INFO("\033[1;31mTime since last callback: %.6f s!\033[0m", time_diff.toSec());
+        }
+        
+        // 计算力
+        pubEsdfForce();
+    }
+
+    void plan_manager::timerCallback(const ros::TimerEvent& event) 
     {
         ros::Time currentTime = ros::Time::now(); 
-
-        //calc force
-        pubEsdfForce();
 
         // Check if any particle is in NEED_TRAJ state
         bool needReplan = false;
