@@ -20,7 +20,7 @@ namespace FLAG_Race
         particles_sub = nh.subscribe("/swarm_particles", 1000, &plan_manager::particlesCallback,this);
         traj_timer = nh.createTimer(ros::Duration(0.1), &plan_manager::timerCallback,this);
         realloca_timer = nh.createTimer(ros::Duration(0.05), &plan_manager::realloca_timerCallback, this);
-        force_timer = nh.createTimer(ros::Duration(0.05), &plan_manager::forceCallback, this);
+        force_timer = nh.createTimer(ros::Duration(0.02), &plan_manager::forceCallback, this);
         traj_puber = nh.advertise<common_msgs::Swarm_traj>("/swarm_traj", 10, true);
         target_pub = nh.advertise<common_msgs::Swarm_particles>("/particle_target", 10);
         force_pub  = nh.advertise<common_msgs::Swarm_particles>("/particle_force", 10);
@@ -171,9 +171,9 @@ namespace FLAG_Race
     void plan_manager::forceCallback(const ros::TimerEvent& event) 
     {
         ros::Duration time_diff = event.current_real - event.last_real;
-        if (time_diff.toSec() > 0.053) {
-            ROS_INFO("\033[1;31mTime since last callback: %.6f s!\033[0m", time_diff.toSec());
-        }
+        // if (time_diff.toSec() > 0.053) {
+        //     ROS_INFO("\033[1;31mTime since last callback: %.6f s!\033[0m", time_diff.toSec());
+        // }
         
         // 计算力
         pubEsdfForce();
@@ -367,12 +367,6 @@ namespace FLAG_Race
         start_a.x()  = particles.particles[index].acceleration.x;
         start_a.y()  = particles.particles[index].acceleration.y;
         start_a.z()  = particles.particles[index].acceleration.z;
-        // start_v.x()  = 0.0;
-        // start_v.y()  = 0.0;
-        // start_v.z()  = 0.0;
-        // start_a.x()  = 0.0;
-        // start_a.y()  = 0.0;
-        // start_a.z()  = 0.0;
 
         // Find the matching particle in particles_goal based on the index
         int current_index = particles.particles[index].index;

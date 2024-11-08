@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
     nh.param("sph/k_den", k_den, -1.0);
     nh.param("sph/k_rep", k_rep, -1.0);
     nh.param("sph/k_fri", k_fri, -1.0);
+    nh.param("sph/k_p", k_p , -1.0); 
     nh.param("sph/v_max", v_max, -1.0);
     nh.param("sph/a_max", a_max, -1.0);
     nh.param("sph/r_1",   r_1, -1.0);
@@ -110,6 +111,7 @@ void SPHSystem::processTraj(const common_msgs::Swarm_traj& swarmtraj)
         // 判断轨迹是否为空（基于 position 列表是否为空）
         if (!traj.position.empty()) {
             swarmTrajBuffer_[traj.traj_id] = traj;
+            // cout<< "size  "<<traj.position.size()<<endl;
         }
     }
 
@@ -386,7 +388,11 @@ void SPHSystem::updateParticleRole()
         }
 
         // 根据象限分布设置角色
-        particle.role = (quadrant1 && quadrant2 && quadrant3 && quadrant4) ? FOLLOWER : LEADER;
+
+        //DEBUG HERE=------------------------------------------------------------------------
+        // particle.role = (quadrant1 && quadrant2 && quadrant3 && quadrant4) ? FOLLOWER : LEADER;
+        particle.role = (quadrant1 && quadrant2 && quadrant3 && quadrant4) ? LEADER : LEADER;
+
     }
 }
 
@@ -427,37 +433,38 @@ void SPHSystem::updateParticleStates()
             continue;  // 如果是NULL_STATE，跳过剩余判断
         }
 
-        // 获取最近邻居的距离
-        double nearestDistance = nearestNeighborDistanceMap[&particle];
-        // ROS_INFO("Particle Index: %d, Nearest Distance: %.4f", particle.index, nearestDistance);
-        float h = settings.h;  
-        // 检查粒子的状态变化逻辑
-        if (nearestDistance < r_1 * h && nearestDistance >= 0.0) {
-            // 距离小于 r1 * h，进入REPEL状态
-            particle.state = REPEL;
-            // 清空该粒子的轨迹向量
-            swarmTrajBuffer_[particleIndex].position.clear();
-            continue;  // 如果进入REPEL状态，跳过剩余判断
-        } 
-        else if (nearestDistance > r_2 * h) {
-            // 距离大于 r_2 * h，进入ATTRACT状态
-            particle.state = ATTRACT;
-            // 清空该粒子的轨迹向量
-            swarmTrajBuffer_[particleIndex].position.clear();
-            continue;  // 如果进入ATTRACT状态，跳过剩余判断
-        } 
-        else {
-            // 距离在 r1 * h 和 r_2 * h 之间，保持TRAJ状态
-            particle.state = TRAJ;
-            continue;  // 保持TRAJ状态后，跳过剩余判断
-        }
+        // // DEBUG HERE=------------------------------------------------------------------------
+        // // 获取最近邻居的距离
+        // double nearestDistance = nearestNeighborDistanceMap[&particle];
+        // // ROS_INFO("Particle Index: %d, Nearest Distance: %.4f", particle.index, nearestDistance);
+        // float h = settings.h;  
+        // // 检查粒子的状态变化逻辑
+        // if (nearestDistance < r_1 * h && nearestDistance >= 0.0) {
+        //     // 距离小于 r1 * h，进入REPEL状态
+        //     particle.state = REPEL;
+        //     // 清空该粒子的轨迹向量
+        //     swarmTrajBuffer_[particleIndex].position.clear();
+        //     continue;  // 如果进入REPEL状态，跳过剩余判断
+        // } 
+        // else if (nearestDistance > r_2 * h) {
+        //     // 距离大于 r_2 * h，进入ATTRACT状态
+        //     particle.state = ATTRACT;
+        //     // 清空该粒子的轨迹向量
+        //     swarmTrajBuffer_[particleIndex].position.clear();
+        //     continue;  // 如果进入ATTRACT状态，跳过剩余判断
+        // } 
+        // else {
+        //     // 距离在 r1 * h 和 r_2 * h 之间，保持TRAJ状态
+        //     particle.state = TRAJ;
+        //     continue;  // 保持TRAJ状态后，跳过剩余判断
+        // }
 
-        // 当从ATTRACT或REPEL状态脱离时，重新进入TRAJ状态
-        if ((particle.state == ATTRACT || particle.state == REPEL) &&
-            (nearestDistance >= r_1 * h && nearestDistance <= r_2 * h)) {
-            particle.state = NEED_TRAJ;
-            continue;  // 进入NEED_TRAJ状态后，跳过剩余判断
-        }
+        // // 当从ATTRACT或REPEL状态脱离时，重新进入TRAJ状态
+        // if ((particle.state == ATTRACT || particle.state == REPEL) &&
+        //     (nearestDistance >= r_1 * h && nearestDistance <= r_2 * h)) {
+        //     particle.state = NEED_TRAJ;
+        //     continue;  // 进入NEED_TRAJ状态后，跳过剩余判断
+        // }
 
     }
 
@@ -689,29 +696,61 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 
             case ATTRACT:
                 // ATTRACT 状态 加速度计算
-                acceleration.x = p->u_den.x + p->u_fri.x + forceMap[p->index].x;
-                acceleration.y = p->u_den.y + p->u_fri.y + forceMap[p->index].y;
-                acceleration.z = p->u_den.z + p->u_fri.z + forceMap[p->index].z;
+                // acceleration.x = p->u_den.x + p->u_fri.x + forceMap[p->index].x;
+                // acceleration.y = p->u_den.y + p->u_fri.y + forceMap[p->index].y;
+                // acceleration.z = p->u_den.z + p->u_fri.z + forceMap[p->index].z;
+                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
+                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
+                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
                 break;
 
             case REPEL:
                 // REPEL 状态 加速度计算
-                acceleration.x = p->u_den.x + p->u_rep.x + forceMap[p->index].x;
-                acceleration.y = p->u_den.y + p->u_rep.y + forceMap[p->index].y;
-                acceleration.z = p->u_den.z + p->u_rep.z + forceMap[p->index].z;
+                // acceleration.x = p->u_den.x + p->u_rep.x + forceMap[p->index].x;
+                // acceleration.y = p->u_den.y + p->u_rep.y + forceMap[p->index].y;
+                // acceleration.z = p->u_den.z + p->u_rep.z + forceMap[p->index].z;
+                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
+                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
+                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
                 break;
 
             case TRAJ:
             case NEED_TRAJ:
                 // TRAJ 或 NEED_TRAJ 状态 加速度计算
-                if (traj_found) {
-                    const auto& traj_acceleration = itt->second.acceleration;
-                    if (!traj_acceleration.empty()) {
-                        acceleration.x += traj_acceleration[0].x;
-                        acceleration.y += traj_acceleration[0].y;
-                        acceleration.z += traj_acceleration[0].z;
+                // if (traj_found) {
+                //     const auto& traj_acceleration = itt->second.acceleration;
+                //     if (!traj_acceleration.empty()) {
+                //         acceleration.x += traj_acceleration[0].x;
+                //         acceleration.y += traj_acceleration[0].y;
+                //         acceleration.z += traj_acceleration[0].z;
+                //     }
+                // }
+
+                // DEBUG HERE...
+                if (traj_found)
+                {
+                    const auto& pos = itt->second.position;
+                    if (!pos.empty())
+                    {
+                        acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + k_p * (pos[0].x - p->position.x);
+                        acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + k_p * (pos[0].y - p->position.y);
+                        acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + k_p * (pos[0].z - p->position.z);
                     }
+                    
                 }
+                
+
+                // if (traj_found)
+                // {
+                //     const auto& vel = itt->second.velocity;
+                //     if (!vel.empty())
+                //     {
+                //         acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + k_p * (vel[0].x - p->velocity.x);
+                //         acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + k_p * (vel[0].y - p->velocity.y);
+                //         acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + k_p * (vel[0].z - p->velocity.z);
+                //     }
+                // }
+
                 break;
             
             default:
@@ -724,8 +763,6 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         //     ROS_ERROR("Unreasonable acceleration!");
         // }
 
-        //Updare traj
-        parallelUpdateParticleTraj();
         //  ROS_INFO("Acceleration - x: %f, y: %f, z: %f", acceleration.x, acceleration.y, acceleration.z);
         //加速度限制
         acceleration.x = clamp(acceleration.x, a_max);
@@ -754,7 +791,9 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         p->position.z += p->velocity.z * deltaTime;
 
     }
-     
+    
+    //Updare traj
+    parallelUpdateParticleTraj();
 }
 
 
@@ -1051,9 +1090,12 @@ void SPHSystem::parallelUpdateParticleTraj() {
     for (auto& entry : swarmTrajBuffer_) {
         auto& traj = entry.second;
 
+        // cout<<"size is:  "<< traj.position.size() << endl;
+
         // 如果轨迹为空，返回
         if (traj.position.empty() || traj.velocity.empty() ||
             traj.acceleration.empty() || traj.jerk.empty()) {
+                // cout<< "sadasdasdasdasdasdas"<<endl;
             continue;
         }
 
