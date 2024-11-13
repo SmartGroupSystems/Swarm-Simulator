@@ -433,7 +433,7 @@ void SPHSystem::updateParticleStates()
             continue;  // 如果是NULL_STATE，跳过剩余判断
         }
 
-        // // DEBUG HERE=------------------------------------------------------------------------
+
         // // 获取最近邻居的距离
         // double nearestDistance = nearestNeighborDistanceMap[&particle];
         // // ROS_INFO("Particle Index: %d, Nearest Distance: %.4f", particle.index, nearestDistance);
@@ -682,9 +682,12 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         switch (p->state) {
             case NULL_STATE:
                 // NULL_STATE 加速度计算
-                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
-                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
-                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
+                // acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
+                // acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
+                // acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
+                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
+                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
+                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
                 break;
 
             case NEAR_TARGET:

@@ -409,8 +409,8 @@ namespace FLAG_Race
             variable_num = (cps_num_-2*p_order_)*Dim_;
             nlopt::opt opt(nlopt::algorithm(nlopt::LD_LBFGS),variable_num);
             opt.set_min_objective(bspline_optimizer::costFunction,this);
-            opt.set_maxeval(200);
-            opt.set_maxtime(0.02);
+            opt.set_maxeval(500);
+            opt.set_maxtime(0.1);
             opt.set_xtol_rel(1e-5);
           
             vector<double> lb(variable_num), ub(variable_num);

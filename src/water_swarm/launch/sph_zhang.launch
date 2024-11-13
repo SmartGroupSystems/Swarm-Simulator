@@ -61,7 +61,7 @@
         <param name="sph/a_max"             value="$(arg a_max)"/>
         <param name="sph/r_1"               value="$(arg r_1)"/>
         <param name="sph/r_2"               value="$(arg r_2)"/>
-        <param name="sph/state_enabled"     value="true"/>
+        <param name="sph/state_enabled"     value="false"/>
         <param name="sph/vis_role"          value="false"/>
         <param name="sph/init_bias"         value="$(arg init_bias)"/>
     </node>

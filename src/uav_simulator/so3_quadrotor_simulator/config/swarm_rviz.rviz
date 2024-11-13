@@ -77,7 +77,6 @@ Visualization Manager:
       Name: particles
       Namespaces:
         particles: true
-        state_texts: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -201,13 +200,13 @@ Visualization Manager:
       Queue Size: 1000
       Value: false
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /traj_vis
       Name: swarm_traj
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -292,7 +291,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 29.831668853759766
+      Distance: 26.657169342041016
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -300,17 +299,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.44867753982543945
-        Y: -7.590985298156738
-        Z: -9.513346412859391e-07
+        X: 0.9662768244743347
+        Y: -15.224454879760742
+        Z: -6.459065843955614e-06
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5647963285446167
+      Pitch: 1.0297964811325073
       Target Frame: world
-      Yaw: 4.71676778793335
+      Yaw: 4.701767921447754
     Saved: ~
 Window Geometry:
   Displays:
