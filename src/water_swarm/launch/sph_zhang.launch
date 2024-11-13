@@ -6,11 +6,11 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="20"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="10"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="8.0"/>       <!-- 初始化时间 -->
-    <arg name="init_bias" value="9.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias" value="19.0"/>         <!-- 初始位置偏移量 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长，要与轨迹采样频率同步-->
     <arg name="h" value="10.0"/>                <!-- kernel function radius -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
@@ -61,14 +61,14 @@
         <param name="sph/a_max"             value="$(arg a_max)"/>
         <param name="sph/r_1"               value="$(arg r_1)"/>
         <param name="sph/r_2"               value="$(arg r_2)"/>
-        <param name="sph/state_enabled"     value="true"/>
+        <param name="sph/state_enabled"     value="false"/>
         <param name="sph/vis_role"          value="false"/>
         <param name="sph/init_bias"         value="$(arg init_bias)"/>
     </node>
 
     <!-- Obs map-->
-    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/> -->
-    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/narrow.pcd"/>
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/>
+    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/narrow.pcd"/> -->
     
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
