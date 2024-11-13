@@ -416,11 +416,11 @@ void SPHSystem::updateParticleStates()
             continue;  //
         }
 
-        if( particle.role == FOLLOWER ||particle.role == FREE)
-        {
-            particle.state = NULL_STATE;
-            continue;
-        }
+        // if( particle.role == FOLLOWER ||particle.role == FREE)
+        // {
+        //     particle.state = NULL_STATE;
+        //     continue;
+        // }
 
         // 检查粒子是否有轨迹（从swarmTrajBuffer_中查询）
         if (swarmTrajBuffer_.find(particleIndex) != swarmTrajBuffer_.end() &&
@@ -510,7 +510,7 @@ void SPHSystem::updateParticlesCPU(
 {   
     findNeighbors();
 
-    updateParticleRole();
+    // updateParticleRole();
 
     updateParticleStates();
 
@@ -692,9 +692,12 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 
             case NEAR_TARGET:
                 // NULL_STATE 加速度计算
-                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
-                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
-                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
+                // acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
+                // acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
+                // acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
+                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
+                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
+                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
                 break;
 
             case ATTRACT:

@@ -321,16 +321,16 @@ namespace FLAG_Race
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx) {
         swarmParticlesManager[index].curr_time = ros::Time::now();
-        if (particles.particles[index].role == FOLLOWER || particles.particles[index].role == FREE)
-        {
-            // ROS_INFO("Particle %d is FOLLOWER, skipping process.", particles.particles[index].index);
-            return;  
-        }
+        // if (particles.particles[index].role == FOLLOWER || particles.particles[index].role == FREE)
+        // {
+        //     // ROS_INFO("Particle %d is FOLLOWER, skipping process.", particles.particles[index].index);
+        //     return;  
+        // }
         // Check if the particle is in ATTRACT or REPEL state
-        if (particles.particles[index].state == ATTRACT || particles.particles[index].state == REPEL) {
-            ROS_INFO("Particle %d is in ATTRACT,REPEL or NULL state, skipping process.", particles.particles[index].index);
-            return;  // Exit the function early if in ATTRACT or REPEL state
-        }
+        // if (particles.particles[index].state == ATTRACT || particles.particles[index].state == REPEL) {
+        //     ROS_INFO("Particle %d is in ATTRACT,REPEL or NULL state, skipping process.", particles.particles[index].index);
+        //     return;  // Exit the function early if in ATTRACT or REPEL state
+        // }
         
         // if (particles.particles[index].state == TRAJ)
         // {
