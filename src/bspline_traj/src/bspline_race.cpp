@@ -384,13 +384,13 @@ namespace FLAG_Race
         }
 
         // Check if the distance between start_pt and end_pt is less than 0.2
-        double distance = (start_pt - end_pt).norm();
+        // double distance = (start_pt - end_pt).norm();
 
-        if (distance < 1.0) {
-            ROS_INFO("Start and goal are too close (distance: %f). Stopping planning.", distance);
-            // particles.particles[index].state = ParticleState::NEAR_TARGET;
-            return;  // Stop planning if the distance is less than 1.0
-        }
+        // if (distance < 1.0) {
+        //     ROS_INFO("Start and goal are too close (distance: %f). Stopping planning.", distance);
+        //     // particles.particles[index].state = ParticleState::NEAR_TARGET;
+        //     return;  // Stop planning if the distance is less than 1.0
+        // }
 
         // cout<< "start: "<< swarmParticlesManager[index].particle_index <<"  "<<start_pt.x()<< " "<< start_pt.y()<<" "<< start_pt.z()<<endl;
 
@@ -467,7 +467,7 @@ namespace FLAG_Race
             geometry_msgs::Point pos;
             pos.x = p_(i, 0);  
             pos.y = p_(i, 1);  
-            pos.z = 0.0;       
+            pos.z = 1.0;       
             traj_.position[i] = pos;
 
             vis_traj[i].x() = p_(i, 0);

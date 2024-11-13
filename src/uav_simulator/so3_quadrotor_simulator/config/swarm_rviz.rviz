@@ -10,7 +10,7 @@ Panels:
         - /MarkerArray1
         - /MarkerArray2
       Splitter Ratio: 0.520588219165802
-    Tree Height: 701
+    Tree Height: 363
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -77,6 +77,7 @@ Visualization Manager:
       Name: particles
       Namespaces:
         particles: true
+        state_texts: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -291,7 +292,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 44.59403610229492
+      Distance: 37.74017333984375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -299,17 +300,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.9421570897102356
-        Y: -13.689189910888672
-        Z: -6.459065843955614e-06
+        X: 7.045605659484863
+        Y: -5.49282169342041
+        Z: 4.239914233039599e-06
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.1697964668273926
+      Pitch: 1.5197962522506714
       Target Frame: world
-      Yaw: 4.696767807006836
+      Yaw: 5.491768836975098
     Saved: ~
 Window Geometry:
   Displays:

@@ -411,8 +411,9 @@ void SPHSystem::updateParticleStates()
             std::pow(particle.position.z - targetPosition.z, 2)
         );
 
-        if (distanceToTarget < 1.0) {
+        if (distanceToTarget < 0.35) {
             particle.state = NEAR_TARGET;
+            // cout<< "sadasdsa"<<endl;
             continue;  //
         }
 
@@ -705,9 +706,9 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
                 // acceleration.x = p->u_den.x + p->u_fri.x + forceMap[p->index].x;
                 // acceleration.y = p->u_den.y + p->u_fri.y + forceMap[p->index].y;
                 // acceleration.z = p->u_den.z + p->u_fri.z + forceMap[p->index].z;
-                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
-                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
-                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
+                // acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
+                // acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
+                // acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
                 break;
 
             case REPEL:
@@ -715,9 +716,9 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
                 // acceleration.x = p->u_den.x + p->u_rep.x + forceMap[p->index].x;
                 // acceleration.y = p->u_den.y + p->u_rep.y + forceMap[p->index].y;
                 // acceleration.z = p->u_den.z + p->u_rep.z + forceMap[p->index].z;
-                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
-                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
-                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
+                // acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
+                // acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
+                // acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
                 break;
 
             case TRAJ:

@@ -16,7 +16,7 @@
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
     <arg name="threshold_dist" value="0.03"/>   <!-- 粒子与虚拟粒子的碰撞检测距离 -->
     <arg name="k_den" value="1.0"/>           <!-- k_den -->
-    <arg name="k_rep" value="1.2"/>           <!-- k_rep -->
+    <arg name="k_rep" value="1.0"/>           <!-- k_rep -->
     <arg name="k_fri" value="1.5"/>           <!-- k_fri -->
     <arg name="k_p"   value="5.0"/>           <!-- k_p -->
     <arg name="k_force" value="5.0"/>       <!-- k_force -->
@@ -61,7 +61,7 @@
         <param name="sph/a_max"             value="$(arg a_max)"/>
         <param name="sph/r_1"               value="$(arg r_1)"/>
         <param name="sph/r_2"               value="$(arg r_2)"/>
-        <param name="sph/state_enabled"     value="false"/>
+        <param name="sph/state_enabled"     value="true"/>
         <param name="sph/vis_role"          value="false"/>
         <param name="sph/init_bias"         value="$(arg init_bias)"/>
     </node>
