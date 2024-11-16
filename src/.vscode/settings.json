@@ -78,7 +78,9 @@
     "bit": "cpp",
     "regex": "cpp",
     "*.ipp": "cpp",
-    "core": "cpp"
+    "core": "cpp",
+    "eigen": "cpp",
+    "dense": "cpp"
   },
   "C_Cpp_Runner.msvcBatchPath": "",
   "C_Cpp_Runner.cCompilerPath": "gcc",

@@ -739,14 +739,17 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
                     const auto& pos = itt->second.position;
                     if (!pos.empty())
                     {
-                        acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + k_p * (pos[0].x - p->position.x);
-                        acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + k_p * (pos[0].y - p->position.y);
-                        acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + k_p * (pos[0].z - p->position.z);
+                        acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + k_p * (pos[0].x - p->position.x) + forceMap[p->index].x;
+                        acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + k_p * (pos[0].y - p->position.y) + forceMap[p->index].y;
+                        acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + k_p * (pos[0].z - p->position.z) + forceMap[p->index].z;
+
+                        // acceleration.x =  k_p * (pos[0].x - p->position.x) ;
+                        // acceleration.y =  k_p * (pos[0].y - p->position.y) ;
+                        // acceleration.z =  k_p * (pos[0].z - p->position.z) ;
                     }
                     
                 }
                 
-
                 // if (traj_found)
                 // {
                 //     const auto& vel = itt->second.velocity;
@@ -1006,7 +1009,8 @@ void SPHSystem::pubroscmd()
             // 设置状态文本   
             if (vis_role)
             {
-                state_marker.text = roleToString(particle.role);
+                // state_marker.text = roleToString(particle.role);
+                state_marker.text = std::to_string(particle.index);
             }
             else
             {

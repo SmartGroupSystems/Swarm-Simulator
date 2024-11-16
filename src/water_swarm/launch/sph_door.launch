@@ -10,7 +10,7 @@
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="8.0"/>       <!-- 初始化时间 -->
-    <arg name="init_bias" value="19.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias" value="8.0"/>         <!-- 初始位置偏移量 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长，要与轨迹采样频率同步-->
     <arg name="h" value="10.0"/>                <!-- kernel function radius -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
@@ -67,8 +67,8 @@
     </node>
 
     <!-- Obs map-->
-    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/>
-    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/narrow.pcd"/> -->
+    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/> -->
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/narrow.pcd"/>
     
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">

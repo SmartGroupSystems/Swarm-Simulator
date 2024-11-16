@@ -642,21 +642,27 @@ namespace FLAG_Race
         std::regex topic_pattern("/particle(\\d+)/odom");
         std::smatch match;
         
+        //EDT & MAP
+        auto sdf_map_ = std::make_shared<SDFMap>();
+        sdf_map_->initMap(nh);
+        auto edt_environment_ = std::make_shared<EDTEnvironment>();
+        edt_environment_->setMap(sdf_map_);
+
         for (const auto &info : topic_list) {
             if (info.datatype == "nav_msgs/Odometry" && std::regex_search(info.name, match, topic_pattern)) {
                 try {
                     std::string particle_index = match[1];
                     std::string particle_base = "/particle" + particle_index;
-                    std::string odom_topic = particle_base + "/odom";
-                    std::string cloud_topic = cloud_topic_;
+                    // std::string odom_topic = particle_base + "/odom";
+                    // std::string cloud_topic = cloud_topic_;
 
                     std::cout << "\033[1;33m" << particle_base << "  init: "<< "\033[0m" << std::endl;
 
-                    //EDT & MAP
-                    auto sdf_map_ = std::make_shared<SDFMap>();
-                    sdf_map_->initMap(nh, particle_base, odom_topic, cloud_topic);
-                    auto edt_environment_ = std::make_shared<EDTEnvironment>();
-                    edt_environment_->setMap(sdf_map_);
+                    // //EDT & MAP
+                    // auto sdf_map_ = std::make_shared<SDFMap>();
+                    // sdf_map_->initMap(nh, particle_base, odom_topic, cloud_topic);
+                    // auto edt_environment_ = std::make_shared<EDTEnvironment>();
+                    // edt_environment_->setMap(sdf_map_);
                     
                     //ASTAR
                     auto geo_path_finder_ = std::make_shared<Astar>();

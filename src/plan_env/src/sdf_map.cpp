@@ -270,9 +270,9 @@ void SDFMap::initMap(ros::NodeHandle& nh) {
   // use odometry and point cloud
 
   indep_cloud_sub_ =
-      nh.subscribe<sensor_msgs::PointCloud2>("/sdf_map/cloud", 10, &SDFMap::cloudCallback, this);
+      nh.subscribe<sensor_msgs::PointCloud2>("/map_generator/global_cloud", 10, &SDFMap::cloudCallback, this);
   indep_odom_sub_ =
-      nh.subscribe<nav_msgs::Odometry>("/sdf_map/odom", 10, &SDFMap::odomCallback, this);
+      nh.subscribe<nav_msgs::Odometry>("/particle0/odom", 10, &SDFMap::odomCallback, this);
 
   occ_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::updateOccupancyCallback, this);
   esdf_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::updateESDFCallback, this);
