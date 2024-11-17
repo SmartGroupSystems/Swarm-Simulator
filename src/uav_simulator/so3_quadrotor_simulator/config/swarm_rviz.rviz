@@ -88,7 +88,7 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 114; 159; 207
+      Color: 32; 74; 135
       Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
@@ -244,13 +244,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /visualization_trajectories
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -291,7 +291,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 38.7974739074707
+      Distance: 20.98400115966797
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -299,17 +299,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 6.962102890014648
-        Y: 2.8225417137145996
-        Z: 1.7491945982328616e-05
+        X: 5.342012405395508
+        Y: 1.2143280506134033
+        Z: -0.9999740123748779
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5247962474822998
-      Target Frame: world
-      Yaw: 0.008582115173339844
+      Pitch: 1.5697963237762451
+      Target Frame: camera_frame
+      Yaw: 0.003581932745873928
     Saved: ~
 Window Geometry:
   Displays:

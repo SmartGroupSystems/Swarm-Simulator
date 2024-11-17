@@ -71,7 +71,7 @@ namespace FLAG_Race
             double trajVisParam;
             std::string cloud_topic_;
             std::mutex mtx;
-            double init_bias;
+            double init_bias_x, init_bias_y;
 
             //智能类指针struct
             std::shared_ptr<UniformBspline> u;

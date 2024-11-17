@@ -6,18 +6,19 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="60"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="20"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="8.0"/>       <!-- 初始化时间 -->
-    <arg name="init_bias" value="8.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_x" value="0.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_y" value="8.0"/>         <!-- 初始位置偏移量 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长，要与轨迹采样频率同步-->
     <arg name="h" value="10.0"/>                <!-- kernel function radius -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
     <arg name="threshold_dist" value="0.03"/>   <!-- 粒子与虚拟粒子的碰撞检测距离 -->
-    <arg name="k_den" value="1.0"/>           <!-- k_den -->
+    <arg name="k_den" value="1.3"/>           <!-- k_den -->
     <arg name="k_rep" value="1.0"/>           <!-- k_rep -->
-    <arg name="k_fri" value="1.5"/>           <!-- k_fri -->
+    <arg name="k_fri" value="1.7"/>           <!-- k_fri -->
     <arg name="k_p"   value="5.0"/>           <!-- k_p -->
     <arg name="k_force" value="0.0"/>       <!-- k_force -->
     <arg name="v_max" value="1.0"/>             <!-- v_max，必须大于规划速度-->
@@ -63,7 +64,8 @@
         <param name="sph/r_2"               value="$(arg r_2)"/>
         <param name="sph/state_enabled"     value="false"/>
         <param name="sph/vis_role"          value="true"/>
-        <param name="sph/init_bias"         value="$(arg init_bias)"/>
+        <param name="sph/init_bias_x"       value="$(arg init_bias_x)"/>
+        <param name="sph/init_bias_y"       value="$(arg init_bias_y)"/>
     </node>
 
     <!-- Obs map-->
@@ -78,7 +80,8 @@
         <param name="fsm/cloud_topic"      type="string" value="/map_generator/global_cloud" />
         <param name="fsm/planInterval"     value="1000.0" /> 
         <param name="fsm/trajVisParam"     value="1.0" /> 
-        <param name="fsm/init_bias"          value="$(arg init_bias)"/>
+        <param name="fsm/init_bias_x"      value="$(arg init_bias_x)"/>
+        <param name="fsm/init_bias_y"      value="$(arg init_bias_y)"/>
 
         <!-- SDF Map -->
         <param name="sdf_map/resolution"   value="0.1" /> 
@@ -166,5 +169,5 @@
 
     <!-- RViz-->
     <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/swarm_rviz.rviz" />
-    
+    <!-- <node pkg="water_swarm" type="sph_vis" name="sph_vis_node" output="screen"/> -->
 </launch>

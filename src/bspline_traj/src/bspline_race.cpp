@@ -9,7 +9,8 @@ namespace FLAG_Race
         nh.param("fsm/planInterval", planInterval, -1.0);
         nh.param<std::string>("fsm/cloud_topic", cloud_topic_, "click_map");
         nh.param("fsm/trajVisParam", trajVisParam, -1.0);
-        nh.param("fsm/init_bias", init_bias, -1.0);
+        nh.param("fsm/init_bias_x", init_bias_x, -1.0);
+        nh.param("fsm/init_bias_y", init_bias_y, -1.0);
         initCallback(nh);
         parallelInit(nh);
     }
@@ -152,8 +153,8 @@ namespace FLAG_Race
         particles_goal = init_particles;                                            
         for (size_t i = 0; i < particles_goal.particles.size(); i++)
         {
-            particles_goal.particles[i].position.x += msg->pose.position.x;
-            particles_goal.particles[i].position.y += msg->pose.position.y + init_bias;
+            particles_goal.particles[i].position.x += msg->pose.position.x + init_bias_x;
+            particles_goal.particles[i].position.y += msg->pose.position.y + init_bias_y;
             particles_goal.particles[i].position.z += msg->pose.position.z;
             particles_goal.particles[i].index = init_particles.particles[i].index;
 

@@ -79,7 +79,7 @@ void swarmParticlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg) {
 
         // 更新或添加到持久标记集合中
         // 每隔8秒更新持久标记
-        if (ros::Time::now() - last_update_time >= ros::Duration(8.0)) {
+        if (ros::Time::now() - last_update_time >= ros::Duration(12.0)) {
             count ++;
             persistentMarkers[particle.index] = marker;
             if (count == msg->particles.size())

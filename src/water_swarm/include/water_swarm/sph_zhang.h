@@ -60,7 +60,7 @@ double v_max, a_max;
 bool   state_enabled;//是否在rviz中显示粒子状态
 bool   vis_role;//是否显示角色，和state显示二选一
 bool   receive_target = false;
-double init_bias;
+double init_bias_x, init_bias_y;
 
 void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);

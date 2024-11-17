@@ -25,7 +25,8 @@ int main(int argc, char **argv) {
     nh.param("sph/r_2",   r_2, -1.0);
     nh.param("sph/state_enabled", state_enabled, false);  // 默认值为 false
     nh.param("sph/vis_role", vis_role, false);  // 默认值为 false
-    nh.param("sph/init_bias", init_bias, -1.0);  //
+    nh.param("sph/init_bias_x", init_bias_x, -1.0);  //
+    nh.param("sph/init_bias_y", init_bias_y, -1.0);  //
     timer                 = nh.createTimer(ros::Duration(updateInterval),   timerCallback);
     particles_publisher   = nh.advertise<visualization_msgs::MarkerArray>("particles_vis", 10);
     virtual_particles_publisher = nh.advertise<visualization_msgs::MarkerArray>("virtual_particles_vis", 10);
@@ -136,7 +137,8 @@ void SPHSystem::initParticles()
             // 初始化每个粒子
             Particle p;
             p.position.x = col * particleInterval;
-            p.position.y = row * particleInterval-init_bias;
+            p.position.x = col * particleInterval-init_bias_x;
+            p.position.y = row * particleInterval-init_bias_y;
             p.position.z = 1.0; // 默认z值为1
             p.velocity.x = 0.0;
             p.velocity.y = 0.0;
