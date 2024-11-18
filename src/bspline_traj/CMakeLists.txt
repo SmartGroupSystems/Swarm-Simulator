@@ -75,4 +75,5 @@ target_link_libraries(swarm_planning
 
 add_executable(traj_server src/traj_server.cpp)
 target_link_libraries(traj_server ${catkin_LIBRARIES})  
-
+add_executable(traj_saver src/traj_saver.cpp)
+target_link_libraries(traj_saver ${catkin_LIBRARIES})  
