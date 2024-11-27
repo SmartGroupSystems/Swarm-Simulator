@@ -18,7 +18,9 @@ int main(int argc, char **argv) {
     nh.param("sph/k_den", k_den, -1.0);
     nh.param("sph/k_rep", k_rep, -1.0);
     nh.param("sph/k_fri", k_fri, -1.0);
-    nh.param("sph/k_p", k_p , -1.0); 
+    nh.param("sph/k_p", k_p, -1.0);  // 位置误差比例增益，默认值 -1.0
+    nh.param("sph/k_d", k_d, 0.0);  // 速度误差微分增益，默认值 0.0
+    nh.param("sph/k_ff", k_ff, 0.0); // 前馈补偿增益，默认值 0.0
     nh.param("sph/v_max", v_max, -1.0);
     nh.param("sph/a_max", a_max, -1.0);
     nh.param("sph/r_1",   r_1, -1.0);
@@ -407,17 +409,17 @@ void SPHSystem::updateParticleStates()
         const auto& targetPosition = targetMap[particleIndex];
     
         // 计算粒子当前位置与目标点的距离
-        double distanceToTarget = std::sqrt(
-            std::pow(particle.position.x - targetPosition.x, 2) +
-            std::pow(particle.position.y - targetPosition.y, 2) +
-            std::pow(particle.position.z - targetPosition.z, 2)
-        );
+        // double distanceToTarget = std::sqrt(
+        //     std::pow(particle.position.x - targetPosition.x, 2) +
+        //     std::pow(particle.position.y - targetPosition.y, 2) +
+        //     std::pow(particle.position.z - targetPosition.z, 2)
+        // );
 
-        if (distanceToTarget < 0.35) {
-            particle.state = NEAR_TARGET;
-            // cout<< "sadasdsa"<<endl;
-            continue;  //
-        }
+        // if (distanceToTarget < 0.05) {
+        //     particle.state = NEAR_TARGET;
+        //     // cout<< "sadasdsa"<<endl;
+        //     continue;  //
+        // }
 
         // if( particle.role == FOLLOWER ||particle.role == FREE)
         // {
@@ -739,15 +741,37 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
                 if (traj_found)
                 {
                     const auto& pos = itt->second.position;
+                    const auto& vel = itt->second.velocity;
+                    const auto& acc = itt->second.acceleration;
                     if (!pos.empty())
                     {
-                        acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + k_p * (pos[0].x - p->position.x) + forceMap[p->index].x;
-                        acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + k_p * (pos[0].y - p->position.y) + forceMap[p->index].y;
-                        acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + k_p * (pos[0].z - p->position.z) + forceMap[p->index].z;
+                        // 计算位置误差和速度误差
+                        Eigen::Vector3d position_error(pos[0].x - p->position.x,
+                                                    pos[0].y - p->position.y,
+                                                    pos[0].z - p->position.z);
 
-                        // acceleration.x =  k_p * (pos[0].x - p->position.x) ;
-                        // acceleration.y =  k_p * (pos[0].y - p->position.y) ;
-                        // acceleration.z =  k_p * (pos[0].z - p->position.z) ;
+                        Eigen::Vector3d velocity_error(vel[0].x - p->velocity.x,
+                                                    vel[0].y - p->velocity.y,
+                                                    vel[0].z - p->velocity.z);
+
+                        // 引入前馈补偿和误差控制
+                        acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x 
+                                        + k_p * position_error.x() 
+                                        + k_d * velocity_error.x() 
+                                        + k_ff * acc[0].x
+                                        + forceMap[p->index].x;
+
+                        acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y 
+                                        + k_p * position_error.y() 
+                                        + k_d * velocity_error.y() 
+                                        + k_ff * acc[0].y
+                                        + forceMap[p->index].y;
+
+                        acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z 
+                                        + k_p * position_error.z() 
+                                        + k_d * velocity_error.z() 
+                                        + k_ff * acc[0].z
+                                        + forceMap[p->index].z;
                     }
                     
                 }

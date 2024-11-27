@@ -6,7 +6,7 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="4"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="1"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.8"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="3.0"/>       <!-- 初始化时间 -->
@@ -19,7 +19,9 @@
     <arg name="k_den" value="1.0"/>           <!-- k_den -->
     <arg name="k_rep" value="1.0"/>           <!-- k_rep -->
     <arg name="k_fri" value="1.5"/>           <!-- k_fri -->
-    <arg name="k_p"   value="5.0"/>           <!-- k_p -->
+    <arg name="k_p"   value="2.0"/>           <!-- k_p -->
+    <arg name="k_d"   value="0.5"/>           <!-- k_p -->
+    <arg name="k_ff"   value="1.0"/>           <!-- k_p -->
     <arg name="k_force" value="0.0"/>       <!-- k_force -->
     <arg name="v_max" value="1.0"/>             <!-- v_max，必须大于规划速度-->
     <arg name="a_max" value="1.5"/>             <!-- a_max，必须大于规划加速度 -->
@@ -58,6 +60,8 @@
         <param name="sph/k_rep"             value="$(arg k_rep)"/> 
         <param name="sph/k_fri"             value="$(arg k_fri)"/> 
         <param name="sph/k_p"               value="$(arg k_p)"/> 
+        <param name="sph/k_d"               value="(arg k_d)" />
+        <param name="sph/k_ff"              value="(arg k_ff)" />
         <param name="sph/v_max"             value="$(arg v_max)"/>
         <param name="sph/a_max"             value="$(arg a_max)"/>
         <param name="sph/r_1"               value="$(arg r_1)"/>
@@ -69,7 +73,7 @@
     </node>
 
     <!-- Obs map,based on the real environment.-->
-    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/experiment.pcd"/>
+    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/experiment.pcd"/> -->
     
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">

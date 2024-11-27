@@ -54,7 +54,7 @@ double particleVisScale;
 double updateInterval;
 double threshold_dist;
 float  mass, restDensity, h, g;
-double k_den, k_rep, k_fri,k_p;
+double k_den, k_rep, k_fri,k_p,k_d,k_ff;
 double r_1,r_2;
 double v_max, a_max;
 bool   state_enabled;//是否在rviz中显示粒子状态
