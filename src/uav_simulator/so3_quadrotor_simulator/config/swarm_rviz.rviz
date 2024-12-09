@@ -192,13 +192,13 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /path_vis
       Name: particlepath
       Namespaces:
         {}
       Queue Size: 1000
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /traj_vis
@@ -252,13 +252,13 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /sdf_map/update_range
       Name: Marker
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -299,7 +299,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 29.1259822845459
+      Distance: 31.131315231323242
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -307,9 +307,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 5.073750972747803
-        Y: 0.8393608331680298
-        Z: -0.9999814629554749
+        X: 6.040750503540039
+        Y: 1.5609703063964844
+        Z: -0.999979555606842
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -317,7 +317,7 @@ Visualization Manager:
       Near Clip Distance: 0.009999999776482582
       Pitch: 1.5697963237762451
       Target Frame: camera_frame
-      Yaw: 0.00358020793646574
+      Yaw: 6.281766414642334
     Saved: ~
 Window Geometry:
   Displays:
@@ -335,5 +335,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1386
-  X: 619
-  Y: 197
+  X: 534
+  Y: 123

@@ -6,7 +6,7 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="40"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="20"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="8.0"/>       <!-- 初始化时间 -->
@@ -159,15 +159,17 @@
         <param name="planning/TrajSampleRate" value="50" />
         <param name="planning/max_vel" value="$(arg planv_max)" />
         <param name="planning/max_acc" value="$(arg plana_max)" />
-        <!-- <param name="planning/lambda1" value="5.0" />
+        <param name="planning/lambda1" value="5.0" />
         <param name="planning/lambda2" value="1.0" />
         <param name="planning/lambda3" value="1000.0" />
-        <param name="planning/dist_p" value="0.5" /> -->
-        <param name="planning/lambda1" value="80.0" />
+        <param name="planning/dist_p" value="0.5" />
+        <!-- <param name="planning/lambda1" value="80.0" />
         <param name="planning/lambda2" value="0.00001" />
-        <param name="planning/lambda3" value="1000.0" />
+        <param name="planning/lambda3" value="1000.0" /> -->
         <param name="planning/safe_distance" value="0.8" />
         <param name="planning/k_force" value="$(arg k_force)" />
+        <param name="planning/planning/opt_maxeval" value="500" />
+        <param name="planning/planning/opt_maxtime" value="1.5" />
     </node>
 
     <!-- RViz-->

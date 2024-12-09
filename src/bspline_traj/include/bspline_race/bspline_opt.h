@@ -45,7 +45,8 @@ namespace FLAG_Race
             double lambda1_,lambda2_,lambda3_;// smooth cost, ESDF cost, feasibility cost
             double max_vel_;//最大速度
             double max_acc_;//最大加速度
-
+            double opt_maxtime;
+            int    opt_maxeval;
             //从A star得到的路径点
             std::vector<Eigen::Vector2d> path_;
             

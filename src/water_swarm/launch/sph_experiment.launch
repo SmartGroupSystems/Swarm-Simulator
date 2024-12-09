@@ -148,6 +148,9 @@
         <param name="planning/dist_p" value="0.5" />
         <param name="planning/safe_distance" value="0.8" />
         <param name="planning/k_force" value="$(arg k_force)" />
+        <param name="planning/planning/opt_maxeval" value="500" />
+        <param name="planning/planning/opt_maxtime" value="0.2" />
+        
     </node>
 
     <!-- Save Traj-->

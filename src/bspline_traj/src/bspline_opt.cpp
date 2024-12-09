@@ -32,7 +32,8 @@ namespace FLAG_Race
         nh.param("planning/lambda3",lambda3_,-1.0);
         nh.param("planning/safe_distance",safe_distance_,-1.0);
         nh.param("planning/k_force",k_force,-1.0);
-
+        nh.param("planning/opt_maxeval",opt_maxeval,500);
+        nh.param("planning/opt_maxtime",opt_maxtime,0.2);
         std::cout << "\033[1;32m" << "success init Opt module" << "\033[0m" << std::endl;
         marker_pub = nh.advertise<visualization_msgs::Marker>("/optimization_path", 1);
     }
@@ -417,8 +418,8 @@ namespace FLAG_Race
             variable_num = (cps_num_-2*p_order_)*Dim_;
             nlopt::opt opt(nlopt::algorithm(nlopt::LD_LBFGS),variable_num);
             opt.set_min_objective(bspline_optimizer::costFunction,this);
-            opt.set_maxeval(500);
-            opt.set_maxtime(0.2);
+            opt.set_maxeval(opt_maxeval);
+            opt.set_maxtime(opt_maxtime);
             opt.set_xtol_rel(1e-5);
 
             vector<double> lb(variable_num), ub(variable_num);
