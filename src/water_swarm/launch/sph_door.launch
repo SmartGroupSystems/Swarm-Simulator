@@ -6,12 +6,12 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="20"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="40"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="8.0"/>       <!-- 初始化时间 -->
-    <arg name="init_bias_x" value="0.0"/>         <!-- 初始位置偏移量 -->
-    <arg name="init_bias_y" value="8.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_x" value="2.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_y" value="0.0"/>         <!-- 初始位置偏移量 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长，要与轨迹采样频率同步-->
     <arg name="h" value="10.0"/>                <!-- kernel function radius -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
@@ -70,7 +70,7 @@
 
     <!-- Obs map-->
     <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/> -->
-    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/narrow.pcd"/>
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/door1.pcd"/>
     
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
@@ -159,8 +159,8 @@
         <param name="planning/TrajSampleRate" value="50" />
         <param name="planning/max_vel" value="$(arg planv_max)" />
         <param name="planning/max_acc" value="$(arg plana_max)" />
-        <param name="planning/lambda1" value="5.0" />
-        <param name="planning/lambda2" value="1.0" />
+        <param name="planning/lambda1" value="80.0" />
+        <param name="planning/lambda2" value="0.00001" />
         <param name="planning/lambda3" value="1000.0" />
         <param name="planning/dist_p" value="0.5" />
         <param name="planning/safe_distance" value="0.8" />

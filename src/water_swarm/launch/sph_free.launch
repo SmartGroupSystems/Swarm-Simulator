@@ -6,7 +6,7 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="200"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="1"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.8"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="3.0"/>       <!-- 初始化时间 -->
@@ -62,6 +62,6 @@
         <param name="sph/init_bias_y"       value="$(arg init_bias_y)"/>
     </node>
     <!-- RViz-->
-    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/experiment.rviz" />
+    <!-- <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/experiment.rviz" /> -->
     
 </launch>

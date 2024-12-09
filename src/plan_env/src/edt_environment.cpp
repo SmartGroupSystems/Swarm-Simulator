@@ -166,6 +166,19 @@ pair<double, Eigen::Vector3d> EDTEnvironment::evaluateEDTWithGrad(const Eigen::V
   getSurroundDistance(sur_pts, dists);
   interpolateTrilinear(dists, diff, dist, grad);
 
+    //   for (int i = 0; i < 2; ++i) {
+    //     for (int j = 0; j < 2; ++j) {
+    //         for (int k = 0; k < 2; ++k) {
+    //             const Eigen::Vector3d& pt = sur_pts[i][j][k];
+    //             double dist = dists[i][j][k];
+    //             std::cout << "sur_pts[" << i << "][" << j << "][" << k << "] = (" 
+    //                       << pt.x() << ", " << pt.y() << ", " << pt.z() << "), "
+    //                       << "dists[" << i << "][" << j << "][" << k << "] = " 
+    //                       << dist << std::endl;
+    //         }
+    //     }
+    // }
+
   // 返回 dist 和 grad
   return std::make_pair(dist, grad);
 }

@@ -159,10 +159,13 @@
         <param name="planning/TrajSampleRate" value="50" />
         <param name="planning/max_vel" value="$(arg planv_max)" />
         <param name="planning/max_acc" value="$(arg plana_max)" />
-        <param name="planning/lambda1" value="5.0" />
+        <!-- <param name="planning/lambda1" value="5.0" />
         <param name="planning/lambda2" value="1.0" />
         <param name="planning/lambda3" value="1000.0" />
-        <param name="planning/dist_p" value="0.5" />
+        <param name="planning/dist_p" value="0.5" /> -->
+        <param name="planning/lambda1" value="80.0" />
+        <param name="planning/lambda2" value="0.00001" />
+        <param name="planning/lambda3" value="1000.0" />
         <param name="planning/safe_distance" value="0.8" />
         <param name="planning/k_force" value="$(arg k_force)" />
     </node>

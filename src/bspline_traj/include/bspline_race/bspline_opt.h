@@ -70,6 +70,7 @@ namespace FLAG_Race
             // std::shared_ptr<EDTEnvironment> edt_environment_;
             EDTEnvironment::Ptr edt_environment_;
             
+            ros::Publisher marker_pub;
         public://函数
             bspline_optimizer() {}
             bspline_optimizer(const std::vector<Eigen::Vector2d> &path, const int&Dim,const int &p);
@@ -149,6 +150,7 @@ namespace FLAG_Race
             common_msgs::Force calcGradForce(const Eigen::Vector3d& q_3d);
             double mapForceToKDen(double force_magnitude);
             bool checkTrajCollision(const common_msgs::BsplineTraj traj);
+            void publishTrajectory(const std::vector<double> &control_points);
     };
 }
 

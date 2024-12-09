@@ -37,6 +37,12 @@
     <arg name="map_size_x_" value="30.0"/>
     <arg name="map_size_y_" value="30.0"/>
     <arg name="map_size_z_" value=" 3.0"/>
+
+        <!-- intrinsic params of the depth camera -->
+    <arg name="cx" value="321.04638671875"/>
+    <arg name="cy" value="243.44969177246094"/>
+    <arg name="fx" value="387.229248046875"/>
+    <arg name="fy" value="387.229248046875"/>
     
     <!-- Run the sph_particles node -->
     <node name="sph_zhang" pkg="water_swarm" type="sph_zhang" output="screen">
@@ -54,8 +60,8 @@
         <param name="sph/k_rep"             value="$(arg k_rep)"/> 
         <param name="sph/k_fri"             value="$(arg k_fri)"/> 
         <param name="sph/k_p"               value="$(arg k_p)"/> 
-        <param name="sph/k_d"               value="(arg k_d)" />
-        <param name="sph/k_ff"              value="(arg k_ff)" />
+        <!-- <param name="sph/k_d"               value="(arg k_d)" />
+        <param name="sph/k_ff"              value="(arg k_ff)" /> -->
         <param name="sph/v_max"             value="$(arg v_max)"/>
         <param name="sph/a_max"             value="$(arg a_max)"/>
         <param name="sph/r_1"               value="$(arg r_1)"/>
@@ -67,7 +73,7 @@
     </node>
 
     <!-- Obs map,based on the real environment.-->
-    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/experiment.pcd"/> -->
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/experiment.pcd"/>
     
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
@@ -86,14 +92,19 @@
         <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
         <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
 
-        <param name="sdf_map/local_update_range_x"  value="30.0" /> 
-        <param name="sdf_map/local_update_range_y"  value="30.0" /> 
+        <param name="sdf_map/local_update_range_x"  value="5.0" /> 
+        <param name="sdf_map/local_update_range_y"  value="5.0" /> 
         <param name="sdf_map/local_update_range_z"  value="3.0" /> 
         
         <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
         <param name="sdf_map/local_bound_inflate"    value="0.0"/>
         <param name="sdf_map/local_map_margin" value="50"/>
         <param name="sdf_map/ground_height"        value="-0.01"/>
+        <!-- camera parameter -->
+        <param name="sdf_map/cx" value="$(arg cx)"/>
+        <param name="sdf_map/cy" value="$(arg cy)"/>
+        <param name="sdf_map/fx" value="$(arg fx)"/>
+        <param name="sdf_map/fy" value="$(arg fy)"/>
         <!-- depth filter -->
         <param name="sdf_map/use_depth_filter" value="true"/>
         <param name="sdf_map/depth_filter_tolerance" value="0.15"/>
@@ -140,11 +151,11 @@
     </node>
 
     <!-- Save Traj-->
-    <node name="traj_saver" pkg="bspline_race" type="traj_saver" output="screen">
+    <!-- <node name="traj_saver" pkg="bspline_race" type="traj_saver" output="screen">
         <param name="wait_time" value="5.0" />
         <param name="particle_num" value="$(arg particleCount)"/>
         <param name="flight_height" value="0.7"/>
-    </node>
+    </node> -->
 
     <!-- Waypoint-->
     <node name="publish_target" pkg="target_publisher" type="publish_target" output="screen">

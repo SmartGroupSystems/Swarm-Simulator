@@ -34,6 +34,7 @@ namespace FLAG_Race
         nh.param("planning/k_force",k_force,-1.0);
 
         std::cout << "\033[1;32m" << "success init Opt module" << "\033[0m" << std::endl;
+        marker_pub = nh.advertise<visualization_msgs::Marker>("/optimization_path", 1);
     }
 
     void bspline_optimizer::setOptParam(const double lambda1,const double lambda2,const double lambda3,
@@ -101,6 +102,7 @@ namespace FLAG_Race
             control_points_.row(i+p_order_) = path_[i+1];
 
         }
+        // std::cout << "control_points_: \n" << control_points_ << std::endl;
     }
 
     void bspline_optimizer::initialControlPoints(UniformBspline u)
@@ -251,7 +253,7 @@ namespace FLAG_Race
             q_3d << q(0,i), q(1,i) , 1.0; 
       
             edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
-            // cout << "dist_grad_3d is "<< dist_grad_3d.transpose()<<endl;
+            // std::cout << "q_3d: [" << q_3d(0) << ", " << q_3d(1) << ", " << q_3d(2) << "] dist: " << dist << std::endl;
             dist_grad << dist_grad_3d(0), dist_grad_3d(1);
 
             if (dist_grad.norm() > 1e-4) dist_grad.normalize();
@@ -261,34 +263,39 @@ namespace FLAG_Race
                 gradient.col(i) += 2.0 * (dist - safe_distance_) * dist_grad;     
             }
         }   
+        //  cout << "============================================== \n"<<endl;
     }
 
     common_msgs::Force bspline_optimizer::calcGradForce(const Eigen::Vector3d& q_3d)
     {
-        common_msgs::Force force; 
-        double dist; 
-        Eigen::Vector3d dist_grad_3d; 
-
-        edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
-
-        if (dist >  safe_distance_) {
+        common_msgs::Force force;
             force.x = 0.0;
             force.y = 0.0;
             force.z = 0.0;
-            force.k_den = 1.0;
-            return force;
-        }
+            force.k_den = 1.0; 
+        // double dist; 
+        // Eigen::Vector3d dist_grad_3d; 
 
-        double force_magnitude = k_force * std::pow((dist - safe_distance_), 2);        
-        Eigen::Vector3d grad_normalized = dist_grad_3d.normalized();
+        // edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
 
-        // 按照归一化梯度方向分配力
-        force.x = force_magnitude * grad_normalized.x();
-        force.y = force_magnitude * grad_normalized.y();
-        force.z = force_magnitude * grad_normalized.z() * 0.0;//z轴不加力
+        // if (dist >  safe_distance_) {
+        //     force.x = 0.0;
+        //     force.y = 0.0;
+        //     force.z = 0.0;
+        //     force.k_den = 1.0;
+        //     return force;
+        // }
 
-        //基于局部ESDF更新k_den系数
-        force.k_den = mapForceToKDen(force_magnitude);
+        // double force_magnitude = k_force * std::pow((dist - safe_distance_), 2);        
+        // Eigen::Vector3d grad_normalized = dist_grad_3d.normalized();
+
+        // // 按照归一化梯度方向分配力
+        // force.x = force_magnitude * grad_normalized.x();
+        // force.y = force_magnitude * grad_normalized.y();
+        // force.z = force_magnitude * grad_normalized.z() * 0.0;//z轴不加力
+
+        // //基于局部ESDF更新k_den系数
+        // force.k_den = mapForceToKDen(force_magnitude);
 
         return force;
     }
@@ -396,6 +403,7 @@ namespace FLAG_Race
                 opt->min_cost_     = cost;
                 opt->best_variable_ = x;
             }
+        // opt->publishTrajectory(x);  // 在每次迭代后输出当前的控制点
         return cost;
     }
 
@@ -409,10 +417,10 @@ namespace FLAG_Race
             variable_num = (cps_num_-2*p_order_)*Dim_;
             nlopt::opt opt(nlopt::algorithm(nlopt::LD_LBFGS),variable_num);
             opt.set_min_objective(bspline_optimizer::costFunction,this);
-            opt.set_maxeval(800);
-            opt.set_maxtime(0.4);
+            opt.set_maxeval(500);
+            opt.set_maxtime(0.2);
             opt.set_xtol_rel(1e-5);
-          
+
             vector<double> lb(variable_num), ub(variable_num);
             vector<double> q(variable_num); 
             for (size_t j = 0; j < cps_num_-2*p_order_; j++)
@@ -431,10 +439,12 @@ namespace FLAG_Race
             }
             opt.set_lower_bounds(lb);
             opt.set_upper_bounds(ub);
+
         try
         {
             double final_cost;
-            nlopt::result result = opt.optimize(q, final_cost);    
+            nlopt::result result = opt.optimize(q, final_cost);
+            publishTrajectory(q);     
         }
         catch(std::exception &e)
         {
@@ -449,7 +459,100 @@ namespace FLAG_Race
         }
             // cout<< "optimize successfully~"<<endl;
             // cout << "iner:\n"<<control_points_<<endl;
-            // cout<<"iter num :"<<iter_num_<<endl;
+            cout<<"iter num :"<<iter_num_<<endl;
+    }
+
+    void bspline_optimizer::publishTrajectory(const std::vector<double>& control_points)
+    {
+        // 创建轨迹标记
+        visualization_msgs::Marker line_strip;
+        line_strip.header.frame_id = "world";
+        line_strip.header.stamp = ros::Time::now();
+        line_strip.ns = "trajectory";
+        line_strip.action = visualization_msgs::Marker::ADD;
+        line_strip.pose.orientation.w = 1.0;
+
+        // 使用递增的id来保留每次轨迹
+        line_strip.id = iter_num_;  // 使用迭代次数作为唯一的标识符
+        line_strip.type = visualization_msgs::Marker::LINE_STRIP;
+
+        // 设置线条属性
+        line_strip.scale.x = 0.05;
+
+        // 设置不同的颜色（可以根据迭代次数循环变化）
+        switch (iter_num_ % 6) {
+            case 0:
+                line_strip.color.r = 1.0;
+                line_strip.color.g = 0.0;
+                line_strip.color.b = 0.0;
+                break;
+            case 1:
+                line_strip.color.r = 0.0;
+                line_strip.color.g = 1.0;
+                line_strip.color.b = 0.0;
+                break;
+            case 2:
+                line_strip.color.r = 0.0;
+                line_strip.color.g = 0.0;
+                line_strip.color.b = 1.0;
+                break;
+            case 3:
+                line_strip.color.r = 1.0;
+                line_strip.color.g = 1.0;
+                line_strip.color.b = 0.0;
+                break;
+            case 4:
+                line_strip.color.r = 0.0;
+                line_strip.color.g = 1.0;
+                line_strip.color.b = 1.0;
+                break;
+            case 5:
+                line_strip.color.r = 1.0;
+                line_strip.color.g = 0.0;
+                line_strip.color.b = 1.0;
+                break;
+        }
+
+        line_strip.color.a = 1.0;
+
+        // 添加点
+        for (size_t j = 0; j < control_points.size() / Dim_; ++j) {
+            geometry_msgs::Point p;
+            p.x = control_points[j * Dim_ + 0];
+            p.y = Dim_ > 1 ? control_points[j * Dim_ + 1] : 0.0;
+            p.z = Dim_ > 2 ? control_points[j * Dim_ + 2] : 0.0;
+            line_strip.points.push_back(p);
+        }
+
+        // 发布轨迹
+        marker_pub.publish(line_strip);
+
+        // 在 RViz 中显示当前迭代次数
+        visualization_msgs::Marker text_marker;
+        text_marker.header.frame_id = "world";
+        text_marker.header.stamp = ros::Time::now();
+        text_marker.ns = "trajectory";
+        text_marker.id = iter_num_ + 1000; // 确保文本标记的 ID 与轨迹的 ID 不冲突
+        text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+        text_marker.pose.position.x = 1.0; // 设置文本位置（可以调整位置）
+        text_marker.pose.position.y = 1.0;
+        text_marker.pose.position.z = 1.0;
+        text_marker.pose.orientation.w = 1.0;
+
+        // 设置文本内容
+        text_marker.text = "Iteration: " + std::to_string(iter_num_);
+
+        // 设置文本颜色
+        text_marker.color.r = 0.0;
+        text_marker.color.g = 0.0;
+        text_marker.color.b = 0.0;
+        text_marker.color.a = 1.0;
+
+        // 设置文本大小
+        text_marker.scale.z = 0.2; // 字体大小
+
+        // 发布文本标记
+        marker_pub.publish(text_marker);
     }
 
 }

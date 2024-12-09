@@ -789,6 +789,8 @@ void SDFMap::clearAndInflateLocalMap() {
   Eigen::Vector3i max_cut_m = max_cut + Eigen::Vector3i(vec_margin, vec_margin, vec_margin);
   boundIndex(min_cut_m);
   boundIndex(max_cut_m);
+   std::cout << "min_cut_m: (" << min_cut_m.x() << ", " << min_cut_m.y() << ", " << min_cut_m.z() << ")\n";
+  std::cout << "max_cut_m: (" << max_cut_m.x() << ", " << max_cut_m.y() << ", " << max_cut_m.z() << ")\n";
 
   // clear data outside the local range
 
@@ -888,8 +890,8 @@ void SDFMap::clearAndInflateLocalMap() {
 void SDFMap::visCallback(const ros::TimerEvent& /*event*/) {
   publishMap();
   publishMapInflate(false);
-  // publishUpdateRange();
-  // publishESDF();
+  publishUpdateRange();
+  publishESDF();
 
   // publishUnknown();
   // publishDepth();
