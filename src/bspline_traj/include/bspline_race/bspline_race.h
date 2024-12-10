@@ -91,6 +91,7 @@ namespace FLAG_Race
                 common_msgs::BsplineTraj particle_traj;
                 ros::Time curr_time;  // 当前时间定时器
                 ros::Time last_time;  // 上一次时间定时器
+                bool is_initialized = false; 
             };
             std::vector<particleManager> swarmParticlesManager;
 

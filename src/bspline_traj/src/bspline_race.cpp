@@ -19,7 +19,7 @@ namespace FLAG_Race
     void plan_manager::initCallback(ros::NodeHandle &nh)
     {
         particles_sub = nh.subscribe("/swarm_particles", 1000, &plan_manager::particlesCallback,this);
-        traj_timer = nh.createTimer(ros::Duration(0.1), &plan_manager::timerCallback,this);
+        traj_timer = nh.createTimer(ros::Duration(0.02), &plan_manager::timerCallback,this);
         realloca_timer = nh.createTimer(ros::Duration(0.05), &plan_manager::realloca_timerCallback, this);
         force_timer = nh.createTimer(ros::Duration(0.02), &plan_manager::forceCallback, this);
         traj_puber = nh.advertise<common_msgs::Swarm_traj>("/swarm_traj", 10, true);
@@ -47,102 +47,10 @@ namespace FLAG_Race
         }
     }
 
-    // void plan_manager::realloca_timerCallback(const ros::TimerEvent&)
-    // {
-    //     int nParticles = current_particles.particles.size();
-    //     int nTargets = particles_goal.particles.size();
-
-    //     // Step 1: 构建代价矩阵
-    //     Eigen::MatrixXd costMatrix(nParticles, nTargets);
-    //     for (int i = 0; i < nParticles; ++i) {
-    //         for (int j = 0; j < nTargets; ++j) {
-    //             Eigen::Vector3d currentPos(current_particles.particles[i].position.x,
-    //                                     current_particles.particles[i].position.y,
-    //                                     current_particles.particles[i].position.z);
-    //             Eigen::Vector3d targetPos(particles_goal.particles[j].position.x,
-    //                                     particles_goal.particles[j].position.y,
-    //                                     particles_goal.particles[j].position.z);
-    //             costMatrix(i, j) = (currentPos - targetPos).norm();  // 使用距离作为代价
-    //         }
-    //     }
-
-    //     // Step 2: 使用匈牙利算法进行匹配
-    //     std::vector<int> assignment = hungarianAlgorithm(costMatrix);
-
-    //     // Step 3: 更新粒子的目标点
-    //     for (size_t i = 0; i < assignment.size(); ++i) {
-    //         int targetIndex = assignment[i];
-    //         particles_goal.particles[i].position = particles_goal.particles[targetIndex].position;
-    //         ROS_INFO("Particle %d reassigned to target %d", i, targetIndex);
-    //     }
-
-    //     target_pub.publish(particles_goal);
-
-    // }
 
     void plan_manager::realloca_timerCallback(const ros::TimerEvent&)
     {
-        // // 遍历所有当前粒子，检查是否到达目标点附近
-        // bool reallocation_needed = false;
-        // for (size_t i = 0; i < current_particles.particles.size(); ++i) {
-        //     Eigen::Vector3d currentPos(current_particles.particles[i].position.x,
-        //                             current_particles.particles[i].position.y,
-        //                             current_particles.particles[i].position.z);
-            
-        //     Eigen::Vector3d targetPos(particles_goal.particles[i].position.x,
-        //                             particles_goal.particles[i].position.y,
-        //                             particles_goal.particles[i].position.z);
-            
-        //     // 判断当前粒子是否接近目标点
-        //     double distance = (currentPos - targetPos).norm();
-        //     if (distance < 2.0) {
-        //         reallocation_needed = true;
-        //         break;  // 如果有一个粒子到达目标点附近，触发重新分配
-        //     }
-        // }
 
-        // // 如果需要重新分配目标点
-        // if (reallocation_needed) {
-        // ROS_INFO("Reallocating targets for all particles...");
-
-        // std::vector<bool> targetAssigned(particles_goal.particles.size(), false);  // 记录每个目标是否已分配
-        // for (size_t i = 0; i < current_particles.particles.size(); ++i) {
-        //     Eigen::Vector3d currentPos(current_particles.particles[i].position.x,
-        //                                current_particles.particles[i].position.y,
-        //                                current_particles.particles[i].position.z);
-
-        //     // 为每个粒子找到最近的未分配目标点
-        //     double minDistance = std::numeric_limits<double>::max();
-        //     int bestTargetIndex = -1;
-
-        //     for (size_t j = 0; j < particles_goal.particles.size(); ++j) {
-        //         if (!targetAssigned[j]) {  // 只考虑未分配的目标点
-        //             Eigen::Vector3d potentialTarget(particles_goal.particles[j].position.x,
-        //                                             particles_goal.particles[j].position.y,
-        //                                             particles_goal.particles[j].position.z);
-        //             double distance = (currentPos - potentialTarget).norm();
-
-        //             // 寻找最近的目标点
-        //             if (distance < minDistance) {
-        //                 minDistance = distance;
-        //                 bestTargetIndex = j;
-        //             }
-        //         }
-        //     }
-
-        //     // 将粒子分配到最佳的目标点
-        //     if (bestTargetIndex != -1) {
-        //         targetAssigned[bestTargetIndex] = true;  // 标记此目标点已被分配
-        //         particles_goal.particles[i].position = particles_goal.particles[bestTargetIndex].position;
-        //         ROS_INFO("Particle %d reassigned to target %d", (int)i, bestTargetIndex);
-        //     }
-        // }
-
-        // // 发布重新分配后的目标点
-        // target_pub.publish(particles_goal);
-
-        // }
-        
     }
 
     void plan_manager::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
@@ -172,9 +80,6 @@ namespace FLAG_Race
     void plan_manager::forceCallback(const ros::TimerEvent& event) 
     {
         ros::Duration time_diff = event.current_real - event.last_real;
-        // if (time_diff.toSec() > 0.053) {
-        //     ROS_INFO("\033[1;31mTime since last callback: %.6f s!\033[0m", time_diff.toSec());
-        // }
         
         // 计算力
         pubEsdfForce();
@@ -183,15 +88,6 @@ namespace FLAG_Race
     void plan_manager::timerCallback(const ros::TimerEvent& event) 
     {
         ros::Time currentTime = ros::Time::now(); 
-
-        // Check if any particle is in NEED_TRAJ state
-        bool needReplan = false;
-        for (const auto& particle : current_particles.particles) {
-            if (particle.state == NEED_TRAJ) {
-                needReplan = true;
-                break;
-            }
-        }
 
         near_target = true;
         for (const auto& particle : current_particles.particles) {
@@ -205,6 +101,10 @@ namespace FLAG_Race
         {   
             wait_target = false;
             receive_goal = false;
+            for (size_t i = 0; i < swarmParticlesManager.size(); i++)
+            {
+                swarmParticlesManager[i].is_initialized = false;
+            }
             // Start optimization
             ROS_INFO("\033[1;32m START OPTIMIZE_TRAJ! \033[0m");
             optTraj();
@@ -214,12 +114,14 @@ namespace FLAG_Race
             exec_traj = true;
         }
 
-        else if (near_target)
+        else if (wait_target || near_target)
         {
-            near_target = false;
-            need_replan = false;
-            exec_traj = false;
-            wait_target = true;
+            double waitElapsedTime = (currentTime - lastWaitOutputTime).toSec();
+            if (waitElapsedTime >= 1.0)
+            {
+                ROS_INFO("WAIT_TARGET");
+                lastWaitOutputTime = currentTime;
+            }
         }
 
         else if (exec_traj)
@@ -227,7 +129,7 @@ namespace FLAG_Race
             double elapsedTime = (currentTime - lastPlanTime).toSec();
 
             // Check if it's time to replan (every 0.5s or particle NEED_TRAJ)
-            if (elapsedTime >= planInterval || needReplan)
+            if (elapsedTime >= planInterval)
             {
                 exec_traj = false;
                 need_replan = true;
@@ -254,16 +156,6 @@ namespace FLAG_Race
 
             exec_traj = true;
             need_replan = false;
-        }
-
-        else if (wait_target)
-        {
-            double waitElapsedTime = (currentTime - lastWaitOutputTime).toSec();
-            if (waitElapsedTime >= 1.0)
-            {
-                ROS_INFO("WAIT_TARGET");
-                lastWaitOutputTime = currentTime;
-            }
         }
     }
 
@@ -321,54 +213,63 @@ namespace FLAG_Race
                                        const common_msgs::Swarm_particles& particles_goal, 
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx) {
-        swarmParticlesManager[index].curr_time = ros::Time::now();
-        // if (particles.particles[index].role == FOLLOWER || particles.particles[index].role == FREE)
-        // {
-        //     // ROS_INFO("Particle %d is FOLLOWER, skipping process.", particles.particles[index].index);
-        //     return;  
-        // }
-        // Check if the particle is in ATTRACT or REPEL state
-        // if (particles.particles[index].state == ATTRACT || particles.particles[index].state == REPEL) {
-        //     ROS_INFO("Particle %d is in ATTRACT,REPEL or NULL state, skipping process.", particles.particles[index].index);
-        //     return;  // Exit the function early if in ATTRACT or REPEL state
-        // }
-        
-        // if (particles.particles[index].state == TRAJ)
-        // {
-        //     //check traj collision
-        //     bool safe = swarmParticlesManager[index].bspline_opt_->checkTrajCollision(swarmParticlesManager[index].particle_traj);
-        //     if (safe)
-        //     {
-        //         ROS_INFO("NO RISK!");
-        //         if ((swarmParticlesManager[index].curr_time - swarmParticlesManager[index].last_time).toSec() > 0.5)
-        //         {
-        //             // 触发重规划逻辑
-        //             ROS_INFO("Replanning triggered!");
-        //             // 更新 last_time
-        //             swarmParticlesManager[index].last_time = swarmParticlesManager[index].curr_time;
-        //         }
-        //         else
-        //         {
-        //             return;
-        //         }
-        //     }
-        // }
-        
         Eigen::MatrixXd initial_state(3,2),terminal_state(3,2);//初始，结束P V A
         Eigen::Vector3d start_pt, end_pt, start_v, end_v, start_a;
         common_msgs::Force particle_force;
 
-        // Assign start_pt using current_particles' position
-        start_pt.x() = particles.particles[index].position.x+0.000001;//if start is zero, a_star bug
-        start_pt.y() = particles.particles[index].position.y+0.000001;//
-        start_pt.z() = particles.particles[index].position.z;
-        start_v.x()  = particles.particles[index].velocity.x;
-        start_v.y()  = particles.particles[index].velocity.y;
-        start_v.z()  = particles.particles[index].velocity.z;
-        start_a.x()  = particles.particles[index].acceleration.x;
-        start_a.y()  = particles.particles[index].acceleration.y;
-        start_a.z()  = particles.particles[index].acceleration.z;
+        swarmParticlesManager[index].curr_time = ros::Time::now();
+        if (!swarmParticlesManager[index].is_initialized)
+        {
+             swarmParticlesManager[index].last_time = ros::Time::now();
+        }        
+        double time_diff = (swarmParticlesManager[index].curr_time - swarmParticlesManager[index].last_time).toSec();
+        int index_to_remove = static_cast<int>(time_diff * swarmParticlesManager[index].spline_->TrajSampleRate) + 15;
+ROS_INFO("Time difference: %f seconds", time_diff);
+ROS_INFO("Index to remove: %d", index_to_remove);
+        if (!swarmParticlesManager[index].is_initialized) {
+            // 第一次进入，初始化 start_pt, start_v, start_a
+            start_pt.x() = particles.particles[index].position.x + 0.000001; // if start is zero, a_star bug
+            start_pt.y() = particles.particles[index].position.y + 0.000001;
+            start_pt.z() = particles.particles[index].position.z;
 
+            start_v.x() = particles.particles[index].velocity.x;
+            start_v.y() = particles.particles[index].velocity.y;
+            start_v.z() = particles.particles[index].velocity.z;
+
+            start_a.x() = particles.particles[index].acceleration.x;
+            start_a.y() = particles.particles[index].acceleration.y;
+            start_a.z() = particles.particles[index].acceleration.z;
+
+            swarmParticlesManager[index].is_initialized = true;
+        } 
+        else if (index_to_remove >= swarmParticlesManager[index].particle_traj.position.size())
+        {
+            ROS_INFO("NEAR TARGET, RETURN.");
+            return;
+        }
+        else {
+            // 剔除对应数量的轨迹点
+            swarmParticlesManager[index].particle_traj.position.erase(swarmParticlesManager[index].particle_traj.position.begin(), 
+                                                        swarmParticlesManager[index].particle_traj.position.begin() + index_to_remove);
+            swarmParticlesManager[index].particle_traj.velocity.erase(swarmParticlesManager[index].particle_traj.velocity.begin(), 
+                                                        swarmParticlesManager[index].particle_traj.velocity.begin() + index_to_remove);
+            swarmParticlesManager[index].particle_traj.acceleration.erase(swarmParticlesManager[index].particle_traj.acceleration.begin(), 
+                                                        swarmParticlesManager[index].particle_traj.acceleration.begin() + index_to_remove);
+            swarmParticlesManager[index].particle_traj.jerk.erase(swarmParticlesManager[index].particle_traj.jerk.begin(), 
+                                                        swarmParticlesManager[index].particle_traj.jerk.begin() + index_to_remove);
+
+            start_pt.x() = swarmParticlesManager[index].particle_traj.position.front().x;
+            start_pt.y() = swarmParticlesManager[index].particle_traj.position.front().y;
+            start_pt.z() = swarmParticlesManager[index].particle_traj.position.front().z;
+
+            start_v.x() = swarmParticlesManager[index].particle_traj.velocity.front().x;
+            start_v.y() = swarmParticlesManager[index].particle_traj.velocity.front().y;
+            start_v.z() = swarmParticlesManager[index].particle_traj.velocity.front().z;
+
+            start_a.x() = swarmParticlesManager[index].particle_traj.acceleration.front().x;
+            start_a.y() = swarmParticlesManager[index].particle_traj.acceleration.front().y;
+            start_a.z() = swarmParticlesManager[index].particle_traj.acceleration.front().z;
+        }
         // Find the matching particle in particles_goal based on the index
         int current_index = particles.particles[index].index;
         for (const auto& goal_particle : particles_goal.particles) {
@@ -377,23 +278,9 @@ namespace FLAG_Race
                 end_pt.x() = goal_particle.position.x;
                 end_pt.y() = goal_particle.position.y;
                 end_pt.z() = goal_particle.position.z;
-                // end_v.x()  = 0.0;
-                // end_v.y()  = 0.0;
-                // end_v.z()  = 0.0;
                 break;
             }
         }
-
-        // Check if the distance between start_pt and end_pt is less than 0.2
-        // double distance = (start_pt - end_pt).norm();
-
-        // if (distance < 1.0) {
-        //     ROS_INFO("Start and goal are too close (distance: %f). Stopping planning.", distance);
-        //     // particles.particles[index].state = ParticleState::NEAR_TARGET;
-        //     return;  // Stop planning if the distance is less than 1.0
-        // }
-
-        // cout<< "start: "<< swarmParticlesManager[index].particle_index <<"  "<<start_pt.x()<< " "<< start_pt.y()<<" "<< start_pt.z()<<endl;
 
         initial_state <<    start_pt(0), start_pt(1),
                             start_v(0),  start_v(1),
@@ -409,20 +296,6 @@ namespace FLAG_Race
         swarmParticlesManager[index].geo_path_finder_->search(start_pt, end_pt, false, -1.0);
         std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[index].geo_path_finder_->getprunePath();
             visualizePath(path_points, path_vis, swarmParticlesManager[index].particle_index);
-            
-        // // Dynamic A*
-        // swarmParticlesManager[index].kino_path_finder_->reset();
-        // bool  status = swarmParticlesManager[index].kino_path_finder_->search(start_pt, start_v, start_a, end_pt, end_v, false);
-        // if (status == KinodynamicAstar::NO_PATH) {
-        //     cout << "[kino replan]: Can't find path." << endl;
-        // } else {
-        // cout << "[kino replan]: Search success." << endl;
-        // }
-        // double ts = swarmParticlesManager[index].spline_->beta_;
-        // std::vector<Eigen::Vector3d> path_points, start_end_derivatives;
-        // // swarmParticlesManager[index].kino_path_finder_->getSamples(ts, path_points, start_end_derivatives);
-        // path_points = swarmParticlesManager[index].kino_path_finder_->getKinoTraj(ts);
-        //     visualizePath(path_points, path_vis, swarmParticlesManager[index].particle_index);
 
         if (path_points.size()==0)
         {
@@ -432,7 +305,7 @@ namespace FLAG_Race
             // std::cout << "First row of initial_state: " << swarmParticlesManager[index].particle_index <<"  "<< initial_state.row(0) << std::endl;
         swarmParticlesManager[index].spline_->setIniandTerandCpsnum(initial_state,terminal_state,
                                                             swarmParticlesManager[index].bspline_opt_->cps_num_);
-        if(swarmParticlesManager[index].bspline_opt_->cps_num_ == 2*swarmParticlesManager[index].spline_->p_)
+        if(swarmParticlesManager[index].bspline_opt_->cps_num_ <= 2*swarmParticlesManager[index].spline_->p_)
         {
             return;
         }
@@ -454,7 +327,7 @@ namespace FLAG_Race
         Eigen::MatrixXd j_ = j.getTrajectory(p.time_);
 
         common_msgs::BsplineTraj traj_;
-        std::vector<Eigen::Vector3d> vis_traj;
+        std::vector<Eigen::Vector3d> vis_traj,vis_vel;
         traj_.traj_id = std::stoi(swarmParticlesManager[index].particle_index);
         int N = p_.rows();  
         traj_.position.resize(N);
@@ -462,7 +335,8 @@ namespace FLAG_Race
         traj_.acceleration.resize(N);
         traj_.jerk.resize(N);
         vis_traj.resize(N);
-
+        vis_vel.resize(N);
+        
         for (int i = 0; i < N; ++i) {
 
             geometry_msgs::Point pos;
@@ -480,6 +354,10 @@ namespace FLAG_Race
             vel.y = v_(i, 1); 
             vel.z = 0.0;       
             traj_.velocity[i] = vel;
+
+            vis_vel[i].x() = v_(i, 0);
+            vis_vel[i].y() = v_(i, 1);
+            vis_vel[i].z() = 1.0;
 
             geometry_msgs::Point acc;
             acc.x = a_(i, 0);  
@@ -501,10 +379,11 @@ namespace FLAG_Race
         
         swarmParticlesManager[index].particle_traj = traj_;
         {       
-             std::lock_guard<std::mutex> lk(muxSwarm_traj);
+            std::lock_guard<std::mutex> lk(muxSwarm_traj);
             swarm_traj.traj.push_back(traj_);
         }
-   
+
+        swarmParticlesManager[index].last_time = ros::Time::now();
     }
 
     void plan_manager::optTraj()
@@ -532,110 +411,6 @@ namespace FLAG_Race
 
         traj_puber.publish(swarm_traj);
     }
-
-    // void plan_manager::optTraj()
-    // {
-    //     for (size_t i = 0; i < init_particles.particles.size(); i++)
-    //     {
-    //         Eigen::MatrixXd initial_state(3,2),terminal_state(3,2);//初始，结束P V A
-    //         Eigen::Vector3d start_pt, end_pt;
-    //         // Assign start_pt using current_particles' position
-    //         start_pt.x() = init_particles.particles[i].position.x+0.000001;
-    //         start_pt.y() = init_particles.particles[i].position.y+0.000001;
-    //         start_pt.z() = init_particles.particles[i].position.z;
-
-    //         // Find the matching particle in particles_goal based on the index
-    //         int current_index = init_particles.particles[i].index;
-    //         for (const auto& goal_particle : particles_goal.particles) {
-    //         if (goal_particle.index == current_index) {
-    //             // Assign end_pt using goal_particle's position
-    //                 end_pt.x() = goal_particle.position.x;
-    //                 end_pt.y() = goal_particle.position.y;
-    //                 end_pt.z() = goal_particle.position.z;
-    //                 break;
-    //             }
-    //         }
-
-    //         swarmParticlesManager[i].geo_path_finder_->reset();
-    //         swarmParticlesManager[i].geo_path_finder_->search(start_pt,end_pt,false,-1.0);
-    //         std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[i].geo_path_finder_->getprunePath();
-    //         visualizePath(path_points, path_vis, swarmParticlesManager[i].particle_index);
-
-    //         if (path_points.size()==0)
-    //         {
-    //             return;
-    //         }
-    //         swarmParticlesManager[i].bspline_opt_->set3DPath(path_points);
-    //             // std::cout << "First row of initial_state: " << swarmParticlesManager[i].particle_index <<"  "<< initial_state.row(0) << std::endl;
-    //         swarmParticlesManager[i].spline_->setIniandTerandCpsnum(initial_state,terminal_state,
-    //                                                             swarmParticlesManager[i].bspline_opt_->cps_num_);
-    //         if(swarmParticlesManager[i].bspline_opt_->cps_num_ == 2*swarmParticlesManager[i].spline_->p_)
-    //         {
-    //             return;
-    //         }
-    //         UniformBspline spline = *swarmParticlesManager[i].spline_;
-    //         swarmParticlesManager[i].bspline_opt_->setSplineParam(spline);
-    //         swarmParticlesManager[i].bspline_opt_->optimize();
-
-    //         swarmParticlesManager[i].spline_->setControlPoints(swarmParticlesManager[i].bspline_opt_->control_points_);
-    //         swarmParticlesManager[i].spline_->getT();
-    //         UniformBspline p = *swarmParticlesManager[i].spline_;
-    //         UniformBspline v = p.getDerivative();
-    //         UniformBspline a = v.getDerivative();
-    //         UniformBspline j = a.getDerivative();
-
-    //         //traj
-    //         Eigen::MatrixXd p_ = p.getTrajectory(p.time_);
-    //         Eigen::MatrixXd v_ = v.getTrajectory(p.time_);
-    //         Eigen::MatrixXd a_ = a.getTrajectory(p.time_);
-    //         Eigen::MatrixXd j_ = j.getTrajectory(p.time_);
-
-    //         common_msgs::BsplineTraj traj_;
-    //         std::vector<Eigen::Vector3d> vis_traj;
-    //         traj_.traj_id = std::stoi(swarmParticlesManager[i].particle_index);
-    //         int N = p_.rows();  
-    //         traj_.position.resize(N);
-    //         traj_.velocity.resize(N);
-    //         traj_.acceleration.resize(N);
-    //         traj_.jerk.resize(N);
-    //         vis_traj.resize(N);
-
-    //         for (int i = 0; i < N; ++i) {
-
-    //             geometry_msgs::Point pos;
-    //             pos.x = p_(i, 0);  
-    //             pos.y = p_(i, 1);  
-    //             pos.z = 0.0;       
-    //             traj_.position[i] = pos;
-
-    //             vis_traj[i].x() = p_(i, 0);
-    //             vis_traj[i].y() = p_(i, 1);
-    //             vis_traj[i].z() = 1.0;
-
-    //             geometry_msgs::Point vel;
-    //             vel.x = v_(i, 0); 
-    //             vel.y = v_(i, 1); 
-    //             vel.z = 0.0;       
-    //             traj_.velocity[i] = vel;
-
-    //             geometry_msgs::Point acc;
-    //             acc.x = a_(i, 0);  
-    //             acc.y = a_(i, 1);  
-    //             acc.z = 0.0;      
-    //             traj_.acceleration[i] = acc;
-
-    //             geometry_msgs::Point jerk;
-    //             jerk.x = j_(i, 0);  
-    //             jerk.y = j_(i, 1);  
-    //             jerk.z = 0.0;       
-    //             traj_.jerk[i] = jerk;
-    //         }
-
-    //         visualizeTraj(vis_traj, traj_vis, swarmParticlesManager[i].particle_index);
-
-    //         swarm_traj.traj.push_back(traj_);
-    //     }
-    // }
 
     void plan_manager::parallelInit(ros::NodeHandle &nh) {
         ros::master::V_TopicInfo topic_list;
@@ -686,11 +461,6 @@ namespace FLAG_Race
                     auto spline_ = std::make_shared<UniformBspline>();
                     spline_->init(nh);
 
-                    // sdf_maps.push_back(sdf_map_);
-                    // edt_environments.push_back(edt_environment_);
-                    // swarm_astar.push_back(geo_path_finder_);
-                    // swarm_opt.push_back(bspline_opt_);
-                    // swarm_bspline.push_back(spline_);
                     particleManager pm {
                         particle_index,
                         sdf_map_,

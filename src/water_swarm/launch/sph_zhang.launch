@@ -6,10 +6,10 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="20"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
+    <arg name="particleCount" value="1"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
-    <arg name="sphInitTime" value="8.0"/>       <!-- 初始化时间 -->
+    <arg name="sphInitTime" value="1.0"/>       <!-- 初始化时间 -->
     <arg name="init_bias_x" value="2.5"/>         <!-- 初始位置偏移量 -->
     <arg name="init_bias_y" value="20.0"/>         <!-- 初始位置偏移量 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长，要与轨迹采样频率同步-->
@@ -19,9 +19,11 @@
     <arg name="k_den" value="1.0"/>           <!-- k_den -->
     <arg name="k_rep" value="1.0"/>           <!-- k_rep -->
     <arg name="k_fri" value="1.5"/>           <!-- k_fri -->
-    <arg name="k_p"   value="5.0"/>           <!-- k_p -->
+    <arg name="k_p"   value="6.0"/>           <!-- k_p -->
+    <arg name="k_d"   value="3.5"/>           <!-- k_d -->
+    <arg name="k_ff"  value="1.0"/>           <!-- k_ffs -->
     <arg name="k_force" value="0.0"/>       <!-- k_force -->
-    <arg name="v_max" value="1.0"/>             <!-- v_max，必须大于规划速度-->
+    <arg name="v_max" value="1.2"/>             <!-- v_max，必须大于规划速度-->
     <arg name="a_max" value="1.5"/>             <!-- a_max，必须大于规划加速度 -->
     <arg name="r_1"   value="0.06"/>            <!-- r_1 -->
     <arg name="r_2"   value="0.2"/>             <!-- r_2 -->
@@ -58,12 +60,14 @@
         <param name="sph/k_rep"             value="$(arg k_rep)"/> 
         <param name="sph/k_fri"             value="$(arg k_fri)"/> 
         <param name="sph/k_p"               value="$(arg k_p)"/> 
+        <param name="sph/k_d"               value="$(arg k_d)" />
+        <param name="sph/k_ff"              value="$(arg k_ff)" />
         <param name="sph/v_max"             value="$(arg v_max)"/>
         <param name="sph/a_max"             value="$(arg a_max)"/>
         <param name="sph/r_1"               value="$(arg r_1)"/>
         <param name="sph/r_2"               value="$(arg r_2)"/>
-        <param name="sph/state_enabled"     value="false"/>
-        <param name="sph/vis_role"          value="true"/>
+        <param name="sph/state_enabled"     value="true"/>
+        <param name="sph/vis_role"          value="false"/>
         <param name="sph/init_bias_x"       value="$(arg init_bias_x)"/>
         <param name="sph/init_bias_y"       value="$(arg init_bias_y)"/>
     </node>
@@ -78,7 +82,7 @@
         <param name="fsm/sphInitTime"      value="$(arg sphInitTime)" /> 
         <!-- <param name="fsm/cloud_topic"      type="string" value="/map_generator/click_map" /> -->
         <param name="fsm/cloud_topic"      type="string" value="/map_generator/global_cloud" />
-        <param name="fsm/planInterval"     value="1000.0" /> 
+        <param name="fsm/planInterval"     value="0.2" /> 
         <param name="fsm/trajVisParam"     value="1.0" /> 
         <param name="fsm/init_bias_x"      value="$(arg init_bias_x)"/>
         <param name="fsm/init_bias_y"      value="$(arg init_bias_y)"/>
@@ -89,8 +93,8 @@
         <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
         <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
 
-        <param name="sdf_map/local_update_range_x"  value="40.0" /> 
-        <param name="sdf_map/local_update_range_y"  value="40.0" /> 
+        <param name="sdf_map/local_update_range_x"  value="30.0" /> 
+        <param name="sdf_map/local_update_range_y"  value="30.0" /> 
         <param name="sdf_map/local_update_range_z"  value="3.0" /> 
         
         <!--test param-->
@@ -168,8 +172,8 @@
         <param name="planning/lambda3" value="1000.0" /> -->
         <param name="planning/safe_distance" value="0.8" />
         <param name="planning/k_force" value="$(arg k_force)" />
-        <param name="planning/planning/opt_maxeval" value="500" />
-        <param name="planning/planning/opt_maxtime" value="1.5" />
+        <param name="planning/planning/opt_maxeval" value="200" />
+        <param name="planning/planning/opt_maxtime" value="0.02" />
     </node>
 
     <!-- RViz-->
