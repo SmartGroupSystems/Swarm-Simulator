@@ -78,9 +78,7 @@ namespace FLAG_Race
     }
 
     void plan_manager::forceCallback(const ros::TimerEvent& event) 
-    {
-        ros::Duration time_diff = event.current_real - event.last_real;
-        
+    {        
         // 计算力
         pubEsdfForce();
     }
@@ -214,7 +212,7 @@ namespace FLAG_Race
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx) {
         Eigen::MatrixXd initial_state(3,2),terminal_state(3,2);//初始，结束P V A
-        Eigen::Vector3d start_pt, end_pt, start_v, end_v, start_a;
+        Eigen::Vector3d start_pt, end_pt, goal_pt, start_v, end_v, start_a;
         common_msgs::Force particle_force;
 
         swarmParticlesManager[index].curr_time = ros::Time::now();
@@ -223,7 +221,7 @@ namespace FLAG_Race
              swarmParticlesManager[index].last_time = ros::Time::now();
         }        
         double time_diff = (swarmParticlesManager[index].curr_time - swarmParticlesManager[index].last_time).toSec();
-        int index_to_remove = static_cast<int>(time_diff * swarmParticlesManager[index].spline_->TrajSampleRate) + 15;
+        int index_to_remove = static_cast<int>(time_diff * swarmParticlesManager[index].spline_->TrajSampleRate) + 5;
 ROS_INFO("Time difference: %f seconds", time_diff);
 ROS_INFO("Index to remove: %d", index_to_remove);
         if (!swarmParticlesManager[index].is_initialized) {
@@ -275,12 +273,27 @@ ROS_INFO("Index to remove: %d", index_to_remove);
         for (const auto& goal_particle : particles_goal.particles) {
             if (goal_particle.index == current_index) {
                 // Assign end_pt using goal_particle's position
-                end_pt.x() = goal_particle.position.x;
-                end_pt.y() = goal_particle.position.y;
-                end_pt.z() = goal_particle.position.z;
+                goal_pt.x() = goal_particle.position.x;
+                goal_pt.y() = goal_particle.position.y;
+                goal_pt.z() = goal_particle.position.z;
                 break;
             }
         }
+        // Reset pathfinder and search for the path
+        // A*
+        swarmParticlesManager[index].geo_path_finder_->reset();
+        swarmParticlesManager[index].geo_path_finder_->search(start_pt, goal_pt, false, -1.0);
+        std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[index].geo_path_finder_->getprunePath();
+        std::vector<Eigen::Vector3d> initial_ctrl_ps;
+        int num_points_to_take = std::min(static_cast<int>(path_points.size()), 10);
+        for (int i = 0; i < num_points_to_take; ++i) {
+            initial_ctrl_ps.push_back(path_points[i]);
+        }
+            visualizePath(path_points, path_vis, swarmParticlesManager[index].particle_index);
+        if (initial_ctrl_ps.empty()) {
+            return;
+        }
+        end_pt = initial_ctrl_ps.back();
 
         initial_state <<    start_pt(0), start_pt(1),
                             start_v(0),  start_v(1),
@@ -290,18 +303,7 @@ ROS_INFO("Index to remove: %d", index_to_remove);
                             0.0, 0.0,
                             0.0, 0.0;
 
-        // Reset pathfinder and search for the path
-        // A*
-        swarmParticlesManager[index].geo_path_finder_->reset();
-        swarmParticlesManager[index].geo_path_finder_->search(start_pt, end_pt, false, -1.0);
-        std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[index].geo_path_finder_->getprunePath();
-            visualizePath(path_points, path_vis, swarmParticlesManager[index].particle_index);
-
-        if (path_points.size()==0)
-        {
-           return;
-        }
-        swarmParticlesManager[index].bspline_opt_->set3DPath(path_points);
+        swarmParticlesManager[index].bspline_opt_->set3DPath(initial_ctrl_ps);
             // std::cout << "First row of initial_state: " << swarmParticlesManager[index].particle_index <<"  "<< initial_state.row(0) << std::endl;
         swarmParticlesManager[index].spline_->setIniandTerandCpsnum(initial_state,terminal_state,
                                                             swarmParticlesManager[index].bspline_opt_->cps_num_);

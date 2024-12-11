@@ -170,7 +170,7 @@
         <!-- <param name="planning/lambda1" value="80.0" />
         <param name="planning/lambda2" value="0.00001" />
         <param name="planning/lambda3" value="1000.0" /> -->
-        <param name="planning/safe_distance" value="0.8" />
+        <param name="planning/safe_distance" value="0.5" />
         <param name="planning/k_force" value="$(arg k_force)" />
         <param name="planning/planning/opt_maxeval" value="200" />
         <param name="planning/planning/opt_maxtime" value="0.02" />

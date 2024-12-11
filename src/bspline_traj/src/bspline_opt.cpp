@@ -270,33 +270,29 @@ namespace FLAG_Race
     common_msgs::Force bspline_optimizer::calcGradForce(const Eigen::Vector3d& q_3d)
     {
         common_msgs::Force force;
+        double dist; 
+        Eigen::Vector3d dist_grad_3d; 
+
+        edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
+
+        if (dist >  safe_distance_) {
             force.x = 0.0;
             force.y = 0.0;
             force.z = 0.0;
-            force.k_den = 1.0; 
-        // double dist; 
-        // Eigen::Vector3d dist_grad_3d; 
+            force.k_den = 1.0;
+            return force;
+        }
 
-        // edt_environment_->evaluateEDTWithGrad(q_3d, -1.0, dist, dist_grad_3d);
+        double force_magnitude = k_force * std::pow((dist - safe_distance_), 2);        
+        Eigen::Vector3d grad_normalized = dist_grad_3d.normalized();
 
-        // if (dist >  safe_distance_) {
-        //     force.x = 0.0;
-        //     force.y = 0.0;
-        //     force.z = 0.0;
-        //     force.k_den = 1.0;
-        //     return force;
-        // }
+        // 按照归一化梯度方向分配力
+        force.x = force_magnitude * grad_normalized.x();
+        force.y = force_magnitude * grad_normalized.y();
+        force.z = force_magnitude * grad_normalized.z() * 0.0;//z轴不加力
 
-        // double force_magnitude = k_force * std::pow((dist - safe_distance_), 2);        
-        // Eigen::Vector3d grad_normalized = dist_grad_3d.normalized();
-
-        // // 按照归一化梯度方向分配力
-        // force.x = force_magnitude * grad_normalized.x();
-        // force.y = force_magnitude * grad_normalized.y();
-        // force.z = force_magnitude * grad_normalized.z() * 0.0;//z轴不加力
-
-        // //基于局部ESDF更新k_den系数
-        // force.k_den = mapForceToKDen(force_magnitude);
+        //基于局部ESDF更新k_den系数
+        force.k_den = mapForceToKDen(force_magnitude);
 
         return force;
     }
