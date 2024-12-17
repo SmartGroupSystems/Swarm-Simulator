@@ -22,7 +22,7 @@
     <arg name="k_p"   value="6.0"/>           <!-- k_p -->
     <arg name="k_d"   value="3.5"/>           <!-- k_d -->
     <arg name="k_ff"  value="1.0"/>           <!-- k_ffs -->
-    <arg name="k_force" value="0.0"/>       <!-- k_force -->
+    <arg name="k_force" value="100.0"/>       <!-- k_force -->
     <arg name="v_max" value="1.0"/>             <!-- v_max，必须大于规划速度-->
     <arg name="a_max" value="1.5"/>             <!-- a_max，必须大于规划加速度 -->
     <arg name="r_1"   value="0.06"/>            <!-- r_1 -->
