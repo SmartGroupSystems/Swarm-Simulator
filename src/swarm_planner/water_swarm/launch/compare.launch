@@ -1,0 +1,149 @@
+<launch>
+    <!--compare proposed, EGO-Swarm, MADER.-->
+
+    <arg name="particleCount" value="9"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleInterval" value="0.8"/>  <!-- 粒子之间的初始间距 -->
+    <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
+    <arg name="sphInitTime" value="5.0"/>       <!-- 初始化时间 -->
+    <arg name="init_bias_x" value="0.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_y" value="1.0"/>         <!-- 初始位置偏移量 -->
+   <arg name="updateInterval" value="0.02"/>   <!-- 时间步长，要与轨迹采样频率同步-->
+    <arg name="h" value="10.0"/>                <!-- kernel function radius -->
+    <arg name="mass" value="1.0"/>              <!-- default MASS -->
+    <arg name="threshold_dist" value="0.03"/>   <!-- 粒子与虚拟粒子的碰撞检测距离 -->
+    <arg name="k_den" value="1.0"/>           <!-- k_den -->
+    <arg name="k_rep" value="1.0"/>           <!-- k_rep -->
+    <arg name="k_fri" value="1.5"/>           <!-- k_fri -->
+    <arg name="k_p"   value="6.0"/>           <!-- k_p -->
+    <arg name="k_d"   value="3.5"/>           <!-- k_d -->
+    <arg name="k_ff"  value="1.0"/>           <!-- k_ffs -->
+    <arg name="k_force" value="100.0"/>       <!-- k_force -->
+    <arg name="v_max" value="1.2"/>             <!-- v_max，必须大于规划速度-->
+    <arg name="a_max" value="1.5"/>             <!-- a_max，必须大于规划加速度 -->
+    <arg name="r_1"   value="0.06"/>            <!-- r_1 -->
+    <arg name="r_2"   value="0.2"/>             <!-- r_2 -->
+    <arg name="planv_max" value="0.8"/>             <!-- v_max -->
+    <arg name="plana_max" value="1.0"/>             <!-- a_max -->
+    <arg name="restDensity" value="1000000.0"/> <!-- \rho0 -->
+    <arg name="g" value="-9.8"/>                <!-- 重力,no use -->
+    <arg name="use_pctrl" value="true"/>        <!-- 使用位置\速度\加速度控制，默认使用位置控制 -->
+    
+    <!-- Planning  parameters-->
+    <arg name="map_size_x_" value="60.0"/>
+    <arg name="map_size_y_" value="60.0"/>
+    <arg name="map_size_z_" value=" 3.0"/>
+    
+    <!-- Run the sph_particles node -->
+    <node name="sph_zhang" pkg="water_swarm" type="sph_zhang" output="screen">
+        <param name="sph/mass"              value="$(arg mass)"/> 
+        <param name="sph/restDensity"       value="$(arg restDensity)"/>
+        <param name="sph/h"                 value="$(arg h)"/> 
+        <param name="sph/g"                 value="$(arg g)"/>
+        <param name="sph/use_pctrl"         value="$(arg use_pctrl)"/>
+        <param name="sph/particleCount"     value="$(arg particleCount)"/> 
+        <param name="sph/particleInterval"  value="$(arg particleInterval)"/>
+        <param name="sph/updateInterval"    value="$(arg updateInterval)"/>
+        <param name="sph/particleVisScale"  value="$(arg particleVisScale)"/>
+        <param name="sph/threshold_dist"    value="$(arg threshold_dist)"/>
+        <param name="sph/k_den"             value="$(arg k_den)"/> 
+        <param name="sph/k_rep"             value="$(arg k_rep)"/> 
+        <param name="sph/k_fri"             value="$(arg k_fri)"/> 
+        <param name="sph/k_p"               value="$(arg k_p)"/> 
+        <param name="sph/k_d"               value="$(arg k_d)" />
+        <param name="sph/k_ff"              value="$(arg k_ff)" />
+        <param name="sph/v_max"             value="$(arg v_max)"/>
+        <param name="sph/a_max"             value="$(arg a_max)"/>
+        <param name="sph/r_1"               value="$(arg r_1)"/>
+        <param name="sph/r_2"               value="$(arg r_2)"/>
+        <param name="sph/state_enabled"     value="false"/>
+        <param name="sph/vis_role"          value="false"/>
+        <param name="sph/init_bias_x"       value="$(arg init_bias_x)"/>
+        <param name="sph/init_bias_y"       value="$(arg init_bias_y)"/>
+    </node>
+
+    <!-- Obs map-->
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/door3.pcd"/>
+    
+    <!-- Traj opt-->
+  <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
+        <!-- Plan Manager -->
+        <param name="fsm/sphInitTime"      value="$(arg sphInitTime)" /> 
+        <!-- <param name="fsm/cloud_topic"      type="string" value="/map_generator/click_map" /> -->
+        <param name="fsm/cloud_topic"      type="string" value="/map_generator/global_cloud" />
+        <param name="fsm/planInterval"     value="0.5" /> 
+        <param name="fsm/trajVisParam"     value="1.0" /> 
+        <param name="fsm/init_bias_x"      value="$(arg init_bias_x)"/>
+        <param name="fsm/init_bias_y"      value="$(arg init_bias_y)"/>
+
+        <!-- SDF Map -->
+        <param name="sdf_map/resolution"   value="0.1" /> 
+        <param name="sdf_map/map_size_x"   value="$(arg map_size_x_)" /> 
+        <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
+        <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
+
+        <param name="sdf_map/local_update_range_x"  value="30.0" /> 
+        <param name="sdf_map/local_update_range_y"  value="30.0" /> 
+        <param name="sdf_map/local_update_range_z"  value="3.0" /> 
+        
+        <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
+        <param name="sdf_map/local_bound_inflate"    value="0.0"/>
+        <param name="sdf_map/local_map_margin" value="50"/>
+        <param name="sdf_map/ground_height"        value="-0.01"/>
+
+        <!-- depth filter -->
+        <param name="sdf_map/use_depth_filter" value="true"/>
+        <param name="sdf_map/depth_filter_tolerance" value="0.15"/>
+        <param name="sdf_map/depth_filter_maxdist"   value="5.0"/>
+        <param name="sdf_map/depth_filter_mindist"   value="0.2"/>
+        <param name="sdf_map/depth_filter_margin"    value="2"/>
+        <param name="sdf_map/k_depth_scaling_factor" value="1000.0"/>
+        <param name="sdf_map/skip_pixel" value="2"/>
+        <!-- local fusion -->
+        <param name="sdf_map/p_hit"  value="0.65"/>
+        <param name="sdf_map/p_miss" value="0.35"/>
+        <param name="sdf_map/p_min"  value="0.12"/>
+        <param name="sdf_map/p_max"  value="0.90"/>
+        <param name="sdf_map/p_occ"  value="0.80"/>
+        <param name="sdf_map/min_ray_length" value="0.5"/>
+        <param name="sdf_map/max_ray_length" value="4.5"/>
+        <param name="sdf_map/esdf_slice_height" value="0.3"/>
+        <param name="sdf_map/visualization_truncate_height"   value="2.49"/>
+        <param name="sdf_map/virtual_ceil_height"   value="2.5"/>
+        <param name="sdf_map/show_occ_time"  value="false"/>
+        <param name="sdf_map/show_esdf_time" value="false"/>
+        <param name="sdf_map/pose_type"     value="2"/>  
+        <param name="sdf_map/frame_id"      value="world"/>
+
+        <!-- geometric path searching -->
+        <param name="astar/lambda_heu" value="10.0" type="double"/>
+        <param name="astar/resolution_astar" value="0.1" type="double"/>
+        <param name="astar/time_resolution" value="0.8" type="double"/>
+        <param name="astar/margin" value="0.1" type="double"/>
+        <param name="astar/allocate_num" value="1000000" type="int"/>
+
+        <!-- bspline opt -->
+        <param name="planning/traj_order" value="3"/>
+        <param name="planning/dimension" value="2" />
+        <param name="planning/TrajSampleRate" value="50" />
+        <param name="planning/max_vel" value="$(arg planv_max)" />
+        <param name="planning/max_acc" value="$(arg plana_max)" />
+        <param name="planning/lambda1" value="5.0" />
+        <param name="planning/lambda2" value="1.0" />
+        <param name="planning/lambda3" value="1000.0" />
+        <param name="planning/dist_p" value="0.5" />
+        <param name="planning/safe_distance" value="0.5" />
+        <param name="planning/k_force" value="$(arg k_force)" />
+        <param name="planning/planning/opt_maxeval" value="200" />
+        <param name="planning/planning/opt_maxtime" value="0.02" />
+    </node>
+
+    <!-- RViz-->
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/swarm_rviz.rviz" />
+    
+    <!-- Vis-->
+    <!-- <node pkg="water_swarm" type="sph_vis" name="sph_vis_node" output="screen"/> -->
+    
+    <!-- Waypoint-->
+    <node name="publish_target" pkg="target_publisher" type="publish_target" output="screen">
+    </node>
+</launch>
