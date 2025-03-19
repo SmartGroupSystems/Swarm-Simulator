@@ -1,29 +1,26 @@
 <launch>
-    <!-- SPH Define parameters -->
-    <!-- The system is designed based on <<Collective fission behavior in swarming systems with density-based interaction>> 
-         The parameters is defined as follows. 
-         Generally speaking, increasing the kernel function radius h, the strength of density force k_den,
-         and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
-         swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
+    <!-- This work aims to further address the issues of SPH particle penetration and SPH systems navigating 
+    through particularly narrow tunnels based on the foundation of Smoothed Particle Hydrodynamics (SPH), 
+    with a focus on significantly improving the deformation capability of the SPH system.-->
 
-    <arg name="particleCount" value="30"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
-    <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
+    <arg name="particleCount" value="9"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleInterval" value="0.8"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
-    <arg name="sphInitTime" value="1.0"/>       <!-- 初始化时间 -->
-    <arg name="init_bias_x" value="2.5"/>         <!-- 初始位置偏移量 -->
-    <arg name="init_bias_y" value="20.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="sphInitTime" value="2.0"/>       <!-- 初始化时间 -->
+    <arg name="init_bias_x" value="1.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_y" value="0.5"/>         <!-- 初始位置偏移量 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长，要与轨迹采样频率同步-->
     <arg name="h" value="10.0"/>                <!-- kernel function radius -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
     <arg name="threshold_dist" value="0.03"/>   <!-- 粒子与虚拟粒子的碰撞检测距离 -->
     <arg name="k_den" value="1.0"/>           <!-- k_den -->
-    <arg name="k_rep" value="1.1"/>           <!-- k_rep -->
-    <arg name="k_fri" value="1.8"/>           <!-- k_fri -->
+    <arg name="k_rep" value="1.0"/>           <!-- k_rep -->
+    <arg name="k_fri" value="1.5"/>           <!-- k_fri -->
     <arg name="k_p"   value="6.0"/>           <!-- k_p -->
     <arg name="k_d"   value="3.5"/>           <!-- k_d -->
     <arg name="k_ff"  value="1.0"/>           <!-- k_ffs -->
     <arg name="k_force" value="100.0"/>       <!-- k_force -->
-    <arg name="v_max" value="1.2"/>             <!-- v_max，必须大于规划速度-->
+    <arg name="v_max" value="1.0"/>             <!-- v_max，必须大于规划速度-->
     <arg name="a_max" value="1.5"/>             <!-- a_max，必须大于规划加速度 -->
     <arg name="r_1"   value="0.06"/>            <!-- r_1 -->
     <arg name="r_2"   value="0.2"/>             <!-- r_2 -->
@@ -37,15 +34,15 @@
     <arg name="map_size_x_" value="60.0"/>
     <arg name="map_size_y_" value="60.0"/>
     <arg name="map_size_z_" value=" 3.0"/>
-    
-    <!-- intrinsic params of the depth camera -->
+
+        <!-- intrinsic params of the depth camera -->
     <arg name="cx" value="321.04638671875"/>
     <arg name="cy" value="243.44969177246094"/>
     <arg name="fx" value="387.229248046875"/>
     <arg name="fy" value="387.229248046875"/>
-
+    
     <!-- Run the sph_particles node -->
-    <node name="sph_zhang" pkg="water_swarm" type="sph_zhang" output="screen">
+    <node name="sph_tase" pkg="water_swarm" type="sph_tase" output="screen">
         <param name="sph/mass"              value="$(arg mass)"/> 
         <param name="sph/restDensity"       value="$(arg restDensity)"/>
         <param name="sph/h"                 value="$(arg h)"/> 
@@ -66,15 +63,14 @@
         <param name="sph/a_max"             value="$(arg a_max)"/>
         <param name="sph/r_1"               value="$(arg r_1)"/>
         <param name="sph/r_2"               value="$(arg r_2)"/>
-        <param name="sph/state_enabled"     value="false"/>
-        <param name="sph/vis_role"          value="false"/>
+        <param name="sph/state_enabled"     value="true"/>
+        <param name="sph/vis_role"          value="true"/>
         <param name="sph/init_bias_x"       value="$(arg init_bias_x)"/>
         <param name="sph/init_bias_y"       value="$(arg init_bias_y)"/>
     </node>
 
-    <!-- Obs map-->
-    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/>
-    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/narrow.pcd"/> -->
+    <!-- Obs map,based on the real environment.-->
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/tase.pcd"/>
     
     <!-- Traj opt-->
   <node name="swarm_planning" pkg="bspline_race" type="swarm_planning" output="screen">
@@ -93,16 +89,10 @@
         <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
         <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
 
-        <param name="sdf_map/local_update_range_x"  value="30.0" /> 
-        <param name="sdf_map/local_update_range_y"  value="30.0" /> 
+        <param name="sdf_map/local_update_range_x"  value="5.0" /> 
+        <param name="sdf_map/local_update_range_y"  value="5.0" /> 
         <param name="sdf_map/local_update_range_z"  value="3.0" /> 
         
-        <!--test param-->
-        <!-- <param name="sdf_map/local_update_range_x"  value="30.0" /> 
-        <param name="sdf_map/local_update_range_y"  value="30.0" /> 
-        <param name="sdf_map/local_update_range_z"  value="4.5" />  -->
-
-
         <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
         <param name="sdf_map/local_bound_inflate"    value="0.0"/>
         <param name="sdf_map/local_map_margin" value="50"/>
@@ -141,21 +131,7 @@
         <param name="astar/resolution_astar" value="0.1" type="double"/>
         <param name="astar/time_resolution" value="0.8" type="double"/>
         <param name="astar/margin" value="0.1" type="double"/>
-        <param name="astar/allocate_num" value="1000000" type="int"/>
-
-          <!-- kinodynamic path searching -->
-        <!-- <param name="search/max_tau" value="0.6" type="double"/>
-        <param name="search/init_max_tau" value="0.8" type="double"/>
-        <param name="search/max_vel" value="$(arg planv_max)" type="double"/>
-        <param name="search/max_acc" value="$(arg plana_max)" type="double"/>
-        <param name="search/w_time" value="10.0" type="double"/>
-        <param name="search/horizon" value="7.0" type="double"/>
-        <param name="search/lambda_heu" value="5.0" type="double"/>
-        <param name="search/resolution_astar" value="0.1" type="double"/>
-        <param name="search/time_resolution" value="0.8" type="double"/>
-        <param name="search/margin" value="0.2" type="double"/>
-        <param name="search/allocate_num" value="100000" type="int"/>
-        <param name="search/check_num" value="5" type="int"/> -->
+        <param name="astar/allocate_num" value="1000000" type="int"/>\
 
         <!-- bspline opt -->
         <param name="planning/traj_order" value="3"/>
@@ -167,16 +143,16 @@
         <param name="planning/lambda2" value="1.0" />
         <param name="planning/lambda3" value="1000.0" />
         <param name="planning/dist_p" value="0.5" />
-        <!-- <param name="planning/lambda1" value="80.0" />
-        <param name="planning/lambda2" value="0.00001" />
-        <param name="planning/lambda3" value="1000.0" /> -->
         <param name="planning/safe_distance" value="0.5" />
         <param name="planning/k_force" value="$(arg k_force)" />
         <param name="planning/planning/opt_maxeval" value="200" />
         <param name="planning/planning/opt_maxtime" value="0.02" />
+        
     </node>
 
+    <!-- Waypoint-->
+    <node name="publish_target" pkg="target_publisher" type="publish_target" output="screen"/>
     <!-- RViz-->
-    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/swarm_rviz.rviz" />
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/experiment.rviz" />
     
 </launch>

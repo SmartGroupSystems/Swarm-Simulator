@@ -34,6 +34,11 @@ include_directories(
   ${NLOPT_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
 )
+add_library(formation_control 
+  src/EdtTransform.cpp
+  src/formation_grad.cpp
+  src/sph_visulization.cpp)
+target_link_libraries(formation_control ${catkin_LIBRARIES})
 
 # add_executable(neighbors src/neighbors.cpp)
 # target_link_libraries(neighbors ${catkin_LIBRARIES})
@@ -44,7 +49,16 @@ include_directories(
 # add_executable(sph_particles src/sph_particles.cpp)
 # target_link_libraries(sph_particles ${catkin_LIBRARIES})
 
+# add_executable(self_organize src/self_organize.cpp)
+# target_link_libraries(self_organize ${catkin_LIBRARIES})
+
 add_executable(sph_zhang src/sph_zhang.cpp)
 target_link_libraries(sph_zhang ${catkin_LIBRARIES})
+
 add_executable(sph_vis src/sph_vis.cpp)
 target_link_libraries(sph_vis ${catkin_LIBRARIES})
+
+add_executable(sph_tase src/sph_tase.cpp)
+target_link_libraries(sph_tase formation_control ${catkin_LIBRARIES})
+
+
