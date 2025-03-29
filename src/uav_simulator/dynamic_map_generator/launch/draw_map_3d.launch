@@ -1,0 +1,11 @@
+<launch>  
+    <!-- Waypoint-->
+    <!-- <node name="publish_target" pkg="target_publisher" type="publish_target" output="screen">
+    </node> -->
+
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/experiment.rviz" />
+
+    <node name="click_map_3d" pkg="map_generator" type="click_map_3d" output="screen">
+    </node>
+ </launch>
+

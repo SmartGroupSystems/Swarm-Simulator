@@ -60,6 +60,16 @@ target_link_libraries(click_map
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES})
   
+add_executable(click_map_3d src/click_map_3d.cpp)
+  target_link_libraries(click_map_3d
+    ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES})
+
+add_executable(move_base_goal_pub src/move_base_goal_pub.cpp)
+  target_link_libraries(move_base_goal_pub
+    ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES})
+
 add_executable(click_map_dynamic src/click_map_dynamic.cpp)
 target_link_libraries(click_map_dynamic
   ${catkin_LIBRARIES}

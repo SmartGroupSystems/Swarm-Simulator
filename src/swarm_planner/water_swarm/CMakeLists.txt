@@ -61,4 +61,5 @@ target_link_libraries(sph_vis ${catkin_LIBRARIES})
 add_executable(sph_tase src/sph_tase.cpp)
 target_link_libraries(sph_tase formation_control ${catkin_LIBRARIES})
 
-
+add_executable(sph_zhang_3d src/sph_zhang_3d.cpp)
+target_link_libraries(sph_zhang_3d ${catkin_LIBRARIES})

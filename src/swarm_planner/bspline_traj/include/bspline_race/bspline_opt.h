@@ -49,7 +49,7 @@ namespace FLAG_Race
             int    opt_maxeval;
             //从A star得到的路径点
             std::vector<Eigen::Vector2d> path_;
-            
+            std::vector<Eigen::Vector3d> path3D_;
             //ESDF
             Eigen::MatrixXd esdf_map_;
             double map_resolution_;//地图分辨率
@@ -114,6 +114,17 @@ namespace FLAG_Race
                 
                 // 更新 cps_num_
                 cps_num_ = path_.size() + 2 * p_order_ - 2;
+            }
+
+            inline void set3DPath2(const std::vector<Eigen::Vector3d> &path) {
+                path3D_.clear(); 
+
+                for (const auto& point : path) {
+                    path3D_.emplace_back(point.x(), point.y(),point.z()); 
+                }
+                
+                // 更新 cps_num_
+                cps_num_ = path3D_.size() + 2 * p_order_ - 2;
             }
 
             //nlopt相关

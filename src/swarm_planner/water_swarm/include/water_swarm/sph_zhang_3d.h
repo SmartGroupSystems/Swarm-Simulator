@@ -1,5 +1,5 @@
-#ifndef __SPH_ZHANG_H__
-#define __SPH_ZHANG_H__
+#ifndef __SPH_ZHANG_3D_H__
+#define __SPH_ZHANG_3D_H__
 
 #define PI 3.14159265f
 
@@ -14,9 +14,7 @@
 #include <map>
 #include <thread>
 #include <math.h>
-#include <cmath>
 #include <unordered_map>
-#include <unordered_set>
 
 #include <eigen3/Eigen/Eigen>
 #include <eigen3/Eigen/Dense>
@@ -34,15 +32,12 @@
 #include "common_msgs/PositionCommand.h"
 #include "common_msgs/BsplineTraj.h"
 #include "common_msgs/Swarm_traj.h"
-#include "formation_grad.h"
-#include "sph_visulization.h"
 
 using namespace std;
 
 ros::Timer                                              timer;
 ros::Publisher                                          particles_publisher;
 ros::Publisher                                          virtual_particles_publisher;
-ros::Publisher                                          marker_pub;
 ros::Publisher                                          swarm_pub;
 ros::Subscriber                                         swarm_traj_sub;
 ros::Subscriber                                         target_sub;
@@ -50,7 +45,6 @@ ros::Subscriber                                         force_sub;
 std::vector<ros::Publisher>                             odom_publishers;
 ros::Publisher                                          pos_pub;
 ros::Publisher                                          vel_pub;
-ros::Publisher                                          formation_vis;
 ros::Time last_time;//控制时间loop
 ros::Time last_print_time;//打印时间loop
 ros::Time current_time;
@@ -68,8 +62,6 @@ bool   state_enabled;//是否在rviz中显示粒子状态
 bool   vis_role;//是否显示角色，和state显示二选一
 bool   receive_target = false;
 double init_bias_x, init_bias_y;
-std::vector<Eigen::Vector2d>  boundary_points;
-
 
 void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
@@ -130,36 +122,21 @@ struct Particle
     common_msgs::Force          force;
     float                       density;
     float                       pressure;
-    uint16_t                    hash;                   
+    uint16_t                    hash;
     common_msgs::Force          u_den, u_rep, u_fri;
-    common_msgs::Force          f_shape,f_elastic,f_topo;
     std_msgs::String            name;
     int                         index;
     ParticleState               state = NULL_STATE;
     ParticleRole                role  = FREE;
-    float                       desired_density;
 };
 
 class SPHSystem
 {
 public:
     SPHSettings     settings;
-    FormationGrad   formation;
     size_t          sph_particleCubeWidth;
     size_t          sph_particleCount;
 
-    /* formation based params */
-    std::unordered_set<int> fixed_indices;
-    std::vector<Eigen::Vector3f> target_positions;
-    double k_shape_max = 50.0;  // 最终形状力大小
-    double start_time = ros::Time::now().toSec(); // 记录启动时间
-    double alpha = 0.5;  // 斥力权重变化速率
-    double beta = 0.2;   // 形状力权重变化速率
-    double gamma = 0.3;  // 粘性力权重变化速率
-    double delta = 0.4;  // 密度力权重变化速率
-    
-
-    /*  */
     bool started;
     bool runOnGPU;
     bool isInitialReceived = false;  // 用于检查是否已经接收到第一个消息
@@ -170,7 +147,7 @@ public:
 
 public:
 	SPHSystem(
-        size_t numParticles, const SPHSettings &settings, FormationGrad &FormationGrad,
+        size_t numParticles, const SPHSettings &settings,
         const bool &runOnGPU);
     SPHSystem();
 	~SPHSystem();
@@ -217,7 +194,7 @@ public:
     void parallelUpdateParticleTraj();
     void parallelUpdateParticlePositions(const float deltaTime);
     void pubroscmd();
-    void formation_slice_output(const Eigen::MatrixXd &formation_grad);
+
     inline std::string stateToString(ParticleState state) {
         switch (state) {
             case NULL_STATE: return "SPH";
@@ -248,24 +225,6 @@ public:
         }
         return value;
     }
-
-    Eigen::Vector3f getLineTargetPosition(const Particle& particle, int index) 
-    {
-        // **定义直线的起点和终点**
-        Eigen::Vector3f start_point(-30.0, 0.0, 0.0);  // 直线起点 (-L/2, 0, 0)
-        Eigen::Vector3f end_point(30.0, 0.0, 0.0);     // 直线终点 (L/2, 0, 0)
-
-        // **计算方向向量**
-        Eigen::Vector3f direction = end_point - start_point;
-
-        // **计算粒子目标位置**
-        Eigen::Vector3f target_position = start_point + (index * direction / (121 - 1));
-
-        return target_position;
-    }
-
-
-
 
 };
 

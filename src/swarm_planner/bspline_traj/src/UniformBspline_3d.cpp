@@ -1,4 +1,4 @@
-#include <bspline_race/UniformBspline.h>
+#include <bspline_race/UniformBspline_3d.h>
 
 namespace FLAG_Race
 
@@ -78,7 +78,7 @@ namespace FLAG_Race
         return trajectory;
     }
 
-     Eigen::Vector2d UniformBspline::singleDeboor(const double &u_probe)//the deboor's algorithm
+     Eigen::Vector3d UniformBspline::singleDeboor(const double &u_probe)//the deboor's algorithm
      {  
         //bound the u_probe
         double u_probe_;
@@ -97,8 +97,8 @@ namespace FLAG_Race
         // since MATLAB index start from 1 instead of 0
         // The effective control points are
         double alpha;
-        Eigen::MatrixXd d(p_+1,2);
-        d = control_points_.block(k-p_,0,p_+1,2);// c++这里是从0行0列开始
+        Eigen::MatrixXd d(p_+1,3);
+        d = control_points_.block(k-p_,0,p_+1,3);// c++这里是从0行0列开始
         for (size_t i = 0; i < p_; i++)
         {
             for (size_t j = p_; j > i; j--)
@@ -108,7 +108,7 @@ namespace FLAG_Race
             }          
         }
 
-            Eigen::Vector2d value;
+            Eigen::Vector3d value;
             value = d.row(p_);
             return value;
      }

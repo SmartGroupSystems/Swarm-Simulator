@@ -1,4 +1,4 @@
-#include <bspline_race/swarm_planning.h>
+#include <bspline_race/swarm_planning_3d.h>
 
 
 using namespace FLAG_Race;

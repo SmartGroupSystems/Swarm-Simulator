@@ -3,7 +3,7 @@
     through particularly narrow tunnels based on the foundation of Smoothed Particle Hydrodynamics (SPH), 
     with a focus on significantly improving the deformation capability of the SPH system.-->
 
-    <arg name="particleCount" value="60"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="15"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.8"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="2.0"/>       <!-- 初始化时间 -->
@@ -20,13 +20,13 @@
     <arg name="k_d"   value="3.5"/>           <!-- k_d -->
     <arg name="k_ff"  value="1.0"/>           <!-- k_ffs -->
     <arg name="k_force" value="100.0"/>       <!-- k_force -->
-    <arg name="v_max" value="1.0"/>             <!-- v_max，必须大于规划速度-->
+    <arg name="v_max" value="1.2"/>             <!-- v_max，必须大于规划速度-->
     <arg name="a_max" value="1.5"/>             <!-- a_max，必须大于规划加速度 -->
     <arg name="r_1"   value="0.06"/>            <!-- r_1 -->
     <arg name="r_2"   value="0.2"/>             <!-- r_2 -->
     <arg name="planv_max" value="0.8"/>             <!-- v_max -->
     <arg name="plana_max" value="1.0"/>             <!-- a_max -->
-    <arg name="restDensity" value="100.0"/> <!-- \rho0 -->
+    <arg name="restDensity" value="1000000.0"/> <!-- \rho0 -->
     <arg name="g" value="-9.8"/>                <!-- 重力,no use -->
     <arg name="use_pctrl" value="true"/>        <!-- 使用位置\速度\加速度控制，默认使用位置控制 -->
 
@@ -56,6 +56,15 @@
         <param name="sph/vis_role"          value="false"/>
         <param name="sph/init_bias_x"       value="$(arg init_bias_x)"/>
         <param name="sph/init_bias_y"       value="$(arg init_bias_y)"/>
+    </node>
+
+    <!-- Map-->
+     <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/tase_test.pcd"/>
+    
+    <!-- Navigation-->
+    <node name="formation_planning" pkg="bspline_race" type="formation_planning" output="screen">
+        <!-- Navigation param -->
+        
     </node>
 
     <!-- RViz-->

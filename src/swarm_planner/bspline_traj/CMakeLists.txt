@@ -40,38 +40,56 @@ include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}/devel/include
 )
 
-add_library( bspline_race 
+# 定义库 (race和3d版本)
+add_library(bspline_race
    src/UniformBspline.cpp
    src/bspline_opt.cpp 
    src/bspline_race.cpp
-   )
-target_link_libraries(bspline_race
-  ${catkin_LIBRARIES}
+   src/gvf.cpp
 )
-# add_dependencies(bspline_race
-#   ${PROJECT_NAME}_generate_messages_cpp
-# )
+target_link_libraries(bspline_race ${catkin_LIBRARIES})
 
-add_executable( flag_planner 
-    src/test_planning.cpp
- )
- 
+add_library(bspline_race_3d
+   src/UniformBspline_3d.cpp
+   src/bspline_opt_3d.cpp 
+   src/bspline_race_3d.cpp
+   src/gvf.cpp
+)
+target_link_libraries(bspline_race_3d ${catkin_LIBRARIES})
+
+# 可执行文件
+add_executable(flag_planner src/test_planning.cpp)
 target_link_libraries(flag_planner 
- bspline_race
- ${catkin_LIBRARIES}
- ${NLOPT_LIBRARIES}
+    bspline_race
+    ${catkin_LIBRARIES}
+    ${NLOPT_LIBRARIES}
 )
 
-add_executable( swarm_planning 
-    src/swarm_planning.cpp
- )
- 
+# swarm planning (2D版本)
+add_executable(swarm_planning src/swarm_planning.cpp)
 target_link_libraries(swarm_planning 
+    bspline_race
+    ${catkin_LIBRARIES}
+    ${NLOPT_LIBRARIES}
+)
+
+# swarm planning (3D版本)
+add_executable(swarm_planning_3d src/swarm_planning_3d.cpp)
+target_link_libraries(swarm_planning_3d 
+    bspline_race_3d
+    ${catkin_LIBRARIES}
+    ${NLOPT_LIBRARIES}
+)
+
+# formaiton planning (2D版本)
+add_executable( formation_planning 
+    src/formation_planning.cpp
+ )
+target_link_libraries(formation_planning 
  bspline_race
  ${catkin_LIBRARIES}
  ${NLOPT_LIBRARIES}
 )
-
 
 add_executable(traj_server src/traj_server.cpp)
 target_link_libraries(traj_server ${catkin_LIBRARIES})  

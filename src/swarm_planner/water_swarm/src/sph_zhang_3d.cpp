@@ -1,9 +1,9 @@
-#include "sph_tase.h"
+#include "sph_zhang_3d.h"
 
 SPHSystem* sph_planner;
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "sph_tase");
+    ros::init(argc, argv, "sph_particles");
     ros::NodeHandle nh("~");
 
     nh.param("sph/particleCount", particleCount, -1);
@@ -32,14 +32,12 @@ int main(int argc, char **argv) {
     timer                 = nh.createTimer(ros::Duration(updateInterval),   timerCallback);
     particles_publisher   = nh.advertise<visualization_msgs::MarkerArray>("particles_vis", 10);
     virtual_particles_publisher = nh.advertise<visualization_msgs::MarkerArray>("virtual_particles_vis", 10);
-    marker_pub = nh.advertise<visualization_msgs::Marker>("/target_positions", 10);
     swarm_pub             = nh.advertise<common_msgs::Swarm_particles>("/swarm_particles", 10);
     swarm_traj_sub        = nh.subscribe("/swarm_traj", 1000, swarmTrajCallback);
     target_sub            = nh.subscribe("/particle_target", 10,targetCallback);
     force_sub             = nh.subscribe("/particle_force", 10,forceCallback);
     pos_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_position", 10);
     vel_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_velocity", 10);
-    formation_vis         = nh.advertise<visualization_msgs::Marker>("/formation_slice", 10);
     odom_publishers.resize(particleCount);
     for (int i = 0; i < particleCount; ++i) {
         std::stringstream ss;
@@ -47,88 +45,9 @@ int main(int argc, char **argv) {
         odom_publishers[i] = nh.advertise<nav_msgs::Odometry>(ss.str(), 10);
     }
 
-
-/**     Formation Construction
- * 
- * 
- * 
- *  圆形区域 (type = 0), params[0]=radius
-    FormationShape circle_shape(Eigen::Vector2d(0, 0), 0, {5.75});
-    circle_shape.addObjective([](const Eigen::Vector2d &pos) {
-        return pos.squaredNorm() - 5.75 * 5.75;
-    });
-    formation.addFormationShape(circle_shape);
-
-   矩形区域 (type = 1), params={width, height}
-    FormationShape rect_shape(Eigen::Vector2d(2, 2), 1, {4.0, 3.0});
-    rect_shape.addObjective([](const Eigen::Vector2d &pos) {
-        return std::max(fabs(pos(0)-2)-2.0, fabs(pos(1)-2)-1.5);
-    });
-    formation.addFormationShape(rect_shape);
-
-    直线区域 (type = 2), params={x_start,y_start,x_end,y_end}
-    FormationShape line_shape(Eigen::Vector2d(0,0), 2, { -1.0,-1.0, 3.0,3.0 });
-    line_shape.addObjective([](const Eigen::Vector2d &pos) {
-    // 直线区域，这里可根据需要定义实际意义
-        return (pos(1)-pos(0));
-    });
-    formation.addFormationShape(line_shape);
-**/
-    
-    
-    FormationGrad formation(200, 200, -10.0, 10.0);
-
-    /* circle 1-------------------------------------- */
-    FormationShape circle_shape(Eigen::Vector2d(0, 0), 0, {6.75});
-    circle_shape.addObjective([](const Eigen::Vector2d &pos) {
-        return pos.squaredNorm() - 6.75 * 6.75;
-    });
-    formation.addFormationShape(circle_shape);
-
-    /* circle 2-------------------------------------- */
-    Eigen::Vector2d circle_center(5.0, -3.0); // 非原点圆心
-    double circle_radius = 2.5;
-    FormationShape circle_shape2(circle_center, 0, {circle_radius});
-    circle_shape2.addObjective([circle_radius](const Eigen::Vector2d &pos) {
-        return circle_radius * circle_radius - pos.squaredNorm(); 
-    });
-    formation.addFormationShape(circle_shape2);
-
-    /* rectangle 1-------------------------------------- */
-    Eigen::Vector2d rect_center(3.0, 3.0);
-    double rect_width = 4.0;
-    double rect_height = 3.0;
-    FormationShape rect_shape(rect_center, 1, {rect_width, rect_height});
-    // 修改后的矩形约束函数（正确版本）
-    rect_shape.addObjective([rect_width, rect_height](const Eigen::Vector2d &pos) {
-        double dx = std::abs(pos(0)) - rect_width / 2.0;
-        double dy = std::abs(pos(1)) - rect_height / 2.0;
-
-        double outside_distance = std::max(dx, dy); 
-        return -outside_distance;
-    });
-    formation.addFormationShape(rect_shape);
-
-    /* rectangle 2-------------------------------------- */
-    Eigen::Vector2d rect_center2(-4.0, 2.0); 
-    double rect_width2 = 3.0;
-    double rect_height2 = 2.0;
-    FormationShape rect_shape2(rect_center2, 1, {rect_width2, rect_height2});
-    rect_shape2.addObjective([rect_width2, rect_height2](const Eigen::Vector2d &pos) {
-        double dx = std::abs(pos(0)) - rect_width2 / 2.0;
-        double dy = std::abs(pos(1)) - rect_height2 / 2.0;
-
-        double outside_distance = std::max(dx, dy);
-        return -outside_distance; // 内部禁止进入
-    });
-    formation.addFormationShape(rect_shape2);
-
-
-
-
     //start sph
     SPHSettings sphSettings(mass, restDensity, h, g);
-    sph_planner = new SPHSystem(15, sphSettings,formation,false);
+    sph_planner = new SPHSystem(15, sphSettings, false);
 
     ROS_INFO("sph_planner node has started.");
 
@@ -204,53 +123,61 @@ void SPHSystem::processTraj(const common_msgs::Swarm_traj& swarmtraj)
     ROS_INFO("Swarm trajectory processed, %lu trajectories stored.", swarmTrajBuffer_.size());
 }
 
-
-void SPHSystem::initParticles() {
+void SPHSystem::initParticles()
+{
     sph_particleCount = particleCount;
 
     int sideLength = static_cast<int>(std::sqrt(particleCount));
-    if (sideLength * sideLength < particleCount) {
-        ++sideLength;
-    }
+        if (sideLength * sideLength < particleCount) {
+            ++sideLength;
+        }
+    double maxRange = sideLength * particleInterval;
+    
+        // 初始化粒子数组
+        for (int i = 0; i < particleCount; ++i) {
+            int row = i / sideLength;
+            int col = i % sideLength;
+            
+            // 初始化每个粒子
+            Particle p;
+            p.position.x = col * particleInterval;
+            p.position.x = col * particleInterval-init_bias_x;
+            p.position.y = row * particleInterval-init_bias_y;
+            p.position.z = 1.0; // 默认z值为1
+            p.velocity.x = 0.0;
+            p.velocity.y = 0.0;
+            p.velocity.z = 0.0;
+            p.acceleration.x = 0.0;
+            p.acceleration.y = 0.0;
+            p.acceleration.z = 0.0;
+            p.force.x = 0.0;
+            p.force.y = 0.0;
+            p.force.z = 0.0;
+            p.density = settings.selfDens;
+            p.pressure = 0.0;
+            p.hash = 0; // 根据需要设置
+            p.index= i;
 
-    // 初始化粒子数组
-    for (int i = 0; i < particleCount; ++i) {
-        int row = i / sideLength;
-        int col = i % sideLength;
+            // 设置粒子名称，例如"Particle 1", "Particle 2"等
+            std::stringstream ss;
+            ss << "Particle " << i + 1;
+            p.name.data = ss.str();
 
-        Particle p;
-
-        if (0) {
-
-        } else {
-            // 正常粒子
-            p.position.x = col * particleInterval - init_bias_x;
-            p.position.y = row * particleInterval - init_bias_y;
+            // 将粒子加入列表
+            particles.push_back(p);
         }
 
-        p.position.z = 1.0; // 默认z值为1
-        p.velocity.x = 0.0;
-        p.velocity.y = 0.0;
-        p.velocity.z = 0.0;
-        p.acceleration.x = 0.0;
-        p.acceleration.y = 0.0;
-        p.acceleration.z = 0.0;
-        p.force.x = 0.0;
-        p.force.y = 0.0;
-        p.force.z = 0.0;
-        p.density = settings.selfDens;
-        p.pressure = 0.0;
-        p.hash = 0;
-        p.index = i;
+    common_msgs::Position apex;
+    apex.x = -0.1; apex.y = -0.1; apex.z = 0;
+    generateVirtualParticles(maxRange,static_cast<int>(std::sqrt(particleCount))*3,apex);
 
-        // 设置粒子名称
-        std::stringstream ss;
-        ss << "Particle " << i + 1;
-        p.name.data = ss.str();
+    // std::cout << "\033[32m粒子初始化成功！总计初始化 " << particles.size()
+    //               << " 个粒子，在 [" << 0 << ", " << 0 << "] 到 [" << maxRange << ", " << maxRange 
+    //               << "] 的正方形区域内。\033[0m" << std::endl;
 
-        // 加入列表
-        particles.push_back(p);
-    }
+    // std::cout << "\033[31m虚拟粒子初始化成功！总计初始化 " << virtual_particles.size()
+    //           << " 个粒子。\033[0m" << std::endl;
+    
 }
 
 void SPHSystem::findNeighbors() {
@@ -269,11 +196,7 @@ void SPHSystem::findNeighbors() {
             float dx = particle.position.x - other.position.x;
             float dy = particle.position.y - other.position.y;
             float dz = particle.position.z - other.position.z;
-            float qij = sqrt(dx * dx + dy * dy + dz * dz);
-            
-            // float dist2 = dx * dx + dy * dy + dz * dz ;
-            float dist2 = qij*qij + particleVisScale* particleVisScale - 2*qij*particleVisScale + 1e-6;
-            
+            float dist2 = dx * dx + dy * dy + dz * dz;
             float h2 = settings.h * settings.h;
 
             if (dist2 < 4 * h2) {
@@ -467,13 +390,13 @@ void SPHSystem::parallelDensityAndPressures()
 
         particle.density = pDensity + settings.selfDens;
         
+        // double k_den_coefficient = (forceMap.count(particle.index) > 0 && forceMap[particle.index].k_den != 0) ? forceMap[particle.index].k_den : 1.0;
+        // if (k_den_coefficient > 1.0)
+        // {
+        //     ROS_INFO("k_den_coefficient for particle %d: %f", particle.index, k_den_coefficient);
+        // }
+        
         double p = -k_den  * (1/particle.density) * (std::pow(particle.density/settings.restDensity,7) -1 );
-
-        // Eigen::Vector3d pos(particle.position.x,particle.position.y,particle.position.z);
-        //  particle.desired_density = formation.calcVelDistance(pos); 
-        //  double p = -k_den * (1/particle.density) * (std::pow(particle.density/particle.desired_density,7) -1 );
-        //  std::cout << "Particle Index: " << particle.index
-        //       << ", Desired Density: " << particle.desired_density << std::endl;
         
         for (auto& neighbor_pair : neighbors)
         {
@@ -519,10 +442,6 @@ void SPHSystem::parallelDensityAndPressures()
 
 void SPHSystem::parallelForces()
 {
-
-    double r_min = 0.4; // 
-    double k_rep_core = 1000.0 * k_rep; // 核排斥力系数增强
-
     for (auto& particle : particles) {
 
         particle.u_rep.x = 0.0;
@@ -533,82 +452,37 @@ void SPHSystem::parallelForces()
         particle.u_fri.y = 0.0; 
         particle.u_fri.z = 0.0; 
 
-        particle.f_shape.x = 0.0;
-        particle.f_shape.y = 0.0;
-        particle.f_shape.z = 0.0;
-
         auto& neighbors = particleNeighborsTable[&particle];
         
-        // for (auto& neighbor_pair : neighbors) {
-        //     const Particle* neighbor = neighbor_pair.first;
-        //     float dist2 = neighbor_pair.second;
-
-        //     // 计算邻居与当前粒子之间的实际距离
-        //     float dist = std::sqrt(dist2) - particleVisScale;
-        //     // float dist = std::sqrt(dist2);
-
-        //     // 计算方向向量
-        //     float dx = particle.position.x - neighbor->position.x;
-        //     float dy = particle.position.y - neighbor->position.y;
-        //     float dz = particle.position.z - neighbor->position.z;
-            
-        //     // 归一化方向向量
-        //     float dir_x = dx / dist;
-        //     float dir_y = dy / dist;
-        //     float dir_z = dz / dist;
-
-        //     particle.u_rep.x += k_rep * 1/dist2 * dist * dir_x;
-        //     particle.u_rep.y += k_rep * 1/dist2 * dist * dir_y;
-        //     particle.u_rep.z += k_rep * 1/dist2 * dist * dir_z;
-        // }
-
         for (auto& neighbor_pair : neighbors) {
             const Particle* neighbor = neighbor_pair.first;
+            float dist2 = neighbor_pair.second;
 
-            Eigen::Vector3d q_ij;
-            q_ij << particle.position.x - neighbor->position.x,
-                    particle.position.y - neighbor->position.y,
-                    particle.position.z - neighbor->position.z;
+            // 计算邻居与当前粒子之间的实际距离
+            float dist = std::sqrt(dist2);
 
-            double dist2 = q_ij.squaredNorm();
-            double dist = std::sqrt(dist2) + 1e-6;
+            // 计算方向向量
+            float dx = particle.position.x - neighbor->position.x;
+            float dy = particle.position.y - neighbor->position.y;
+            float dz = particle.position.z - neighbor->position.z;
+            
+            // 归一化方向向量
+            float dir_x = dx / dist;
+            float dir_y = dy / dist;
+            float dir_z = dz / dist;
 
-            Eigen::Vector3d force_rep(0, 0, 0);
+            particle.u_rep.x += k_rep * 1/dist2 * dist * dir_x;
+            particle.u_rep.y += k_rep * 1/dist2 * dist * dir_y;
+            particle.u_rep.z += k_rep * 1/dist2 * dist * dir_z;
 
-            if (dist >= r_min) {
-                // 正常斥力 (原始公式)
-                force_rep = k_rep * q_ij / dist2;
-            } else {
-                // 极近距离增强排斥力，强硬核排斥
-                force_rep = k_rep_core * q_ij / (dist2 * dist2);
-                //  std::cout << "\033[1;31mUSE!\033[0m" << std::endl;
-            }
-
-            // 累加斥力
-            particle.u_rep.x += force_rep(0);
-            particle.u_rep.y += force_rep(1);
-            particle.u_rep.z += force_rep(2);
-        } 
-
-        // **计算形状约束力**
-        Eigen::Vector3d pos(particle.position.x,particle.position.y,particle.position.z);
-        Eigen::Vector2d shapeforce = formation.calcPotentialGrad(pos);
-        particle.f_shape.x = -100* shapeforce(0);
-        particle.f_shape.y = -100* shapeforce(1);
-        particle.f_shape.z = 0 ;
-
-
+        }
+    
         particle.u_fri.x = -k_fri * particle.velocity.x; 
         particle.u_fri.y = -k_fri * particle.velocity.y; 
         particle.u_fri.z = -k_fri * particle.velocity.z; 
     }   
 }
 
-
-// void SPHSystem::parallelForces()
-// {
-
-// }
 
 void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 {
@@ -636,17 +510,18 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         switch (p->state) {
             case NULL_STATE:
                 // NULL_STATE 加速度计算
-                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + p->f_shape.x;
-                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + p->f_shape.y;
-                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + p->f_shape.z;
+                // acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + forceMap[p->index].x;
+                // acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + forceMap[p->index].y;
+                // acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + forceMap[p->index].z;
+                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
+                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
+                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
                 break;
 
             case NEAR_TARGET:
-                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x + p->f_shape.x;
-                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y + p->f_shape.y;
-                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z + p->f_shape.z;
-                // std::cout << "Acceleration: [" << acceleration.x << ", " << acceleration.y << ", " << acceleration.z << "]" << std::endl;
-
+                acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
+                acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
+                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
                 break;
 
             case ATTRACT:
@@ -689,11 +564,25 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
                                         + k_ff * acc[0].y
                                         + forceMap[p->index].y;
 
-                        acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z 
-                                        + k_p * position_error.z() 
+                        acceleration.z = k_p * position_error.z() 
                                         + k_d * velocity_error.z() 
                                         + k_ff * acc[0].z
                                         + forceMap[p->index].z;
+
+                        // acceleration.x = k_p * position_error.x() 
+                        //                 + k_d * velocity_error.x() 
+                        //                 + k_ff * acc[0].x
+                        //                 + forceMap[p->index].x;
+
+                        // acceleration.y = k_p * position_error.y() 
+                        //                 + k_d * velocity_error.y() 
+                        //                 + k_ff * acc[0].y
+                        //                 + forceMap[p->index].y;
+
+                        // acceleration.z = k_p * position_error.z() 
+                        //                 + k_d * velocity_error.z() 
+                        //                 + k_ff * acc[0].z
+                        //                 + forceMap[p->index].z;
 
                         // 发布位置消息
                         geometry_msgs::PoseStamped pos_msg;
@@ -748,11 +637,10 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
 
 
         // 更新位置
-        if (fixed_indices.find(p->index) == fixed_indices.end()) {
-            p->position.x += p->velocity.x * deltaTime;
-            p->position.y += p->velocity.y * deltaTime;
-            p->position.z += p->velocity.z * deltaTime;
-        }
+        p->position.x += p->velocity.x * deltaTime;
+        p->position.y += p->velocity.y * deltaTime;
+        p->position.z += p->velocity.z * deltaTime;
+
     }
     
     //Updare traj
@@ -901,117 +789,12 @@ void SPHSystem::pubroscmd()
     // 发布 Swarm_particles 消息
     swarm_msg.header.stamp = ros::Time::now();  // 设置时间戳
     swarm_msg.header.frame_id = "world";  // 设置 frame_id
-    swarm_pub.publish(swarm_msg);  // 发布消息.
-
-
-    visualization_msgs::Marker marker;
-    marker.header.frame_id = "world";
-    marker.header.stamp = ros::Time::now();
-    marker.ns = "formation_shapes";
-    marker.id = 0;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.orientation.w = 1.0;
-    marker.color.a = 0.8;
-
-    int marker_id = 0;
-    for (const auto& shape : formation.formation_shapes_)
-    {
-        marker.id = marker_id++;
-        if (shape.shape_type == 0) // 圆形
-        {
-            marker.type = visualization_msgs::Marker::CYLINDER;
-            marker.scale.x = shape.params[0]*2; // diameter
-            marker.scale.y = shape.params[0]*2;
-            marker.scale.z = 0.01; //厚度
-
-            marker.pose.position.x = shape.reference_point(0);
-            marker.pose.position.y = shape.reference_point(1);
-            marker.pose.position.z = 0;
-
-            marker.color.r = 0.2; marker.color.g = 0.2; marker.color.b = 0.0;
-        }
-        else if (shape.shape_type == 1) // 矩形
-        {
-            marker.type = visualization_msgs::Marker::CUBE;
-            marker.scale.x = shape.params[0]; // width
-            marker.scale.y = shape.params[1]; // height
-            marker.scale.z = 0.02; // 厚度
-
-            marker.pose.position.x = shape.reference_point(0);
-            marker.pose.position.y = shape.reference_point(1);
-            marker.pose.position.z = 0;
-
-            marker.color.r = 0.0; marker.color.g = 1.0; marker.color.b = 0.0;
-        }
-        else if (shape.shape_type == 2) // 直线
-        {
-            marker.type = visualization_msgs::Marker::LINE_STRIP;
-            marker.scale.x = 0.05; //线宽
-            marker.points.clear();
-
-            geometry_msgs::Point pt_start, pt_end;
-            pt_start.x = shape.params[0]; pt_start.y = shape.params[1]; pt_start.z = 0.0;
-            pt_end.x   = shape.params[2]; pt_end.y   = shape.params[3]; pt_end.z = 0.0;
-
-            marker.points.push_back(pt_start);
-            marker.points.push_back(pt_end);
-
-            marker.color.r = 0.0; marker.color.g = 0.0; marker.color.b = 1.0;
-        }
-
-        formation_vis.publish(marker);
-    }
-
+    swarm_pub.publish(swarm_msg);  // 发布消息
 }
 
 void SPHSystem::calaDynamicBound()
 {
 
-}
-
-void SPHSystem::formation_slice_output(const Eigen::MatrixXd &formationmap)
-{
-    visualization_msgs::Marker marker_result;
-    marker_result.header.frame_id = "world";
-    marker_result.type = visualization_msgs::Marker::POINTS;
-    marker_result.action = visualization_msgs::Marker::MODIFY;
-    marker_result.scale.x = 0.1;
-    marker_result.scale.y = 0.1;
-    marker_result.scale.z = 0.1;
-    marker_result.pose.orientation.x = 0;
-    marker_result.pose.orientation.y = 0;
-    marker_result.pose.orientation.z = 0;
-    marker_result.pose.orientation.w = 1;
-
-    for (int i = 0; i < formationmap.rows(); i++)
-    {
-        for (int j = 0; j < formationmap.cols(); j++)
-        {
-            double h = formationmap(i, j);
-            double max_dist = 50.0;
-            if (h < -30.0 || h > 50.0) continue;
-            /* 计算当前栅格中心的真实坐标 */
-            double vox_pos_x, vox_pos_y;
-            vox_pos_x = (j+0.5)*0.1 + (formation.map_origin_x -0.05);
-            vox_pos_y = (formation.map_origin_y + 0.05) - (i+0.5)*0.1;
-            geometry_msgs::Point pt;
-            pt.x = vox_pos_x;
-            pt.y = vox_pos_y;
-            pt.z = -1.0;
-            marker_result.points.push_back(pt);
-
-            /* 计算色彩 */
-            std_msgs::ColorRGBA color;
-            color.a = 1;
-            std::vector<float> color_result;
-            color_result = calculate_color(h, max_dist, -max_dist, R, G, B);
-            color.r = color_result[0];
-            color.g = color_result[1];
-            color.b = color_result[2];
-            marker_result.colors.push_back(color);
-        }
-    }
-    formation_vis.publish(marker_result);
 }
 
 void SPHSystem::parallelUpdateParticleTraj() {
@@ -1108,11 +891,10 @@ bool SPHSystem::isNearVirtualParticle(double x, double y, double z)
 }
 
 SPHSystem::SPHSystem(
-    size_t particleCubeWidth, const SPHSettings &settings, FormationGrad &FormationGrad,
+    size_t particleCubeWidth, const SPHSettings &settings,
     const bool &runOnGPU)
     : sph_particleCubeWidth(particleCubeWidth)
     , settings(settings)
-    , formation(FormationGrad)
     , runOnGPU(runOnGPU)
 {
     /*---TEST-------*/ 
