@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
     swarm_traj_sub        = nh.subscribe("/swarm_traj", 1000, swarmTrajCallback);
     target_sub            = nh.subscribe("/particle_target", 10,targetCallback);
     force_sub             = nh.subscribe("/particle_force", 10,forceCallback);
+    collision_matrix_sub  = nh.subscribe("/check_collision_matrix", 10,collisionMatrixCallback);
     pos_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_position", 10);
     vel_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_velocity", 10);
     odom_publishers.resize(particleCount);
@@ -53,6 +54,22 @@ int main(int argc, char **argv) {
 
     ros::spin();
     return 0;
+}
+
+void collisionMatrixCallback(const std_msgs::Int32MultiArray::ConstPtr& msg)
+{
+    int num_rows = msg->layout.dim[0].size;
+    int num_cols = msg->layout.dim[1].size;
+
+    Eigen::MatrixXi collision_matrix(num_rows, num_cols);
+
+    for (int i = 0; i < num_rows; ++i) {
+        for (int j = 0; j < num_cols; ++j) {
+            collision_matrix(i, j) = msg->data[i * num_cols + j];
+        }
+    }
+
+    sph_planner->updateCollisionMatrix(collision_matrix);
 }
 
 void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg)
@@ -192,6 +209,7 @@ void SPHSystem::findNeighbors() {
 
         for (auto& other : particles) {
             if (&particle == &other) continue;
+            if (collision_matrix_.size() > 0 && collision_matrix_(particle.index, other.index) == 1) continue;
 
             float dx = particle.position.x - other.position.x;
             float dy = particle.position.y - other.position.y;

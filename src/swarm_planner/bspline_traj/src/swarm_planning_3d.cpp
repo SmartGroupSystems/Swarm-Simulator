@@ -15,7 +15,7 @@ int main(int argc, char ** argv)
 
     plan_manager manager(nh);
 
-    ros::AsyncSpinner spinner(15); // Use 15 threads
+    ros::AsyncSpinner spinner(15); // Use 18 threads
     spinner.start();
     ros::waitForShutdown();
 

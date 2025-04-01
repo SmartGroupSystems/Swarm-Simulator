@@ -75,11 +75,7 @@ namespace FLAG_Race
 
             //智能类指针struct
             std::shared_ptr<UniformBspline> u;
-            // std::vector<std::shared_ptr<UniformBspline>> swarm_bspline;
-            // std::vector<std::shared_ptr<bspline_optimizer>> swarm_opt;
-            // std::vector<std::shared_ptr<Astar>> swarm_astar;
-            // std::vector<std::shared_ptr<SDFMap>> sdf_maps;
-            // std::vector<std::shared_ptr<EDTEnvironment>> edt_environments;
+            
             struct particleManager {
                 std::string particle_index;
                 std::shared_ptr<SDFMap> sdf_map_;
@@ -108,7 +104,6 @@ namespace FLAG_Race
             common_msgs::Swarm_particles particles_force;
             std::shared_ptr<ros::AsyncSpinner> force_spinner;
 
-        public:
             //ROS
             ros::Subscriber particles_sub; 
             ros::Publisher  traj_vis;

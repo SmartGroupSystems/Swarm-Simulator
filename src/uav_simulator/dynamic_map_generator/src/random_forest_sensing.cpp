@@ -244,7 +244,7 @@ int main(int argc, char** argv) {
   n.param("map/obs_num", _obs_num, 30);
   n.param("map/resolution", _resolution, 0.1);
   n.param("map/circle_num", circle_num_, 30);
-  n.param("map/frame_id", _frame_id, string("map"));
+  n.param("map/frame_id", _frame_id, string("world"));
 
 
   n.param("ObstacleShape/lower_rad", _w_l, 0.3);

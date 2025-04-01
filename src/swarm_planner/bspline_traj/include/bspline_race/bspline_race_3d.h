@@ -26,6 +26,7 @@
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 #include <std_msgs/Bool.h>
@@ -75,11 +76,7 @@ namespace FLAG_Race
 
             //智能类指针struct
             std::shared_ptr<UniformBspline> u;
-            // std::vector<std::shared_ptr<UniformBspline>> swarm_bspline;
-            // std::vector<std::shared_ptr<bspline_optimizer>> swarm_opt;
-            // std::vector<std::shared_ptr<Astar>> swarm_astar;
-            // std::vector<std::shared_ptr<SDFMap>> sdf_maps;
-            // std::vector<std::shared_ptr<EDTEnvironment>> edt_environments;
+
             struct particleManager {
                 std::string particle_index;
                 std::shared_ptr<SDFMap> sdf_map_;
@@ -123,6 +120,8 @@ namespace FLAG_Race
             ros::Publisher  path_vis;
             ros::Time       lastPlanTime;
             ros::Time       lastWaitOutputTime;
+            ros::Publisher  collision_matrix_pub;
+            ros::Publisher  collision_marker_pub;
 
             //fsm
             bool receive_goal = false;
@@ -152,6 +151,7 @@ namespace FLAG_Race
                         std::vector<particleManager>& swarmParticlesManager, 
                         ros::Publisher& path_vis, std::mutex& mtx); 
             void pubEsdfForce();
+            void checkBetweenObstacles(const common_msgs::Swarm_particles& particles);
             std::vector<int> hungarianAlgorithm(const Eigen::MatrixXd& costMatrix);
     };
 

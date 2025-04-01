@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     ros::Duration(wait_time).sleep();
 
     // 获取轨迹存储路径
-    std::string base_path = "/home/uav/water_swarm/src/bspline_traj/config/";
+    std::string base_path = "/home/uav/water_swarm/src/swarm_planner/bspline_traj/config/";
 
     // 订阅话题
     std::vector<ros::Subscriber> subscribers;

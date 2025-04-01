@@ -1,4 +1,4 @@
-#include "bspline_race/bspline_race.h"
+#include "bspline_race/bspline_race_3d.h"
 
 namespace FLAG_Race
 
@@ -28,12 +28,12 @@ namespace FLAG_Race
         goal_sub = nh.subscribe("/move_base_simple/goal", 1000, &plan_manager::goalCallback, this);
         path_vis = nh.advertise<visualization_msgs::Marker>("/path_vis", 10);
         traj_vis = nh.advertise<visualization_msgs::Marker>("/traj_vis", 10);
+        collision_matrix_pub = nh.advertise<std_msgs::Int32MultiArray>("/check_collision_matrix", 10);
+        collision_marker_pub = nh.advertise<visualization_msgs::Marker>("/particle_collision_lines", 1);
+
         lastPlanTime = ros::Time::now();
         lastWaitOutputTime = ros::Time::now(); 
 
-        // force_spinner = std::make_shared<ros::AsyncSpinner>(2);  // 创建一个单独线程的 spinner
-        // force_spinner->start();  // 启动线程
-        // ROS_INFO("Force timer spinner started in a separate thread for high-frequency callback.");
     }   
 
     void plan_manager::particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
@@ -44,9 +44,10 @@ namespace FLAG_Race
         } 
         else {
             current_particles = *msg; 
+            checkBetweenObstacles(current_particles);
         }
-    }
 
+    }
 
     void plan_manager::realloca_timerCallback(const ros::TimerEvent&)
     {
@@ -156,6 +157,117 @@ namespace FLAG_Race
             need_replan = false;
         }
     }
+    void plan_manager::checkBetweenObstacles(const common_msgs::Swarm_particles& current_particles)
+    {
+        int num_particles = current_particles.particles.size();
+
+        // 初始化碰撞检查矩阵 (对角线为0)
+        Eigen::MatrixXi collisionMatrix = Eigen::MatrixXi::Zero(num_particles, num_particles);
+
+        visualization_msgs::Marker line_list;
+        line_list.header.frame_id = "world"; // 根据实际情况设置frame_id
+        line_list.header.stamp = ros::Time::now();
+        line_list.ns = "particle_lines";
+        line_list.action = visualization_msgs::Marker::ADD;
+        line_list.pose.orientation.w = 1.0;
+        line_list.id = 0;
+        line_list.type = visualization_msgs::Marker::LINE_LIST;
+        line_list.scale.x = 0.03; // 线条宽度
+
+        // 设置颜色为浅蓝色
+        line_list.color.r = 0.53f;
+        line_list.color.g = 0.81f;
+        line_list.color.b = 0.98f;
+        line_list.color.a = 0.8f;
+
+        for (int i = 0; i < num_particles; ++i) {
+            const auto& particle_i = current_particles.particles[i];
+            int particleIndex_i = particle_i.index;
+
+            // 查找粒子i的粒子管理器
+            auto it_i = std::find_if(swarmParticlesManager.begin(), swarmParticlesManager.end(),
+                                    [&particleIndex_i](const particleManager& manager) {
+                                        return manager.particle_index == std::to_string(particleIndex_i);
+                                    });
+
+            if (it_i == swarmParticlesManager.end()) {
+                ROS_WARN("Particle manager not found for particle index: %d", particleIndex_i);
+                continue;
+            }
+
+            std::shared_ptr<SDFMap> sdf_map = it_i->sdf_map_;
+            Eigen::Vector3d position_i(particle_i.position.x, particle_i.position.y, particle_i.position.z);
+
+            // 遍历其他粒子
+            for (int j = 0; j < num_particles; ++j) {
+                if (i == j) continue;  // 对角线元素始终为0
+
+                const auto& particle_j = current_particles.particles[j];
+                Eigen::Vector3d position_j(particle_j.position.x, particle_j.position.y, particle_j.position.z);
+
+                Eigen::Vector3d direction = position_j - position_i;
+                double distance = direction.norm();
+                int num_samples = std::ceil(distance / 0.1);  // 每隔0.1进行采样
+                Eigen::Vector3d step = direction.normalized() * 0.1;
+
+                bool obstacle_free = true;
+                Eigen::Vector3d sample_point = position_i;
+
+                for (int k = 1; k <= num_samples; ++k) {
+                    sample_point += step;
+
+                    // 使用SDFMap检查占据状态
+                    int occupancy = sdf_map->getInflateOccupancy(sample_point);
+
+                    if (occupancy == 1) {
+                        obstacle_free = false;
+                        break;
+                    }
+                }
+
+                collisionMatrix(particle_i.index, particle_j.index) = obstacle_free ? 0 : 1;
+
+                // 如果无障碍物，添加连线Marker
+                if (obstacle_free) {
+                    geometry_msgs::Point p_start, p_end;
+                    p_start.x = position_i.x();
+                    p_start.y = position_i.y();
+                    p_start.z = position_i.z();
+
+                    p_end.x = position_j.x();
+                    p_end.y = position_j.y();
+                    p_end.z = position_j.z();
+
+                    line_list.points.push_back(p_start);
+                    line_list.points.push_back(p_end);
+                }
+                     
+            }
+        }
+
+        // 将Eigen矩阵转换为ROS消息并发布
+        std_msgs::Int32MultiArray collision_matrix_msg;
+        collision_matrix_msg.layout.dim.resize(2);
+        collision_matrix_msg.layout.dim[0].label = "particles";
+        collision_matrix_msg.layout.dim[0].size = num_particles;
+        collision_matrix_msg.layout.dim[0].stride = num_particles * num_particles;
+        collision_matrix_msg.layout.dim[1].label = "neighbors";
+        collision_matrix_msg.layout.dim[1].size = num_particles;
+        collision_matrix_msg.layout.dim[1].stride = num_particles;
+
+        collision_matrix_msg.data.resize(num_particles * num_particles);
+        for (int i = 0; i < num_particles; ++i) {
+            for (int j = 0; j < num_particles; ++j) {
+                collision_matrix_msg.data[i * num_particles + j] = collisionMatrix(i, j);
+            }
+        }
+
+        collision_matrix_pub.publish(collision_matrix_msg);
+
+        //visulization
+        collision_marker_pub.publish(line_list);
+
+    }
 
     void plan_manager::update(const common_msgs::Swarm_particles& particles) 
     {
@@ -223,12 +335,12 @@ namespace FLAG_Race
         double time_diff = (swarmParticlesManager[index].curr_time - swarmParticlesManager[index].last_time).toSec();
         int index_to_remove = static_cast<int>(time_diff * swarmParticlesManager[index].spline_->TrajSampleRate) + 5;
 ROS_INFO("Time difference: %f seconds", time_diff);
-ROS_INFO("Index to remove: %d", index_to_remove);
+ROS_ERROR("Index to remove: %d", index_to_remove);
         if (!swarmParticlesManager[index].is_initialized) {
             // 第一次进入，初始化 start_pt, start_v, start_a
             start_pt.x() = particles.particles[index].position.x + 0.000001; // if start is zero, a_star bug
             start_pt.y() = particles.particles[index].position.y + 0.000001;
-            start_pt.z() = particles.particles[index].position.z;
+            start_pt.z() = particles.particles[index].position.z + 0.000001;
 
             start_v.x() = particles.particles[index].velocity.x;
             start_v.y() = particles.particles[index].velocity.y;
@@ -436,11 +548,6 @@ ROS_INFO("Index to remove: %d", index_to_remove);
 
                     std::cout << "\033[1;33m" << particle_base << "  init: "<< "\033[0m" << std::endl;
 
-                    // //EDT & MAP
-                    // auto sdf_map_ = std::make_shared<SDFMap>();
-                    // sdf_map_->initMap(nh, particle_base, odom_topic, cloud_topic);
-                    // auto edt_environment_ = std::make_shared<EDTEnvironment>();
-                    // edt_environment_->setMap(sdf_map_);
                     
                     //ASTAR
                     auto geo_path_finder_ = std::make_shared<Astar>();
@@ -450,10 +557,7 @@ ROS_INFO("Index to remove: %d", index_to_remove);
 
                     // dynamic a*
                     auto kino_path_finder_ = std::make_shared<KinodynamicAstar>();
-                    // kino_path_finder_->setParam(nh);
-                    // kino_path_finder_->setEnvironment(edt_environment_);
-                    // kino_path_finder_->init();
-
+ 
                     //OPT
                     auto bspline_opt_ = std::make_shared<bspline_optimizer>();
                     bspline_opt_->init(nh);

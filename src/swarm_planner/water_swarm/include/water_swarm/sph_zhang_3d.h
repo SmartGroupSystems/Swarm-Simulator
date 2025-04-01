@@ -9,6 +9,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/String.h>
 #include <regex>
 #include <map>
@@ -42,6 +43,7 @@ ros::Publisher                                          swarm_pub;
 ros::Subscriber                                         swarm_traj_sub;
 ros::Subscriber                                         target_sub;
 ros::Subscriber                                         force_sub;
+ros::Subscriber                                         collision_matrix_sub;
 std::vector<ros::Publisher>                             odom_publishers;
 ros::Publisher                                          pos_pub;
 ros::Publisher                                          vel_pub;
@@ -69,6 +71,7 @@ void timerCallback(const ros::TimerEvent&);
 void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg);
 void targetCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
 void forceCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
+void collisionMatrixCallback(const std_msgs::Int32MultiArray::ConstPtr& msg);
 
 struct SPHSettings
 {   
@@ -156,6 +159,7 @@ public:
     std::vector<Particle>       virtual_particles;
     std::map<const Particle*, std::vector<std::pair<const Particle*, float>>> particleNeighborsTable;
     std::map<const Particle*, double> nearestNeighborDistanceMap;
+    Eigen::MatrixXi collision_matrix_;
 
     //initializes the particles that will be used
 	void initParticles();
@@ -226,6 +230,10 @@ public:
         return value;
     }
 
+    inline void updateCollisionMatrix(const Eigen::MatrixXi& matrix)
+    {
+        collision_matrix_ = matrix;
+    }
 };
 
 #endif
