@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
     collision_matrix_sub  = nh.subscribe("/check_collision_matrix", 10,collisionMatrixCallback);
     pos_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_position", 10);
     vel_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_velocity", 10);
+    // goal_sub              = nh.subscribe("/particle_target", 10,goalCallback);
     odom_publishers.resize(particleCount);
     for (int i = 0; i < particleCount; ++i) {
         std::stringstream ss;
@@ -55,7 +56,10 @@ int main(int argc, char **argv) {
     ros::spin();
     return 0;
 }
+void goalCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
+{
 
+}
 void collisionMatrixCallback(const std_msgs::Int32MultiArray::ConstPtr& msg)
 {
     int num_rows = msg->layout.dim[0].size;
@@ -209,8 +213,12 @@ void SPHSystem::findNeighbors() {
 
         for (auto& other : particles) {
             if (&particle == &other) continue;
-            if (collision_matrix_.size() > 0 && collision_matrix_(particle.index, other.index) == 1) continue;
-
+            if (collision_matrix_.size() > 0 && collision_matrix_(particle.index, other.index) == 1) 
+                {
+                    // cout<< "ignore particle: "<< other.index <<"!"<<endl;
+                    continue;
+                }
+                
             float dx = particle.position.x - other.position.x;
             float dy = particle.position.y - other.position.y;
             float dz = particle.position.z - other.position.z;
@@ -299,22 +307,39 @@ void SPHSystem::updateParticleStates()
     // 遍历每个粒子
     for (auto& particle : particles) {
         int particleIndex = particle.index;
+
+        // 确认targetPosition存在
+        if (targetMap.find(particleIndex) == targetMap.end()) {
+            continue; // 若targetPosition不存在，则跳过该粒子
+        }
+
         const auto& targetPosition = targetMap[particleIndex];
-  
+
         // 检查粒子是否有轨迹（从swarmTrajBuffer_中查询）
         if (swarmTrajBuffer_.find(particleIndex) != swarmTrajBuffer_.end() &&
             !swarmTrajBuffer_[particleIndex].position.empty()) {
             // 粒子进入TRAJ状态
             particle.state = TRAJ;
-        } else {
-            // 如果轨迹为空，保持或进入NEAR_TARGET
+        } 
+        // else {
+        //     // 计算与目标位置的距离
+        //     Eigen::Vector3d currentPos(particle.position.x, particle.position.y, 0.0);
+        //     Eigen::Vector3d targetPos(targetPosition.x, targetPosition.y, 0.0);
+        //     double distanceToTarget = (currentPos - targetPos).norm();
+
+        //     if (distanceToTarget > 0.2) {
+        //         // 如果距离目标位置大于0.2，进入NEED_TRAJ状态
+        //         particle.state = NEED_TRAJ;
+        //     } else {
+        //         // 如果轨迹为空且距离目标位置不超过0.2，进入NEAR_TARGET状态
+        //         particle.state = NEAR_TARGET;
+        //         targetMap.erase(particleIndex);
+        //     }
+        // }
+        else
             particle.state = NEAR_TARGET;
-            continue;  // 如果是NEAR_TARGET，跳过剩余判断
-        }
     }
-
 }
-
 
 void SPHSystem::update(float deltaTime) {
 	if (!started) return;
@@ -658,6 +683,19 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
         p->position.x += p->velocity.x * deltaTime;
         p->position.y += p->velocity.y * deltaTime;
         p->position.z += p->velocity.z * deltaTime;
+        
+        // Z轴反弹机制
+        if (p->position.z < 0.0) {
+            p->position.z = 0.1; // 限制在地面上
+
+            double rebound_coeff = 0.5; // 反弹系数（可调：0~1，模拟能量损失）
+
+            // 速度反弹（方向反转+能量损失）
+            p->velocity.z = -p->velocity.z * rebound_coeff;
+
+            // 加速度也反向衰减（模拟接触地面产生的冲击变化）
+            p->acceleration.z = -p->acceleration.z * rebound_coeff;
+        }
 
     }
     

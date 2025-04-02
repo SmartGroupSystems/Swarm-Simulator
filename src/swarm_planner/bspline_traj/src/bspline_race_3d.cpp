@@ -94,6 +94,10 @@ namespace FLAG_Race
                 near_target = false;  // If any particle is not in NEAR_TARGET, set to false
                 break;
             }
+            // else if(particle.state == NEED_TRAJ)
+            // {
+            //     need_replan = true;
+            // } 
         }
 
         if (receive_goal)
@@ -227,20 +231,20 @@ namespace FLAG_Race
 
                 collisionMatrix(particle_i.index, particle_j.index) = obstacle_free ? 0 : 1;
 
-                // 如果无障碍物，添加连线Marker
-                if (obstacle_free) {
-                    geometry_msgs::Point p_start, p_end;
-                    p_start.x = position_i.x();
-                    p_start.y = position_i.y();
-                    p_start.z = position_i.z();
+                // // 如果无障碍物，添加连线Marker
+                // if (obstacle_free) {
+                //     geometry_msgs::Point p_start, p_end;
+                //     p_start.x = position_i.x();
+                //     p_start.y = position_i.y();
+                //     p_start.z = position_i.z();
 
-                    p_end.x = position_j.x();
-                    p_end.y = position_j.y();
-                    p_end.z = position_j.z();
+                //     p_end.x = position_j.x();
+                //     p_end.y = position_j.y();
+                //     p_end.z = position_j.z();
 
-                    line_list.points.push_back(p_start);
-                    line_list.points.push_back(p_end);
-                }
+                //     line_list.points.push_back(p_start);
+                //     line_list.points.push_back(p_end);
+                // }
                      
             }
         }
@@ -265,7 +269,7 @@ namespace FLAG_Race
         collision_matrix_pub.publish(collision_matrix_msg);
 
         //visulization
-        collision_marker_pub.publish(line_list);
+        // collision_marker_pub.publish(line_list);
 
     }
 
@@ -334,8 +338,8 @@ namespace FLAG_Race
         }        
         double time_diff = (swarmParticlesManager[index].curr_time - swarmParticlesManager[index].last_time).toSec();
         int index_to_remove = static_cast<int>(time_diff * swarmParticlesManager[index].spline_->TrajSampleRate) + 5;
-ROS_INFO("Time difference: %f seconds", time_diff);
-ROS_ERROR("Index to remove: %d", index_to_remove);
+// ROS_INFO("Time difference: %f seconds", time_diff);
+// ROS_INFO("Index to remove: %d", index_to_remove);
         if (!swarmParticlesManager[index].is_initialized) {
             // 第一次进入，初始化 start_pt, start_v, start_a
             start_pt.x() = particles.particles[index].position.x + 0.000001; // if start is zero, a_star bug
@@ -354,7 +358,7 @@ ROS_ERROR("Index to remove: %d", index_to_remove);
         } 
         else if (index_to_remove >= swarmParticlesManager[index].particle_traj.position.size())
         {
-            ROS_INFO("NEAR TARGET, RETURN.");
+            // ROS_INFO("NEAR TARGET, RETURN.");
             return;
         }
         else {
@@ -380,6 +384,22 @@ ROS_ERROR("Index to remove: %d", index_to_remove);
             start_a.y() = swarmParticlesManager[index].particle_traj.acceleration.front().y;
             start_a.z() = swarmParticlesManager[index].particle_traj.acceleration.front().z;
         }
+
+        // 如果起点距离当前粒子位置大于1.0,则重置起点
+        Eigen::Vector3d currentPos(particles.particles[index].position.x,
+                                particles.particles[index].position.y,
+                                particles.particles[index].position.z);
+
+
+        if ((start_pt - currentPos).norm() >1.0) {
+            // 重置起点为当前粒子的状态
+            start_pt = currentPos;
+        }
+        if (start_pt.z()<0)
+        {
+            start_pt.z() = 0.1;
+        }
+        
         // Find the matching particle in particles_goal based on the index
         int current_index = particles.particles[index].index;
         for (const auto& goal_particle : particles_goal.particles) {
@@ -393,6 +413,39 @@ ROS_ERROR("Index to remove: %d", index_to_remove);
         }
         // Reset pathfinder and search for the path
         // A*
+
+        //check start and end,if occ, select another one.
+        int occupancy1 = swarmParticlesManager[index].sdf_map_->getOccupancy(start_pt);
+        int occupancy2 = swarmParticlesManager[index].sdf_map_->getOccupancy(goal_pt);
+
+        // 如果起点被占据，则找到最近的未占据点作为新起点
+        if (occupancy1 == 1) {
+            Eigen::Vector3d nearest_free_start;
+            if (swarmParticlesManager[index].sdf_map_->getNearestFreePoint(start_pt, nearest_free_start)) {
+                start_pt = nearest_free_start;
+                ROS_WARN("aaaaaaaaaaaaaaaaa");
+            } else {
+                ROS_WARN("无法找到合适的起点！");
+                return;
+            }
+        }
+
+        // 如果终点被占据，则找到最近的未占据点作为新终点
+        if (occupancy2 == 1) {
+            Eigen::Vector3d nearest_free_goal;
+            if (swarmParticlesManager[index].sdf_map_->getNearestFreePoint(goal_pt, nearest_free_goal)) {
+                goal_pt = nearest_free_goal;
+                ROS_WARN("aaaaaaaaaaaaaaaaa");
+            } else {
+                ROS_WARN("无法找到合适的终点！");
+                return;
+            }
+        }
+
+        // std::cout << "\033[33m[Debug] index: " << current_index
+        //   << ", start_pt: [" << start_pt.x() << ", " << start_pt.y() << ", " << start_pt.z() << "]"
+        //   << ", goal_pt: [" << goal_pt.x() << ", " << goal_pt.y() << ", " << goal_pt.z() << "]\033[0m" << std::endl;
+
         swarmParticlesManager[index].geo_path_finder_->reset();
         swarmParticlesManager[index].geo_path_finder_->search(start_pt, goal_pt, false, -1.0);
         std::vector<Eigen::Vector3d> path_points = swarmParticlesManager[index].geo_path_finder_->getprunePath();
@@ -533,21 +586,26 @@ ROS_ERROR("Index to remove: %d", index_to_remove);
         std::smatch match;
         
         //EDT & MAP
-        auto sdf_map_ = std::make_shared<SDFMap>();
-        sdf_map_->initMap(nh);
-        auto edt_environment_ = std::make_shared<EDTEnvironment>();
-        edt_environment_->setMap(sdf_map_);
+        // auto sdf_map_ = std::make_shared<SDFMap>();
+        // sdf_map_->initMap(nh);
+        // auto edt_environment_ = std::make_shared<EDTEnvironment>();
+        // edt_environment_->setMap(sdf_map_);
 
         for (const auto &info : topic_list) {
             if (info.datatype == "nav_msgs/Odometry" && std::regex_search(info.name, match, topic_pattern)) {
                 try {
                     std::string particle_index = match[1];
                     std::string particle_base = "/particle" + particle_index;
-                    // std::string odom_topic = particle_base + "/odom";
-                    // std::string cloud_topic = cloud_topic_;
+                    std::string odom_topic = particle_base + "/odom";
+                    std::string cloud_topic = particle_base + "/local_map";
 
                     std::cout << "\033[1;33m" << particle_base << "  init: "<< "\033[0m" << std::endl;
 
+                    // //EDT & MAP
+                    auto sdf_map_ = std::make_shared<SDFMap>();
+                    sdf_map_->initMap(nh, particle_base, odom_topic, cloud_topic);
+                    auto edt_environment_ = std::make_shared<EDTEnvironment>();
+                    edt_environment_->setMap(sdf_map_);
                     
                     //ASTAR
                     auto geo_path_finder_ = std::make_shared<Astar>();

@@ -6,12 +6,12 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="14"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
+    <arg name="particleCount" value="9"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="1.0"/>       <!-- 初始化时间 -->
-    <arg name="init_bias_x" value="2.5"/>         <!-- 初始位置偏移量 -->
-    <arg name="init_bias_y" value="10.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_x" value="0.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_y" value="12.0"/>         <!-- 初始位置偏移量 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长，要与轨迹采样频率同步-->
     <arg name="h" value="10.0"/>                <!-- kernel function radius -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
@@ -19,12 +19,12 @@
     <arg name="k_den" value="1.0"/>           <!-- k_den -->
     <arg name="k_rep" value="1.1"/>           <!-- k_rep -->
     <arg name="k_fri" value="1.8"/>           <!-- k_fri -->
-    <arg name="k_p"   value="6.0"/>           <!-- k_p -->
-    <arg name="k_d"   value="3.5"/>           <!-- k_d -->
+    <arg name="k_p"   value="15.0"/>           <!-- k_p -->
+    <arg name="k_d"   value="6.5"/>           <!-- k_d -->
     <arg name="k_ff"  value="1.0"/>           <!-- k_ffs -->
     <arg name="k_force" value="100.0"/>       <!-- k_force -->
-    <arg name="v_max" value="1.5"/>             <!-- v_max，必须大于规划速度-->
-    <arg name="a_max" value="2.0"/>             <!-- a_max，必须大于规划加速度 -->
+    <arg name="v_max" value="2.5"/>             <!-- v_max，必须大于规划速度-->
+    <arg name="a_max" value="3.5"/>             <!-- a_max，必须大于规划加速度 -->
     <arg name="r_1"   value="0.06"/>            <!-- r_1 -->
     <arg name="r_2"   value="0.2"/>             <!-- r_2 -->
     <arg name="planv_max" value="1.2"/>             <!-- v_max -->
@@ -33,10 +33,14 @@
     <arg name="g" value="-9.8"/>                <!-- 重力,no use -->
     <arg name="use_pctrl" value="true"/>        <!-- 使用位置\速度\加速度控制，默认使用位置控制 -->
     
-    <!-- Planning  parameters-->
+    <!-- Map  parameters-->
     <arg name="map_size_x_" value="50.0"/>
     <arg name="map_size_y_" value="50.0"/>
     <arg name="map_size_z_" value=" 5.0"/>
+
+    <arg name="local_update_range_x" value="4.0"/>
+    <arg name="local_update_range_y" value="4.0"/>
+    <arg name="local_update_range_z" value="3.5"/>
     
     <!-- intrinsic params of the depth camera -->
     <arg name="cx" value="321.04638671875"/>
@@ -89,9 +93,9 @@
         <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
         <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
 
-        <param name="sdf_map/local_update_range_x"  value="20.0" /> 
-        <param name="sdf_map/local_update_range_y"  value="20.0" /> 
-        <param name="sdf_map/local_update_range_z"  value="5.0" /> 
+        <param name="sdf_map/local_update_range_x"  value="$(arg local_update_range_x)" /> 
+        <param name="sdf_map/local_update_range_y"  value="$(arg local_update_range_y)" /> 
+        <param name="sdf_map/local_update_range_z"  value="$(arg local_update_range_z)" /> 
         
         <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
         <param name="sdf_map/local_bound_inflate"    value="0.0"/>
@@ -148,57 +152,14 @@
         <param name="planning/planning/opt_maxtime" value="0.02" />
     </node>
 
-    <node pkg="mockamap" type="mockamap_node" name="mockamap_node" output="screen">
-        <param name="seed" type="int" value="511"/>
-        <param name="update_freq" type="double" value="1.0"/>
-
-        <!--  box edge length, unit meter-->
-        <param name="resolution" type="double" value="0.1"/>
-
-        <!-- map size unit meter-->
-        <param name="x_length" type="int" value="10"/>
-        <param name="y_length" type="int" value="10"/>
-        <param name="z_length" type="int" value="4"/>
-        <!-- 1 perlin noise 3D -->
-        <!-- 2 perlin box random map-->
-        <!-- 3 2d maze still developing-->
-            <param name="type" type="int" value="1"/>
-
-        <!-- 1 perlin noise parameters -->
-            <!-- complexity:    base noise frequency,
-                                large value will be complex
-                                typical 0.0 ~ 0.5 -->
-            <!-- fill:          infill persentage
-                                typical: 0.4 ~ 0.0 -->
-            <!-- fractal:       large value will have more detail-->
-            <!-- attenuation:   for fractal attenuation
-                                typical: 0.0 ~ 0.5 -->
-        <param name="complexity"    type="double" value="0.03"/>
-        <param name="fill"          type="double" value="0.3"/>
-        <param name="fractal"       type="int"    value="1"/>
-        <param name="attenuation"   type="double" value="0.1"/>
-
-        <!--    <param name="type" type="int" value="2"/>-->
-        <param name="width_min"         type="double" value="0.6"/>
-        <param name="width_max"         type="double" value="1.5"/>
-        <param name="obstacle_number"   type="int"    value="50"/>
-
-        <!--    <param name="type" type="int" value="3"/>-->
-        <param name="road_width"        type="double" value="0.5"/>
-        <param name="add_wall_x"        type="int"    value="0"/>
-        <param name="add_wall_y"        type="int"    value="1"/>
-        <!--    maze type: -->
-        <!--    1 recursive division maze-->
-        <param name="maze_type"         type="int"    value="1"/>
-
-        <!-- 4 maze 3d -->
-        <param name="numNodes"        type="int"    value="40"/>
-        <param name="connectivity"    type="double" value="0.8"/>
-        <param name="nodeRad"         type="int"    value="1"/>
-        <param name="roadRad"         type="int"    value="10"/>
-  </node>
-
-    <!-- RViz-->
-    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/swarm_rviz_3d.rviz" />
+    <node pkg="map_generator" type="local_sensing" name="map_generator" output="screen">
+        <param name="sdf_map/resolution" value="0.1" />
+        <param name="sdf_map/map_size_x"   value="$(arg map_size_x_)" /> 
+        <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
+        <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
+        <param name="sdf_map/local_update_range_x"  value="$(arg local_update_range_x)" /> 
+        <param name="sdf_map/local_update_range_y"  value="$(arg local_update_range_y)" /> 
+        <param name="sdf_map/local_update_range_z"  value="$(arg local_update_range_z)" /> 
+    </node>
     
 </launch>

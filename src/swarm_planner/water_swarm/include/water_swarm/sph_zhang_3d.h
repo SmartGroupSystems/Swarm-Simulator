@@ -47,6 +47,7 @@ ros::Subscriber                                         collision_matrix_sub;
 std::vector<ros::Publisher>                             odom_publishers;
 ros::Publisher                                          pos_pub;
 ros::Publisher                                          vel_pub;
+ros::Subscriber                                         goal_sub;
 ros::Time last_time;//控制时间loop
 ros::Time last_print_time;//打印时间loop
 ros::Time current_time;
@@ -72,6 +73,7 @@ void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg);
 void targetCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
 void forceCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
 void collisionMatrixCallback(const std_msgs::Int32MultiArray::ConstPtr& msg);
+void goalCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
 
 struct SPHSettings
 {   
@@ -147,6 +149,7 @@ public:
     std::unordered_map<int, common_msgs::BsplineTraj> swarmTrajBuffer_;
     std::unordered_map<int, common_msgs::Position> targetMap;
     std::unordered_map<int, common_msgs::Force> forceMap;
+    std::unordered_map<int, common_msgs::Particle> goalMap;
 
 public:
 	SPHSystem(
@@ -234,6 +237,15 @@ public:
     {
         collision_matrix_ = matrix;
     }
+    
+    // inline void updateSwarmGoal(const common_msgs::Swarm_particles& particles_goal)
+    // {
+    //     for (auto& goal : particles_goal.particles)
+    //     {
+    //        //
+    //     }
+        
+    // }
 };
 
 #endif

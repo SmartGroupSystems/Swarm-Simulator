@@ -90,6 +90,11 @@ target_link_libraries(map_recorder
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES})
 
+add_executable (local_sensing src/local_sensing.cpp )
+  target_link_libraries(local_sensing
+    ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES})
+
 add_executable (map_pub src/map_publisher.cpp )
 target_link_libraries(map_pub
   ${catkin_LIBRARIES}

@@ -188,7 +188,7 @@ public:
   inline int getOccupancy(Eigen::Vector3d pos);
   inline int getOccupancy(Eigen::Vector3i id);
   inline int getInflateOccupancy(Eigen::Vector3d pos);
-
+  inline bool getNearestFreePoint(const Eigen::Vector3d& pos, Eigen::Vector3d& near_pos);
   inline void boundIndex(Eigen::Vector3i& id);
   inline bool isUnknown(const Eigen::Vector3i& id);
   inline bool isUnknown(const Eigen::Vector3d& pos);
@@ -429,6 +429,45 @@ inline int SDFMap::getOccupancy(Eigen::Vector3d pos) {
   posToIndex(pos, id);
 
   return md_.occupancy_buffer_[toAddress(id)] > mp_.min_occupancy_log_ ? 1 : 0;
+}
+
+inline bool SDFMap::getNearestFreePoint(const Eigen::Vector3d& pos, Eigen::Vector3d& near_pos)
+{
+    if (!isInMap(pos)) return false;
+
+    Eigen::Vector3i center_id;
+    posToIndex(pos, center_id);
+
+    int max_radius = 10;  // 搜索半径最大范围（单位：格子数）
+    for (int r = 1; r <= max_radius; ++r) {
+      for (int dx = -r; dx <= r; ++dx) {
+        for (int dy = -r; dy <= r; ++dy) {
+          for (int dz = -r; dz <= r; ++dz) {
+            // 只在壳层搜索，避免重复
+            if (std::abs(dx) != r && std::abs(dy) != r && std::abs(dz) != r) continue;
+
+            Eigen::Vector3i candidate_id = center_id + Eigen::Vector3i(dx, dy, dz);
+
+            // 检查边界
+            if (candidate_id(0) < 0 || candidate_id(0) >= mp_.map_voxel_num_(0) ||
+                candidate_id(1) < 0 || candidate_id(1) >= mp_.map_voxel_num_(1) ||
+                candidate_id(2) < 0 || candidate_id(2) >= mp_.map_voxel_num_(2)) {
+              continue;
+            }
+
+            int addr = toAddress(candidate_id);
+            if (md_.occupancy_buffer_inflate_[addr] == 0) {
+              // 找到未被占据的点，转为坐标返回
+              indexToPos(candidate_id, near_pos);
+              return true;
+            }
+          }
+        }
+      }
+  }
+
+  // 如果搜索失败
+  return false;
 }
 
 inline int SDFMap::getInflateOccupancy(Eigen::Vector3d pos) {

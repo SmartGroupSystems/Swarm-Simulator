@@ -136,7 +136,7 @@ void SDFMap::initMap(ros::NodeHandle& nh,const std::string& particle, const std:
 
   occ_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::updateOccupancyCallback, this);
   esdf_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::updateESDFCallback, this);
-  vis_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::visCallback, this);
+  vis_timer_ = nh.createTimer(ros::Duration(0.10), &SDFMap::visCallback, this);
 
   map_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"sdf_map/occupancy", 10);
   map_inf_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"sdf_map/occupancy_inflate", 10);
@@ -276,7 +276,7 @@ void SDFMap::initMap(ros::NodeHandle& nh) {
 
   occ_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::updateOccupancyCallback, this);
   esdf_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::updateESDFCallback, this);
-  vis_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::visCallback, this);
+  vis_timer_ = nh.createTimer(ros::Duration(1.0), &SDFMap::visCallback, this);
 
   map_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/sdf_map/occupancy", 10);
   map_inf_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/sdf_map/occupancy_inflate", 10);
