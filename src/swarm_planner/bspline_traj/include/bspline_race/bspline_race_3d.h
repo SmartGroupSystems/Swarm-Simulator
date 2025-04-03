@@ -14,6 +14,7 @@
 #include <mutex>
 #include <vector>
 #include <Eigen/Dense>
+
 //ros
 #include <ros/ros.h>
 #include <tf/tf.h>
@@ -99,6 +100,7 @@ namespace FLAG_Race
 
             //Particles
             bool isFirstCall = true; 
+            bool has_particle_data_ = false;
             common_msgs::Swarm_particles current_particles;
             common_msgs::Swarm_particles init_particles;
             common_msgs::Swarm_particles particles_goal;
@@ -122,6 +124,7 @@ namespace FLAG_Race
             ros::Time       lastWaitOutputTime;
             ros::Publisher  collision_matrix_pub;
             ros::Publisher  collision_marker_pub;
+            ros::Timer      obstacle_check_timer;
 
             //fsm
             bool receive_goal = false;
@@ -143,6 +146,7 @@ namespace FLAG_Race
             void timerCallback(const ros::TimerEvent& event);
             void forceCallback(const ros::TimerEvent& event);
             void realloca_timerCallback(const ros::TimerEvent&);
+            void obstacleCheckCallback(const ros::TimerEvent&);
             void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
             void visualizePath(const std::vector<Eigen::Vector3d>& path_points, ros::Publisher& marker_pub, const std::string& particle_index);
             void visualizeTraj(const std::vector<Eigen::Vector3d>& traj, ros::Publisher& marker_pub, const std::string& particle_index);

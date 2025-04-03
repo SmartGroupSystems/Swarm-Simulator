@@ -78,10 +78,26 @@ void collisionMatrixCallback(const std_msgs::Int32MultiArray::ConstPtr& msg)
 
 void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg)
 {
+    // 静态变量记录上一次的时间
+    static ros::Time last_recv_time;
+
+    // 当前时间
+    ros::Time current_time = msg->header.stamp;
+
+    // 如果上一次时间有效，计算时间差
+    if (!last_recv_time.isZero()) {
+        double dt = (current_time - last_recv_time).toSec();
+        ROS_INFO_STREAM("\033[1;33m [SwarmTraj] Δt since last trajectory: " << dt << " s \033[0m");
+    }
+
+    last_recv_time = current_time;  // 更新为当前时间
+
+    // 处理轨迹
     common_msgs::Swarm_traj swarmTrajBuffer = *msg;
     sph_planner->processTraj(swarmTrajBuffer);
     ROS_INFO("\033[1;32m RECEIVE SWARM TRAJ. \033[0m");
 }
+
 
 void timerCallback(const ros::TimerEvent&) {
     

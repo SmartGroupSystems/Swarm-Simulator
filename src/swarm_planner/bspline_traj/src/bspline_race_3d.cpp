@@ -30,21 +30,29 @@ namespace FLAG_Race
         traj_vis = nh.advertise<visualization_msgs::Marker>("/traj_vis", 10);
         collision_matrix_pub = nh.advertise<std_msgs::Int32MultiArray>("/check_collision_matrix", 10);
         collision_marker_pub = nh.advertise<visualization_msgs::Marker>("/particle_collision_lines", 1);
+        obstacle_check_timer = nh.createTimer(ros::Duration(0.1), &plan_manager::obstacleCheckCallback, this);
 
         lastPlanTime = ros::Time::now();
         lastWaitOutputTime = ros::Time::now(); 
 
     }   
 
+    void plan_manager::obstacleCheckCallback(const ros::TimerEvent&)
+    {
+        if (has_particle_data_) {
+            checkBetweenObstacles(current_particles);
+        }
+    }
+
     void plan_manager::particlesCallback(const common_msgs::Swarm_particles::ConstPtr& msg)
     {
         if (isFirstCall) {
             init_particles = *msg; 
-            isFirstCall = false; 
+            isFirstCall = false;
+            has_particle_data_ = true; 
         } 
         else {
             current_particles = *msg; 
-            checkBetweenObstacles(current_particles);
         }
 
     }
@@ -199,7 +207,6 @@ namespace FLAG_Race
                 continue;
             }
 
-            std::shared_ptr<SDFMap> sdf_map = it_i->sdf_map_;
             Eigen::Vector3d position_i(particle_i.position.x, particle_i.position.y, particle_i.position.z);
 
             // 遍历其他粒子
@@ -221,7 +228,7 @@ namespace FLAG_Race
                     sample_point += step;
 
                     // 使用SDFMap检查占据状态
-                    int occupancy = sdf_map->getInflateOccupancy(sample_point);
+                    int occupancy = it_i->sdf_map_->getInflateOccupancy(sample_point);
 
                     if (occupancy == 1) {
                         obstacle_free = false;
@@ -231,20 +238,20 @@ namespace FLAG_Race
 
                 collisionMatrix(particle_i.index, particle_j.index) = obstacle_free ? 0 : 1;
 
-                // // 如果无障碍物，添加连线Marker
-                // if (obstacle_free) {
-                //     geometry_msgs::Point p_start, p_end;
-                //     p_start.x = position_i.x();
-                //     p_start.y = position_i.y();
-                //     p_start.z = position_i.z();
+                // 如果无障碍物，添加连线Marker
+                if (obstacle_free) {
+                    geometry_msgs::Point p_start, p_end;
+                    p_start.x = position_i.x();
+                    p_start.y = position_i.y();
+                    p_start.z = position_i.z();
 
-                //     p_end.x = position_j.x();
-                //     p_end.y = position_j.y();
-                //     p_end.z = position_j.z();
+                    p_end.x = position_j.x();
+                    p_end.y = position_j.y();
+                    p_end.z = position_j.z();
 
-                //     line_list.points.push_back(p_start);
-                //     line_list.points.push_back(p_end);
-                // }
+                    line_list.points.push_back(p_start);
+                    line_list.points.push_back(p_end);
+                }
                      
             }
         }
@@ -269,7 +276,7 @@ namespace FLAG_Race
         collision_matrix_pub.publish(collision_matrix_msg);
 
         //visulization
-        // collision_marker_pub.publish(line_list);
+        collision_marker_pub.publish(line_list);
 
     }
 

@@ -25,6 +25,41 @@ bool has_map = false;
 double resolution, x_size, y_size, z_size;
 Eigen::Vector3d local_range;
 
+
+void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, int particle_id) {
+    particles_map[particle_id].position = Eigen::Vector3d(
+        msg->pose.pose.position.x,
+        msg->pose.pose.position.y,
+        msg->pose.pose.position.z
+    );
+}
+
+void checkForNewParticles(ros::NodeHandle& nh) {
+    ros::master::V_TopicInfo topic_list;
+    ros::master::getTopics(topic_list);
+
+    std::regex topic_pattern("/particle(\\d+)/odom");
+    std::smatch match;
+
+    for (const auto& topic : topic_list) {
+        if (std::regex_match(topic.name, match, topic_pattern)) {
+            int id = std::stoi(match[1].str());
+
+            // 如果是新粒子，则添加订阅器和发布器
+            if (particles_map.find(id) == particles_map.end()) {
+                std::string sub_topic = topic.name;
+                std::string pub_topic = "/particle" + std::to_string(id) + "/local_map";
+
+                particles_map[id].odom_sub = nh.subscribe<nav_msgs::Odometry>(
+                    sub_topic, 1, boost::bind(&odomCallback, _1, id));
+                particles_map[id].local_map_pub = nh.advertise<sensor_msgs::PointCloud2>(pub_topic, 1);
+
+                ROS_INFO_STREAM("[local_sensing] New particle detected: id=" << id);
+            }
+        }
+    }
+}
+
 void mockMapCallback(const sensor_msgs::PointCloud2ConstPtr& msg) {
     if (!has_map)
     {
@@ -33,14 +68,6 @@ void mockMapCallback(const sensor_msgs::PointCloud2ConstPtr& msg) {
         has_map = true;
         ROS_INFO("[local_sensing] Mock map received with %lu points.", full_cloud->points.size());
     }
-}
-
-void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, int particle_id) {
-    particles_map[particle_id].position = Eigen::Vector3d(
-        msg->pose.pose.position.x,
-        msg->pose.pose.position.y,
-        msg->pose.pose.position.z
-    );
 }
 
 void pubLocalMaps() {
@@ -116,11 +143,19 @@ int main(int argc, char** argv) {
         }
     }
 
-    ros::Rate rate(10.0); // 10Hz 发布
+    ros::Rate rate(10.0); // 10Hz 发布 local_map
+    int loop_count = 0;
 
     while (ros::ok()) {
         ros::spinOnce();
         pubLocalMaps();
+
+        // 每1秒检查一次新增粒子（10Hz -> 每10次）
+        if (loop_count % 10 == 0) {
+            checkForNewParticles(nh);
+        }
+
+        loop_count++;
         rate.sleep();
     }
 

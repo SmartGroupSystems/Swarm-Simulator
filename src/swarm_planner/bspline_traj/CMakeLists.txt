@@ -4,7 +4,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
 # add_definitions(-std=c++11 -g -Og -ftree-vectorize -ffast-math -march=native -lpthread)
-
 find_package(NLopt REQUIRED)
 set(NLopt_INCLUDE_DIRS ${NLOPT_INCLUDE_DIR})
 find_package(catkin REQUIRED COMPONENTS
