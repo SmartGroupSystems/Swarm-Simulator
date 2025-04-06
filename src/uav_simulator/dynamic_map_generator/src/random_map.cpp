@@ -19,6 +19,7 @@ int obs_num, circle_num;
 double w_l, w_h, h_l, h_h;
 double radius_l, radius_h, z_l, z_h, theta;
 double init_x, init_y;
+int circle_thickness;
 
 void RandomMapGenerate() {
   cloudMap.clear();
@@ -58,7 +59,7 @@ void RandomMapGenerate() {
     }
   }
 
-  // Generate vertical circular obstacles
+  // Generate vertical circular obstacles with thickness
   for (int i = 0; i < circle_num; ++i) {
     double x = rand_x(eng);
     double y = rand_y(eng);
@@ -77,13 +78,16 @@ void RandomMapGenerate() {
 
     double radius = rand_radius(eng);
 
-    for (double ang = 0; ang < 2 * M_PI; ang += resolution / radius) {
-      Eigen::Vector3d point(0, radius * cos(ang), radius * sin(ang));
-      point = rotation * point + center;
-      pt.x = point(0);
-      pt.y = point(1);
-      pt.z = point(2);
-      cloudMap.points.push_back(pt);
+    for (int thick = -circle_thickness; thick <= circle_thickness; ++thick) {
+      double current_radius = radius + thick * resolution;
+      for (double ang = 0; ang < 2 * M_PI; ang += resolution / current_radius) {
+        Eigen::Vector3d point(0, current_radius * cos(ang), current_radius * sin(ang));
+        point = rotation * point + center;
+        pt.x = point(0);
+        pt.y = point(1);
+        pt.z = point(2);
+        cloudMap.points.push_back(pt);
+      }
     }
   }
 
@@ -102,6 +106,7 @@ int main(int argc, char** argv) {
   nh.param("resolution", resolution, 0.1);
   nh.param("obs_num", obs_num, 30);
   nh.param("circle_num", circle_num, 30);
+  nh.param("circle_thickness", circle_thickness, 2);
 
   nh.param("w_l", w_l, 0.3);
   nh.param("w_h", w_h, 0.8);

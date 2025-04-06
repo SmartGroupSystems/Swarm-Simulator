@@ -17,6 +17,7 @@
         <param name="theta" value="3.14"/>
         <param name="init_x" value="0.0"/>
         <param name="init_y" value="0.0"/>
+        <param name="circle_thickness" value="3"/>
     </node>
 
     <!-- RViz-->
