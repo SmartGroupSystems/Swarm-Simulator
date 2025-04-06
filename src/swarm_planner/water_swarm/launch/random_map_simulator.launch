@@ -1,0 +1,24 @@
+<launch>
+    <node name="random_map" pkg="map_generator" type="random_map" output="screen">
+        <param name="x_size" value="20.0"/>
+        <param name="y_size" value="20.0"/>
+        <param name="z_size" value="5.0"/>
+        <param name="resolution" value="0.1"/>
+        <param name="obs_num" value="30"/>
+        <param name="circle_num" value="30"/>
+        <param name="w_l" value="0.3"/>
+        <param name="w_h" value="0.8"/>
+        <param name="h_l" value="3.0"/>
+        <param name="h_h" value="7.0"/>
+        <param name="radius_l" value="1.0"/>
+        <param name="radius_h" value="2.0"/>
+        <param name="z_l" value="1.0"/>
+        <param name="z_h" value="2.0"/>
+        <param name="theta" value="3.14"/>
+        <param name="init_x" value="0.0"/>
+        <param name="init_y" value="0.0"/>
+    </node>
+
+    <!-- RViz-->
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/swarm_rviz_3d.rviz" />
+</launch>

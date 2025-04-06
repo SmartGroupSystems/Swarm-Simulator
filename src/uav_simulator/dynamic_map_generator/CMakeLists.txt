@@ -95,6 +95,11 @@ add_executable (local_sensing src/local_sensing.cpp )
     ${catkin_LIBRARIES}
     ${PCL_LIBRARIES})
 
+add_executable (random_map src/random_map.cpp )
+target_link_libraries(random_map
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES})
+
 add_executable (map_pub src/map_publisher.cpp )
 target_link_libraries(map_pub
   ${catkin_LIBRARIES}
