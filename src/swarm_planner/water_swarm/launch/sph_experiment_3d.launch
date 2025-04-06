@@ -6,12 +6,12 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="10"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
+    <arg name="particleCount" value="15"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="1.0"/>       <!-- 初始化时间 -->
-    <arg name="init_bias_x" value="2.5"/>         <!-- 初始位置偏移量 -->
-    <arg name="init_bias_y" value="4.0"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_x" value="4.5"/>         <!-- 初始位置偏移量 -->
+    <arg name="init_bias_y" value="0.0"/>         <!-- 初始位置偏移量 -->
     <arg name="updateInterval" value="0.02"/>   <!-- 时间步长，要与轨迹采样频率同步-->
     <arg name="h" value="10.0"/>                <!-- kernel function radius -->
     <arg name="mass" value="1.0"/>              <!-- default MASS -->
@@ -34,9 +34,13 @@
     <arg name="use_pctrl" value="true"/>        <!-- 使用位置\速度\加速度控制，默认使用位置控制 -->
     
     <!-- Planning  parameters-->
-    <arg name="map_size_x_" value="80.0"/>
-    <arg name="map_size_y_" value="80.0"/>
+    <arg name="map_size_x_" value="40.0"/>
+    <arg name="map_size_y_" value="40.0"/>
     <arg name="map_size_z_" value=" 5.0"/>
+
+    <arg name="local_update_range_x" value="7.0"/>
+    <arg name="local_update_range_y" value="7.0"/>
+    <arg name="local_update_range_z" value="4.5"/>
     
     <!-- intrinsic params of the depth camera -->
     <arg name="cx" value="321.04638671875"/>
@@ -73,7 +77,7 @@
     </node>
 
     <!-- Obs map-->
-    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/door2.pcd"/>
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/demoalg.pcd"/>
     
     <!-- Traj opt-->
   <node name="swarm_planning_3d" pkg="bspline_race" type="swarm_planning_3d" output="screen">
@@ -91,11 +95,10 @@
         <param name="sdf_map/map_size_x"   value="$(arg map_size_x_)" /> 
         <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
         <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
+        <param name="sdf_map/local_update_range_x"  value="$(arg local_update_range_x)" /> 
+        <param name="sdf_map/local_update_range_y"  value="$(arg local_update_range_y)" /> 
+        <param name="sdf_map/local_update_range_z"  value="$(arg local_update_range_z)" /> 
 
-        <param name="sdf_map/local_update_range_x"  value="20.0" /> 
-        <param name="sdf_map/local_update_range_y"  value="20.0" /> 
-        <param name="sdf_map/local_update_range_z"  value="4.0" /> 
-        
         <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
         <param name="sdf_map/local_bound_inflate"    value="0.0"/>
         <param name="sdf_map/local_map_margin" value="50"/>
@@ -152,16 +155,26 @@
     </node>
 
     <!-- Save Traj-->
-    <node name="traj_saver" pkg="bspline_race" type="traj_saver" output="screen">
+    <!-- <node name="traj_saver" pkg="bspline_race" type="traj_saver" output="screen">
         <param name="wait_time" value="5.0" />
         <param name="particle_num" value="$(arg particleCount)"/>
         <param name="flight_height" value="0.7"/>
+    </node> -->
+
+    <node pkg="map_generator" type="local_sensing" name="map_generator" output="screen">
+        <param name="sdf_map/resolution" value="0.1" />
+        <param name="sdf_map/map_size_x"   value="$(arg map_size_x_)" /> 
+        <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
+        <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
+        <param name="sdf_map/local_update_range_x"  value="$(arg local_update_range_x)" /> 
+        <param name="sdf_map/local_update_range_y"  value="$(arg local_update_range_y)" /> 
+        <param name="sdf_map/local_update_range_z"  value="$(arg local_update_range_z)" /> 
     </node>
 
     <!-- Waypoint-->
-    <node name="publish_target" pkg="target_publisher" type="publish_target" output="screen">
-    </node>
+    <!-- <node name="publish_target" pkg="target_publisher" type="publish_target" output="screen">
+    </node> -->
     <!-- RViz-->
-    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/experiment.rviz" />
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/swarm_rviz_3d.rviz" />
     
 </launch>
