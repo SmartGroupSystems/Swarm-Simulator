@@ -70,8 +70,8 @@
         <param name="sph/a_max"             value="$(arg a_max)"/>
         <param name="sph/r_1"               value="$(arg r_1)"/>
         <param name="sph/r_2"               value="$(arg r_2)"/>
-        <param name="sph/state_enabled"     value="false"/>
-        <param name="sph/vis_role"          value="false"/>
+        <param name="sph/state_enabled"     value="true"/>
+        <param name="sph/vis_role"          value="true"/>
         <param name="sph/init_bias_x"       value="$(arg init_bias_x)"/>
         <param name="sph/init_bias_y"       value="$(arg init_bias_y)"/>
     </node>
@@ -169,7 +169,7 @@
     </node>
 
     <node name="exp_map" pkg="map_generator" type="exp_map" output="screen">
-        <param name="map_id" value="2" /> <!-- 设置使用第3种地图 -->
+        <param name="map_id" value="4" /> <!-- 设置使用第3种地图 -->
     </node>
 
     <!-- Waypoint-->

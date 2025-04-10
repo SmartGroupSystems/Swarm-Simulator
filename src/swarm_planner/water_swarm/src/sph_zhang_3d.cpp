@@ -580,7 +580,7 @@ void SPHSystem::parallelUpdateParticlePositions(const float deltaTime)
             case NEAR_TARGET:
                 acceleration.x = p->u_den.x + p->u_rep.x + p->u_fri.x;
                 acceleration.y = p->u_den.y + p->u_rep.y + p->u_fri.y;
-                acceleration.z = p->u_den.z + p->u_rep.z + p->u_fri.z;
+                acceleration.z = 0;
                 break;
 
             case ATTRACT:

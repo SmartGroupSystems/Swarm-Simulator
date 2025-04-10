@@ -6,7 +6,7 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="4"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
+    <arg name="particleCount" value="10"/>      <!-- 粒子的数量,确保你的CPU核心足够多，不然多线程并行计算很容易失败-->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="1.0"/>       <!-- 初始化时间 -->
@@ -71,7 +71,7 @@
         <param name="sph/r_1"               value="$(arg r_1)"/>
         <param name="sph/r_2"               value="$(arg r_2)"/>
         <param name="sph/state_enabled"     value="true"/>
-        <param name="sph/vis_role"          value="true"/>
+        <param name="sph/vis_role"          value="false"/>
         <param name="sph/init_bias_x"       value="$(arg init_bias_x)"/>
         <param name="sph/init_bias_y"       value="$(arg init_bias_y)"/>
     </node>    

@@ -101,7 +101,7 @@ PointCloud::Ptr generateMap3() {
             }
         }
     }
-
+    *cloud += *generateBoundary();
     return cloud;
 }
 
