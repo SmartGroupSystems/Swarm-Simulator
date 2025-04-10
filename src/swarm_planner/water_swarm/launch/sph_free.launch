@@ -6,7 +6,7 @@
          and the reference density restDensity, or decreasing the strength of repulsion force k_rep, the 
          swarming system is more likely to maintain a single cluster, and the critical group size becomes larger.-->
 
-    <arg name="particleCount" value="4"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
+    <arg name="particleCount" value="50"/>      <!-- 粒子的数量,确保你的内存足够大，一般要超过32G，16G最多支持20个左右的粒子 -->
     <arg name="particleInterval" value="0.5"/>  <!-- 粒子之间的初始间距 -->
     <arg name="particleVisScale" value="0.25"/> <!-- 粒子可视化尺寸 -->
     <arg name="sphInitTime" value="3.0"/>       <!-- 初始化时间 -->
@@ -29,7 +29,7 @@
     <arg name="r_2"   value="0.2"/>             <!-- r_2 -->
     <arg name="planv_max" value="0.8"/>             <!-- v_max -->
     <arg name="plana_max" value="1.0"/>             <!-- a_max -->
-    <arg name="restDensity" value="1000000.0"/> <!-- \rho0 -->
+    <arg name="restDensity" value="10000.0"/> <!-- \rho0 -->
     <arg name="g" value="-9.8"/>                <!-- 重力,no use -->
     <arg name="use_pctrl" value="true"/>        <!-- 使用位置\速度\加速度控制，默认使用位置控制 -->
     

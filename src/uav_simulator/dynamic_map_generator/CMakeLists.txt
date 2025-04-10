@@ -104,6 +104,12 @@ add_executable (map_pub src/map_publisher.cpp )
 target_link_libraries(map_pub
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES})
+
+add_executable (exp_map src/exp_map.cpp )
+target_link_libraries(exp_map
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES})
+
 install(TARGETS random_forest click_map
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
