@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
     collision_matrix_sub  = nh.subscribe("/check_collision_matrix", 10,collisionMatrixCallback);
     pos_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_position", 10);
     vel_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_velocity", 10);
+    initial_pospub        = nh.advertise<visualization_msgs::MarkerArray>("/initial_pose", 1,true);
     // goal_sub              = nh.subscribe("/particle_target", 10,goalCallback);
     odom_publishers.resize(particleCount);
     for (int i = 0; i < particleCount; ++i) {
@@ -177,7 +178,6 @@ void SPHSystem::initParticles()
             
             // 初始化每个粒子
             Particle p;
-            p.position.x = col * particleInterval;
             p.position.x = col * particleInterval-init_bias_x;
             p.position.y = row * particleInterval-init_bias_y;
             p.position.z = 1.0; // 默认z值为1
@@ -202,19 +202,62 @@ void SPHSystem::initParticles()
 
             // 将粒子加入列表
             particles.push_back(p);
-        }
+        } 
 
-    common_msgs::Position apex;
-    apex.x = -0.1; apex.y = -0.1; apex.z = 0;
-    generateVirtualParticles(maxRange,static_cast<int>(std::sqrt(particleCount))*3,apex);
+    visualization_msgs::MarkerArray marker_array;
 
-    // std::cout << "\033[32m粒子初始化成功！总计初始化 " << particles.size()
-    //               << " 个粒子，在 [" << 0 << ", " << 0 << "] 到 [" << maxRange << ", " << maxRange 
-    //               << "] 的正方形区域内。\033[0m" << std::endl;
+    for (const auto& p : particles) {
+        // 坐标系可视化 Marker
+        visualization_msgs::Marker cube_marker;
+        cube_marker.header.frame_id = "world";
+        cube_marker.header.stamp = ros::Time::now();
+        cube_marker.ns = "particle_cubes";
+        cube_marker.id = p.index;
+        cube_marker.type = visualization_msgs::Marker::CUBE;
+        cube_marker.action = visualization_msgs::Marker::ADD;
+        cube_marker.pose.position.x = p.position.x;
+        cube_marker.pose.position.y = p.position.y;
+        cube_marker.pose.position.z = p.position.z;
+        cube_marker.pose.orientation.w = 1.0;
+        cube_marker.scale.x = 0.1;  // 方块大小
+        cube_marker.scale.y = 0.1;
+        cube_marker.scale.z = 0.1;
+        cube_marker.color.r = 1.0;
+        cube_marker.color.g = 0.5;
+        cube_marker.color.b = 1.0;
+        cube_marker.color.a = 1.0;
 
-    // std::cout << "\033[31m虚拟粒子初始化成功！总计初始化 " << virtual_particles.size()
-    //           << " 个粒子。\033[0m" << std::endl;
-    
+        marker_array.markers.push_back(cube_marker);
+
+        // 文本 Marker 显示粒子坐标
+        visualization_msgs::Marker text_marker;
+        text_marker.header.frame_id = "world";
+        text_marker.header.stamp = ros::Time::now();
+        text_marker.ns = "particle_text";
+        text_marker.id = p.index + 10000;
+        text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+        text_marker.action = visualization_msgs::Marker::ADD;
+        text_marker.pose.position.x = p.position.x;
+        text_marker.pose.position.y = p.position.y;
+        text_marker.pose.position.z = p.position.z + 0.3; // 提高一点，防止与坐标系重叠
+        text_marker.scale.z = 0.25; // 字体大小
+        text_marker.color.r = 0.0;
+        text_marker.color.g = 0.0;
+        text_marker.color.b = 0.0;
+        text_marker.color.a = 1.0;
+
+        std::ostringstream oss;
+        oss << "[" << std::fixed << std::setprecision(2)
+            << p.position.x << ", "
+            << p.position.y << "]";
+        text_marker.text = oss.str();
+
+        marker_array.markers.push_back(text_marker);
+    }
+
+    // 一次性发布所有 marker
+    initial_pospub.publish(marker_array);
+
 }
 
 void SPHSystem::findNeighbors() {

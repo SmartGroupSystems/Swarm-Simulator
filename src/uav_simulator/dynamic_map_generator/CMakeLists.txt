@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(PCL 1.7 REQUIRED)
 find_package(Eigen3 REQUIRED)
-
+find_package(octomap REQUIRED)
 add_message_files(
   FILES
   dynamic_obs.msg
@@ -109,6 +109,11 @@ add_executable (exp_map src/exp_map.cpp )
 target_link_libraries(exp_map
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES})
+
+add_executable (map2bt src/map2bt.cpp )
+  target_link_libraries(map2bt
+    ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES} ${OCTOMAP_LIBRARIES})
 
 install(TARGETS random_forest click_map
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

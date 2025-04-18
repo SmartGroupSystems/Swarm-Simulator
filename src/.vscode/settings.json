@@ -80,7 +80,14 @@
     "*.ipp": "cpp",
     "core": "cpp",
     "eigen": "cpp",
-    "dense": "cpp"
+    "dense": "cpp",
+    "csetjmp": "cpp",
+    "any": "cpp",
+    "codecvt": "cpp",
+    "forward_list": "cpp",
+    "filesystem": "cpp",
+    "slist": "cpp",
+    "future": "cpp"
   },
   "C_Cpp_Runner.msvcBatchPath": "",
   "C_Cpp_Runner.cCompilerPath": "gcc",

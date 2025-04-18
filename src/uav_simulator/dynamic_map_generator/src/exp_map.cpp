@@ -84,23 +84,40 @@ PointCloud::Ptr generateMap2() {
 }
 
 PointCloud::Ptr generateMap3() {
-    PointCloud::Ptr cloud = generateMap2();
+    PointCloud::Ptr cloud(new PointCloud);
+    cloud->header.frame_id = "world";
 
-    // Add inclined columns
-    std::vector<Eigen::Vector2d> base_centers = {{6.5, 2.0}, {11.0, 6.0}};
+    // 高低差柱子：低0.6m，高2.0m
+    std::vector<std::pair<Eigen::Vector2d, double>> columns = {
+        {{5.0, 2.0}, 0.6}, {{6.5, 4.0}, 2.0}, {{8.0, 6.0}, 0.6},
+        {{9.5, 3.0}, 2.0}, {{11.0, 5.0}, 0.6}, {{12.5, 2.0}, 2.0}
+    };
     double size = 0.3;
-    double height = 2.5;
 
-    for (const auto& base : base_centers) {
-        for (double z = 0; z <= height; z += 0.2) {
-            double x_offset = 0.1 * z;
-            for (double x = base.x() + x_offset - size / 2; x <= base.x() + x_offset + size / 2; x += 0.05) {
-                for (double y = base.y() - size / 2; y <= base.y() + size / 2; y += 0.05) {
+    for (const auto& c : columns) {
+        for (double x = c.first.x() - size / 2; x <= c.first.x() + size / 2; x += 0.05) {
+            for (double y = c.first.y() - size / 2; y <= c.first.y() + size / 2; y += 0.05) {
+                for (double z = 0; z <= c.second; z += 0.2) {
                     cloud->points.emplace_back(x, y, z);
                 }
             }
         }
     }
+
+    // 斜柱连接高低柱子
+    for (size_t i = 0; i + 1 < columns.size(); ++i) {
+        Eigen::Vector3d start(columns[i].first.x(), columns[i].first.y(), columns[i].second);
+        Eigen::Vector3d end(columns[i + 1].first.x(), columns[i + 1].first.y(), columns[i + 1].second);
+        for (double t = 0.0; t <= 1.0; t += 0.05) {
+            Eigen::Vector3d pt = (1 - t) * start + t * end;
+            for (double dx = -0.05; dx <= 0.05; dx += 0.05) {
+                for (double dy = -0.05; dy <= 0.05; dy += 0.05) {
+                    cloud->points.emplace_back(pt.x() + dx, pt.y() + dy, pt.z());
+                }
+            }
+        }
+    }
+
     *cloud += *generateBoundary();
     return cloud;
 }
@@ -110,8 +127,8 @@ PointCloud::Ptr generateMap4() {
     cloud->header.frame_id = "world";
 
     double wall_x = 7.0;
-    double door_y_min = 3.5, door_y_max = 4.5;
-    double wall_height = 2.5;
+    double door_y_min = 3.0, door_y_max = 5.0;
+    double wall_height = 3.0;
     double resolution = 0.1;
 
     for (double y = 0; y <= 8.0; y += resolution) {
@@ -132,12 +149,27 @@ PointCloud::Ptr generateMap5() {
     double wall_height = 2.5;
     double resolution = 0.1;
 
+    // 通道墙宽：2m (y: 3.0 ~ 5.0)
     for (double x = 5.0; x <= 10.0; x += resolution) {
         for (double z = 0; z <= wall_height; z += resolution) {
             for (double dy = -0.025; dy <= 0.025; dy += 0.025) {
-                cloud->points.emplace_back(x, 3.25 + dy, z); // left wall
-                cloud->points.emplace_back(x, 4.75 + dy, z); // right wall
+                cloud->points.emplace_back(x, 3.0 + dy, z);
+                cloud->points.emplace_back(x, 5.0 + dy, z);
             }
+        }
+    }
+
+    // 左门框（y=3.0）连接起始点
+    for (double y = 0; y <= 3.0; y += resolution) {
+        for (double z = 0; z <= wall_height; z += resolution) {
+            cloud->points.emplace_back(5.0, y, z);
+        }
+    }
+
+    // 右门框（y=5.0）连接起始点
+    for (double y = 5.0; y <= 8.0; y += resolution) {
+        for (double z = 0; z <= wall_height; z += resolution) {
+            cloud->points.emplace_back(5.0, y, z);
         }
     }
 

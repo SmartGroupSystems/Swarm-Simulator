@@ -48,6 +48,7 @@ std::vector<ros::Publisher>                             odom_publishers;
 ros::Publisher                                          pos_pub;
 ros::Publisher                                          vel_pub;
 ros::Subscriber                                         goal_sub;
+ros::Publisher                                          initial_pospub;
 ros::Time last_time;//控制时间loop
 ros::Time last_print_time;//打印时间loop
 ros::Time current_time;
@@ -98,6 +99,7 @@ struct SPHSettings
     {
         h2 = h * h;
         poly = 10 * 54.97 / ( 7 * PI * h2);
+        // poly = 1 / (  PI * h2* h);
         selfDens = mass * poly ;
     }
 

@@ -5,14 +5,10 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /particles1
-        - /global_map1
         - /global_map1/Autocompute Value Bounds1
-        - /PointCloud21
         - /MarkerArray1
-        - /MarkerArray2
-        - /Marker1
-        - /Marker2
+        - /MarkerArray3
+        - /MarkerArray4
         - /Marker3
         - /PointCloud221/Autocompute Value Bounds1
       Splitter Ratio: 0.5235294103622437
@@ -78,14 +74,13 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /sph_zhang_3d/particles_vis
       Name: particles
       Namespaces:
-        particles: true
-        state_texts: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -239,7 +234,7 @@ Visualization Manager:
       Marker Topic: /traj_vis
       Name: swarm_traj
       Namespaces:
-        traj_visualization: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -271,13 +266,13 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /visualization_particles
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: /visualization_trajectories
@@ -310,14 +305,22 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /initial_pose
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /particle_collision_lines
       Name: Marker
       Namespaces:
-        particle_lines: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -489,8 +492,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.800000011920929
-        Min Value: 0.20000000298023224
+        Max Value: 3.9000000953674316
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -517,7 +520,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0
+        Max Value: 3.9000000953674316
         Min Value: 0
         Value: true
       Axis: Z
@@ -545,7 +548,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0
+        Max Value: 1.2999999523162842
         Min Value: 0
         Value: true
       Axis: Z
@@ -573,7 +576,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0
+        Max Value: 2.700000047683716
         Min Value: 0
         Value: true
       Axis: Z
@@ -601,8 +604,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 3.4000000953674316
-        Min Value: -0.5
+        Max Value: 3.9000000953674316
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -629,8 +632,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 1.5
-        Min Value: 1.100000023841858
+        Max Value: 3.9000000953674316
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -657,7 +660,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0
+        Max Value: 3.9000000953674316
         Min Value: 0
         Value: true
       Axis: Z
@@ -685,7 +688,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0
+        Max Value: 3.9000000953674316
         Min Value: 0
         Value: true
       Axis: Z
@@ -713,7 +716,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0
+        Max Value: 1.2000000476837158
         Min Value: 0
         Value: true
       Axis: Z
@@ -741,8 +744,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 3.4000000953674316
-        Min Value: -0.5
+        Max Value: 2.700000047683716
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -769,8 +772,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 2
-        Min Value: 1
+        Max Value: 2.700000047683716
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -797,7 +800,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0
+        Max Value: 3.9000000953674316
         Min Value: 0
         Value: true
       Axis: Z
@@ -825,7 +828,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0
+        Max Value: 3.9000000953674316
         Min Value: 0
         Value: true
       Axis: Z
@@ -853,7 +856,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0
+        Max Value: 3.9000000953674316
         Min Value: 0
         Value: true
       Axis: Z
@@ -881,8 +884,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 2
-        Min Value: -2.7755575615628914e-17
+        Max Value: 1
+        Min Value: 1
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -909,8 +912,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 1.5
-        Min Value: 1.100000023841858
+        Max Value: 2.700000047683716
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -937,8 +940,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 1.100000023841858
-        Min Value: 1
+        Max Value: 2.700000047683716
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -965,8 +968,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 1.600000023841858
-        Min Value: 1
+        Max Value: 3.5999999046325684
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -993,8 +996,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.6000000238418579
-        Min Value: 0.5
+        Max Value: 3.9000000953674316
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -1021,8 +1024,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 1.399999976158142
-        Min Value: 0.30000001192092896
+        Max Value: 3.9000000953674316
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -1046,6 +1049,37 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: false
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: PoseWithCovariance
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Axes
+      Topic: /initialpose
+      Unreliable: false
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -1086,7 +1120,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 12.947479248046875
+      Distance: 24.876989364624023
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1094,17 +1128,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 4.582531452178955
-        Y: -0.948246955871582
-        Z: -0.9999601244926453
+        X: -0.058234989643096924
+        Y: -3.892688751220703
+        Z: -0.999968945980072
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.13979585468769073
+      Pitch: 1.3697959184646606
       Target Frame: camera_frame
-      Yaw: 6.11176061630249
+      Yaw: 4.708569526672363
     Saved: ~
 Window Geometry:
   Displays:
