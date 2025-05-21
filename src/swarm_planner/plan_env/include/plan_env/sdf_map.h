@@ -229,10 +229,11 @@ public:
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-private:
+public:
   MappingParameters mp_;
   MappingData md_;
-
+  
+private:
   template <typename F_get_val, typename F_set_val>
   void fillESDF(F_get_val f_get_val, F_set_val f_set_val, int start, int end, int dim);
 
@@ -565,5 +566,4 @@ inline void SDFMap::inflatePoint(const Eigen::Vector3i& pt, int step, vector<Eig
         pts[num++] = Eigen::Vector3i(pt(0) + x, pt(1) + y, pt(2) + z);
       }
 }
-
 #endif

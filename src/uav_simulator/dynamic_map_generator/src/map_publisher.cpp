@@ -47,10 +47,10 @@ int main(int argc, char** argv) {
   }
 
   // Add ground
-  for (double x = mmin[0]; x <= mmax[0]; x += 0.1)
-    for (double y = mmin[1]; y <= mmax[1]; y += 0.1) {
-      cloud.push_back(pcl::PointXYZ(x, y, 0));
-    }
+  // for (double x = mmin[0]; x <= mmax[0]; x += 0.1)
+  //   for (double y = mmin[1]; y <= mmax[1]; y += 0.1) {
+  //     cloud.push_back(pcl::PointXYZ(x, y, 0));
+  //   }
 
   // cout << "Publishing map..." << endl;
 

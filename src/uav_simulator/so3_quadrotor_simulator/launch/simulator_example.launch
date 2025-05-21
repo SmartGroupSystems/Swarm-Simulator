@@ -60,10 +60,12 @@
         <param name="robot_scale" value="1.0"/>
         <param name="tf45" value="true"/>
   </node>
+
+  <!-- Obs map-->
+  <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/>
+  <!-- RViz-->
+  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/swarm_rviz.rviz" />
     
-    <!-- <node name="fpv_rviz" pkg="rviz" type="rviz"
-      args="-d $(find so3_quadrotor_simulator)/config/fpv_gvo.rviz"
-      /> -->
  </launch>
 
 

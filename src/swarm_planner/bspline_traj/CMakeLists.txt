@@ -52,6 +52,7 @@ add_library(bspline_race_3d
    src/UniformBspline_3d.cpp
    src/bspline_opt_3d.cpp 
    src/bspline_race_3d.cpp
+   src/gvf_manager.cpp
    src/gvf.cpp
 )
 target_link_libraries(bspline_race_3d ${catkin_LIBRARIES})
@@ -80,12 +81,11 @@ target_link_libraries(swarm_planning_3d
     ${NLOPT_LIBRARIES}
 )
 
-# formaiton planning (2D版本)
 add_executable( formation_planning 
     src/formation_planning.cpp
  )
 target_link_libraries(formation_planning 
- bspline_race
+bspline_race_3d
  ${catkin_LIBRARIES}
  ${NLOPT_LIBRARIES}
 )
