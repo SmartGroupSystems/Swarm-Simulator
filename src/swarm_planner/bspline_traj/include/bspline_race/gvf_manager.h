@@ -55,6 +55,7 @@ class gvf_manager
         double init_bias_x, init_bias_y;
         double planInterval;
         std::string cloud_topic_, odom_topic_;
+        Eigen::Vector3d odom_;
 
         struct gvfManager {
             std::string index;
@@ -66,8 +67,9 @@ class gvf_manager
             ros::Time curr_time;  // 当前时间定时器
             ros::Time last_time;  // 上一次时间定时器
             bool is_initialized = false; 
-            ros::Publisher  path_pub;
-            Eigen::Vector3d start_pt, goal_pt;
+            bool receive_startpt = false;
+            // ros::Subscriber odom_sub;
+            Eigen::Vector3d start_pt, goal_pt, odom;
         };
 
         std::vector<gvfManager> swarmParticlesManager;
@@ -76,8 +78,12 @@ class gvf_manager
         //ROS
         ros::Publisher  force_pub;
         ros::Timer      exec_timer;
+        ros::Publisher  cmd_pub;
+        ros::Timer      cmd_timer;
         ros::Subscriber goal_sub;
         ros::Publisher  path_vis;
+        ros::Subscriber odom_sub;
+        ros::Publisher  path_pub; 
 
     public:
         gvf_manager(){};  
@@ -86,7 +92,9 @@ class gvf_manager
         void initCallback(ros::NodeHandle &nh);
         void InitGvf(ros::NodeHandle &nh);
         void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
+        void odomCallback(const nav_msgs::Odometry::ConstPtr& msg); 
         void AstarExecCallback(const ros::TimerEvent& event);
+        void cmdCallback(const ros::TimerEvent& event);
         void publishCorridorMarker(double C_thresh = -1.0);
         void visualizePath(const std::vector<Eigen::Vector3d>& path_points, 
                             ros::Publisher& marker_pub, const std::string& particle_index);

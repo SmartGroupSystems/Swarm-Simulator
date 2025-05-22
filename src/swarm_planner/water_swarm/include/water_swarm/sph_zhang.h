@@ -32,10 +32,12 @@
 #include "common_msgs/PositionCommand.h"
 #include "common_msgs/BsplineTraj.h"
 #include "common_msgs/Swarm_traj.h"
+#include <quadrotor_msgs/PositionCommand.h>
 
 using namespace std;
 
 ros::Timer                                              timer;
+ros::Timer                                              gvf_timer;
 ros::Publisher                                          particles_publisher;
 ros::Publisher                                          virtual_particles_publisher;
 ros::Publisher                                          swarm_pub;
@@ -45,6 +47,7 @@ ros::Subscriber                                         force_sub;
 std::vector<ros::Publisher>                             odom_publishers;
 ros::Publisher                                          pos_pub;
 ros::Publisher                                          vel_pub;
+ros::Subscriber                                         position_cmd_sub;
 ros::Time last_time;//控制时间loop
 ros::Time last_print_time;//打印时间loop
 ros::Time current_time;
@@ -66,9 +69,11 @@ double init_bias_x, init_bias_y;
 void odomBroadcastCallback(const common_msgs::OdomBroadcast::ConstPtr& msg);
 void navGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
 void timerCallback(const ros::TimerEvent&);
+void gvf_timerCallback(const ros::TimerEvent&);
 void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg);
 void targetCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
 void forceCallback(const common_msgs::Swarm_particles::ConstPtr& msg);
+void positionCmdCallback(const quadrotor_msgs::PositionCommand::ConstPtr& msg);
 
 struct SPHSettings
 {   
@@ -156,6 +161,7 @@ public:
     std::vector<Particle>       virtual_particles;
     std::map<const Particle*, std::vector<std::pair<const Particle*, float>>> particleNeighborsTable;
     std::map<const Particle*, double> nearestNeighborDistanceMap;
+    quadrotor_msgs::PositionCommand latest_position_cmd;
 
     //initializes the particles that will be used
 	void initParticles();

@@ -37,7 +37,7 @@
 #include <std_msgs/Float64.h>
 #include <ros/topic_manager.h>
 #include <std_msgs/String.h>
-
+#include <quadrotor_msgs/PositionCommand.h>
 
 using namespace std;
 
@@ -50,7 +50,7 @@ struct VectorFieldData {
   Eigen::Vector3i map_voxel_num_;                        // map range in index
   Eigen::Vector3i map_min_idx_, map_max_idx_;
   Eigen::Vector3d local_update_range_;
-  Eigen::Vector3d camera_pos_;
+  Eigen::Vector3d camera_pos_, last_camera_pos_;
   double resolution_, resolution_inv_;
   double obstacles_inflation_;
   string frame_id_;
@@ -71,6 +71,7 @@ struct VectorFieldData {
 
   /* visualization and computation time display */
   double esdf_slice_height_, visualization_truncate_height_, virtual_ceil_height_, ground_height_;
+
   bool show_esdf_time_, show_occ_time_, has_odom_,local_updated_, esdf_need_update_;
   // range of updating ESDF
   Eigen::Vector3i local_bound_min_, local_bound_max_;
@@ -78,6 +79,9 @@ struct VectorFieldData {
   double esdf_time_, max_fuse_time_, max_esdf_time_;
 
   int update_num_;
+  
+  //GVF GAIN
+  double K_;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -86,10 +90,11 @@ class gvf
 {
     public:
         VectorFieldData gvf_;
-        ros::Subscriber indep_odom_sub_, indep_cloud_sub_;
+        ros::Subscriber indep_odom_sub_, indep_cloud_sub_, path_sub_, goal_sub_;
         ros::Publisher map_pub_, esdf_pub_, map_inf_pub_, update_range_pub_;
         ros::Timer esdf_timer_, vis_timer_;
-        
+        nav_msgs::Path last_path_;
+    
     public:
         gvf(){};  
         ~gvf(){};
@@ -103,10 +108,12 @@ class gvf
         void updateESDFCallback(const ros::TimerEvent& /*event*/);
         void visCallback(const ros::TimerEvent& /*event*/);
         void pathCallback(const nav_msgs::Path::ConstPtr& msg);
+        void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
         void publishMap();
         void publishMapInflate(bool all_info = false);
         void publishESDF();
         void publishUpdateRange();
+        Eigen::Vector3d calcGuidingVectorField(const Eigen::Vector3d pos);
 
         inline void posToIndex(const Eigen::Vector3d& pos, Eigen::Vector3i& id);
         inline void indexToPos(const Eigen::Vector3i& id, Eigen::Vector3d& pos);
@@ -129,6 +136,7 @@ class gvf
         inline bool isKnownOccupied(const Eigen::Vector3i& id);
         inline double getDistance(const Eigen::Vector3d& pos);
         inline double getDistance(const Eigen::Vector3i& id);
+        inline double getDistWithGradTrilinear(Eigen::Vector3d pos, Eigen::Vector3d& grad);
 };
 
 /* ============================== definition of inline function
@@ -164,6 +172,85 @@ inline double gvf::getDistance(const Eigen::Vector3d& pos) {
   boundIndex(id);
 
   return gvf_.distance_buffer_all_[toAddress(id)];
+}
+
+inline double gvf::getDistance(const Eigen::Vector3i& id) {
+  Eigen::Vector3i id1 = id;
+  boundIndex(id1);
+  return gvf_.distance_buffer_all_[toAddress(id1)];
+}
+
+inline bool gvf::isInMap(const Eigen::Vector3d& pos) {
+  if (pos(0) < gvf_.map_min_boundary_(0) + 1e-4 || pos(1) < gvf_.map_min_boundary_(1) + 1e-4 ||
+      pos(2) < gvf_.map_min_boundary_(2) + 1e-4) {
+    // cout << "less than min range!" << endl;
+    return false;
+  }
+  if (pos(0) > gvf_.map_max_boundary_(0) - 1e-4 || pos(1) > gvf_.map_max_boundary_(1) - 1e-4 ||
+      pos(2) > gvf_.map_max_boundary_(2) - 1e-4) {
+    return false;
+  }
+  return true;
+}
+
+inline bool gvf::isInMap(const Eigen::Vector3i& idx) {
+  if (idx(0) < 0 || idx(1) < 0 || idx(2) < 0) {
+    return false;
+  }
+  if (idx(0) > gvf_.map_voxel_num_(0) - 1 || idx(1) > gvf_.map_voxel_num_(1) - 1 ||
+      idx(2) > gvf_.map_voxel_num_(2) - 1) {
+    return false;
+  }
+  return true;
+}
+
+inline double gvf::getDistWithGradTrilinear(Eigen::Vector3d pos, Eigen::Vector3d& grad) {
+  if (!isInMap(pos)) {
+    grad.setZero();
+    return 0;
+  }
+
+  /* use trilinear interpolation */
+  Eigen::Vector3d pos_m = pos - 0.5 * gvf_.resolution_ * Eigen::Vector3d::Ones();
+
+  Eigen::Vector3i idx;
+  posToIndex(pos_m, idx);
+
+  Eigen::Vector3d idx_pos, diff;
+  indexToPos(idx, idx_pos);
+
+  diff = (pos - idx_pos) * gvf_.resolution_inv_;
+
+  double values[2][2][2];
+  for (int x = 0; x < 2; x++) {
+    for (int y = 0; y < 2; y++) {
+      for (int z = 0; z < 2; z++) {
+        Eigen::Vector3i current_idx = idx + Eigen::Vector3i(x, y, z);
+        values[x][y][z] = getDistance(current_idx);
+      }
+    }
+  }
+
+  double v00 = (1 - diff[0]) * values[0][0][0] + diff[0] * values[1][0][0];
+  double v01 = (1 - diff[0]) * values[0][0][1] + diff[0] * values[1][0][1];
+  double v10 = (1 - diff[0]) * values[0][1][0] + diff[0] * values[1][1][0];
+  double v11 = (1 - diff[0]) * values[0][1][1] + diff[0] * values[1][1][1];
+  double v0 = (1 - diff[1]) * v00 + diff[1] * v10;
+  double v1 = (1 - diff[1]) * v01 + diff[1] * v11;
+  double dist = (1 - diff[2]) * v0 + diff[2] * v1;
+
+  grad[2] = (v1 - v0) * gvf_.resolution_inv_;
+  grad[1] = ((1 - diff[2]) * (v10 - v00) + diff[2] * (v11 - v01)) * gvf_.resolution_inv_;
+  grad[0] = (1 - diff[2]) * (1 - diff[1]) * (values[1][0][0] - values[0][0][0]);
+  grad[0] += (1 - diff[2]) * diff[1] * (values[1][1][0] - values[0][1][0]);
+  grad[0] += diff[2] * (1 - diff[1]) * (values[1][0][1] - values[0][0][1]);
+  grad[0] += diff[2] * diff[1] * (values[1][1][1] - values[0][1][1]);
+
+  grad[0] *= gvf_.resolution_inv_;
+
+  if ( dist < 0) dist = 0.0;
+
+  return dist;
 }
 
 }

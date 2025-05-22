@@ -13,7 +13,7 @@ void gvf::init(ros::NodeHandle& nh, const std::string& particle, const std::stri
     nh.param("sdf_map/local_update_range_x", gvf_.local_update_range_(0), -1.0);
     nh.param("sdf_map/local_update_range_y", gvf_.local_update_range_(1), -1.0);
     nh.param("sdf_map/local_update_range_z", gvf_.local_update_range_(2), -1.0);
-    nh.param("sdf_map/obstacles_inflation", gvf_.obstacles_inflation_, -1.0);
+    nh.param("sdf_map/gvf_inflation", gvf_.obstacles_inflation_, -1.0);
 
     nh.param("sdf_map/esdf_slice_height", gvf_.esdf_slice_height_, -0.1);
     nh.param("sdf_map/visualization_truncate_height", gvf_.visualization_truncate_height_, -0.1);
@@ -21,10 +21,11 @@ void gvf::init(ros::NodeHandle& nh, const std::string& particle, const std::stri
     nh.param("sdf_map/ground_height", gvf_.ground_height_, 1.0);
 
     nh.param("sdf_map/show_occ_time", gvf_.show_occ_time_, false);
-    nh.param("sdf_map/show_esdf_time", gvf_.show_esdf_time_, false);
+    nh.param("sdf_map/show_esdf_time", gvf_.show_esdf_time_, true);
     nh.param("sdf_map/frame_id", gvf_.frame_id_, std::string("world"));
     nh.param("sdf_map/local_bound_inflate", gvf_.local_bound_inflate_, 1.0);
     nh.param("sdf_map/local_map_margin", gvf_.local_map_margin_, 1);
+    nh.param("sdf_map/gvf_gain", gvf_.K_, 0.0);
 
     gvf_.local_bound_inflate_ = std::max(gvf_.resolution_, gvf_.local_bound_inflate_);
     gvf_.resolution_inv_ = 1.0 / gvf_.resolution_;
@@ -73,15 +74,23 @@ void gvf::init(ros::NodeHandle& nh, const std::string& particle, const std::stri
     gvf_.max_esdf_time_ = 0.0;
     gvf_.max_fuse_time_ = 0.0;
 
-    esdf_timer_ = nh.createTimer(ros::Duration(0.05), &gvf::updateESDFCallback, this);
+    esdf_timer_ = nh.createTimer(ros::Duration(0.10), &gvf::updateESDFCallback, this);
     vis_timer_ = nh.createTimer(ros::Duration(0.10), &gvf::visCallback, this);
 
     indep_odom_sub_ = nh.subscribe<nav_msgs::Odometry>(odom, 10, &gvf::odomCallback, this);
-    map_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"gvf/occupancy", 10);
-    map_inf_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"gvf/occupancy_inflate", 10);
-    esdf_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"gvf/esdf", 10);
-    update_range_pub_ = nh.advertise<visualization_msgs::Marker>(particle +"gvf/update_range", 10);
+    path_sub_ = nh.subscribe<nav_msgs::Path>(particle + "/path", 10, &gvf::pathCallback, this);
+    goal_sub_ = nh.subscribe("/move_base_simple/goal", 1000, &gvf::goalCallback, this);
+    map_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"/gvf/occupancy", 10);
+    map_inf_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"/gvf/occupancy_inflate", 10);
+    esdf_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"/gvf/esdf", 10);
+    update_range_pub_ = nh.advertise<visualization_msgs::Marker>(particle +"/gvf/update_range", 10);
 
+}
+
+void gvf::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
+{
+    // ROS_INFO("RECEIVE NEW GOAL, RESET ALL BUFFER!");
+    // // resetBuffer();
 }
 
 template <typename F_get_val, typename F_set_val>
@@ -124,7 +133,7 @@ void gvf::updateESDF3d()
 {
     Eigen::Vector3i min_esdf = gvf_.local_bound_min_;
     Eigen::Vector3i max_esdf = gvf_.local_bound_max_;
-
+    // ROS_INFO_STREAM("min_esdf: " << min_esdf.transpose() << ", max_esdf: " << max_esdf.transpose());
     // ========== compute positive DT ==========
 
     for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
@@ -222,7 +231,136 @@ void gvf::updateESDF3d()
                     gvf_.distance_buffer_all_[idx] += 
                         (-gvf_.distance_buffer_neg_[idx] + gvf_.resolution_);
             }
+
 }
+
+// void gvf::updateESDF3d() 
+// {
+//     Eigen::Vector3i min_esdf = gvf_.local_bound_min_;
+//     Eigen::Vector3i max_esdf = gvf_.local_bound_max_;
+
+//     ros::Time t_start = ros::Time::now();
+
+//     // ========== compute positive DT ==========
+//     ros::Time t_pos_start = ros::Time::now();
+
+//     for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
+//         for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
+//             fillESDF(
+//                 [&](int z) {
+//                     return gvf_.occupancy_buffer_inflate_[toAddress(x, y, z)] == 1 ?
+//                         0 :
+//                         std::numeric_limits<double>::max();
+//                 },
+//                 [&](int z, double val) { gvf_.tmp_buffer1_[toAddress(x, y, z)] = val; }, 
+//                 min_esdf[2], max_esdf[2], 2);
+//         }
+//     }
+
+//     for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
+//         for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
+//             fillESDF(
+//                 [&](int y) { return gvf_.tmp_buffer1_[toAddress(x, y, z)]; },
+//                 [&](int y, double val) { gvf_.tmp_buffer2_[toAddress(x, y, z)] = val; }, 
+//                 min_esdf[1], max_esdf[1], 1);
+//         }
+//     }
+
+//     for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
+//         for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
+//             fillESDF(
+//                 [&](int x) { return gvf_.tmp_buffer2_[toAddress(x, y, z)]; },
+//                 [&](int x, double val) {
+//                     gvf_.distance_buffer_[toAddress(x, y, z)] = 
+//                         gvf_.resolution_ * std::sqrt(val);
+//                 },
+//                 min_esdf[0], max_esdf[0], 0);
+//         }
+//     }
+
+//     ros::Duration pos_dt = ros::Time::now() - t_pos_start;
+//     ROS_INFO_STREAM("Positive DT time: " << pos_dt.toSec() << " s");
+
+//     // ========== compute negative occupancy ==========
+//     ros::Time t_neg_occ_start = ros::Time::now();
+
+//     for (int x = min_esdf(0); x <= max_esdf(0); ++x)
+//         for (int y = min_esdf(1); y <= max_esdf(1); ++y)
+//             for (int z = min_esdf(2); z <= max_esdf(2); ++z) {
+//                 int idx = toAddress(x, y, z);
+//                 if (gvf_.occupancy_buffer_inflate_[idx] == 0) {
+//                     gvf_.occupancy_buffer_neg[idx] = 1;
+//                 } else if (gvf_.occupancy_buffer_inflate_[idx] == 1) {
+//                     gvf_.occupancy_buffer_neg[idx] = 0;
+//                 } else {
+//                     ROS_ERROR("what?");
+//                 }
+//             }
+
+//     ros::Duration neg_occ_dt = ros::Time::now() - t_neg_occ_start;
+//     ROS_INFO_STREAM("Negative occupancy assignment time: " << neg_occ_dt.toSec() << " s");
+
+//     // ========== compute negative DT ==========
+//     ros::Time t_neg_dt_start = ros::Time::now();
+
+//     for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
+//         for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
+//             fillESDF(
+//                 [&](int z) {
+//                     return gvf_.occupancy_buffer_neg[
+//                         x * gvf_.map_voxel_num_[1] * gvf_.map_voxel_num_[2] +
+//                         y * gvf_.map_voxel_num_[2] + z] == 1 ?
+//                         0 : std::numeric_limits<double>::max();
+//                 },
+//                 [&](int z, double val) { gvf_.tmp_buffer1_[toAddress(x, y, z)] = val; },
+//                 min_esdf[2], max_esdf[2], 2);
+//         }
+//     }
+
+//     for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
+//         for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
+//             fillESDF(
+//                 [&](int y) { return gvf_.tmp_buffer1_[toAddress(x, y, z)]; },
+//                 [&](int y, double val) { gvf_.tmp_buffer2_[toAddress(x, y, z)] = val; }, 
+//                 min_esdf[1], max_esdf[1], 1);
+//         }
+//     }
+
+//     for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
+//         for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
+//             fillESDF(
+//                 [&](int x) { return gvf_.tmp_buffer2_[toAddress(x, y, z)]; },
+//                 [&](int x, double val) {
+//                     gvf_.distance_buffer_neg_[toAddress(x, y, z)] = 
+//                         gvf_.resolution_ * std::sqrt(val);
+//                 },
+//                 min_esdf[0], max_esdf[0], 0);
+//         }
+//     }
+
+//     ros::Duration neg_dt = ros::Time::now() - t_neg_dt_start;
+//     ROS_INFO_STREAM("Negative DT time: " << neg_dt.toSec() << " s");
+
+//     // ========== combine distances ==========
+//     ros::Time t_combine_start = ros::Time::now();
+
+//     for (int x = min_esdf(0); x <= max_esdf(0); ++x)
+//         for (int y = min_esdf(1); y <= max_esdf(1); ++y)
+//             for (int z = min_esdf(2); z <= max_esdf(2); ++z) {
+//                 int idx = toAddress(x, y, z);
+//                 gvf_.distance_buffer_all_[idx] = gvf_.distance_buffer_[idx];
+//                 if (gvf_.distance_buffer_neg_[idx] > 0.0)
+//                     gvf_.distance_buffer_all_[idx] += 
+//                         (-gvf_.distance_buffer_neg_[idx] + gvf_.resolution_);
+//             }
+
+//     ros::Duration combine_dt = ros::Time::now() - t_combine_start;
+//     ROS_INFO_STREAM("Combine positive and negative DT time: " << combine_dt.toSec() << " s");
+
+//     ros::Duration total_dt = ros::Time::now() - t_start;
+//     ROS_INFO_STREAM("Total updateESDF3d time: " << total_dt.toSec() << " s");
+// }
+
 
 void gvf::odomCallback(const nav_msgs::OdometryConstPtr& odom) 
 {
@@ -232,6 +370,156 @@ void gvf::odomCallback(const nav_msgs::OdometryConstPtr& odom)
 
   gvf_.has_odom_ = true;
 }
+
+void gvf::pathCallback(const nav_msgs::Path::ConstPtr& msg)
+{
+    if (msg->poses.empty()) return;
+
+    if (std::isnan(gvf_.camera_pos_(0)) || 
+        std::isnan(gvf_.camera_pos_(1)) || 
+        std::isnan(gvf_.camera_pos_(2))) return;
+
+    // // ====== 判断路径是否更新 ======
+    // if (msg->poses.size() == last_path_.poses.size()) {
+    //     bool is_same = true;
+    //     for (size_t i = 0; i < msg->poses.size(); ++i) {
+    //         const auto& a = msg->poses[i].pose.position;
+    //         const auto& b = last_path_.poses[i].pose.position;
+
+    //         if (std::fabs(a.x - b.x) > 1e-4 ||
+    //             std::fabs(a.y - b.y) > 1e-4 ||
+    //             std::fabs(a.z - b.z) > 1e-4) {
+    //             is_same = false;
+    //             break;
+    //         }
+    //     }
+    //     if (is_same && (gvf_.camera_pos_ - gvf_.last_camera_pos_).norm() < 1e-4) {
+    //         // ROS_INFO_THROTTLE(1.0, "[GVF] Received same path and unchanged camera, skip update.");
+    //         return;
+    //     }
+    // }
+
+    last_path_ = *msg; 
+    gvf_.last_camera_pos_ = gvf_.camera_pos_;
+
+    this->resetBuffer(gvf_.camera_pos_ - gvf_.local_update_range_,
+                      gvf_.camera_pos_ + gvf_.local_update_range_);
+
+    Eigen::Vector3d p3d, p3d_inf;
+    Eigen::Vector3i inf_pt;
+
+    int inf_step = std::ceil(gvf_.obstacles_inflation_ / gvf_.resolution_);
+    // int inf_step_z = 1;
+    int inf_step_z = inf_step + 1;
+
+    Eigen::Vector3d min_pos = gvf_.camera_pos_ - gvf_.local_update_range_;
+    Eigen::Vector3d max_pos = gvf_.camera_pos_ + gvf_.local_update_range_;
+
+    for (const auto& pose : msg->poses) {
+        p3d << pose.pose.position.x, pose.pose.position.y, pose.pose.position.z;
+
+        Eigen::Vector3d devi = p3d - gvf_.camera_pos_;
+
+        if (fabs(devi(0)) < gvf_.local_update_range_(0) &&
+            fabs(devi(1)) < gvf_.local_update_range_(1) &&
+            fabs(devi(2)) < gvf_.local_update_range_(2)) {
+
+            for (int x = -inf_step; x <= inf_step; ++x)
+                for (int y = -inf_step; y <= inf_step; ++y)
+                    for (int z = -inf_step_z; z <= inf_step_z; ++z) {
+
+                        p3d_inf = p3d + gvf_.resolution_ * Eigen::Vector3d(x, y, z);
+                        posToIndex(p3d_inf, inf_pt);
+                        if (!isInMap(inf_pt)) continue;
+
+                        int idx = toAddress(inf_pt);
+                        gvf_.occupancy_buffer_inflate_[idx] = 1;
+                    }
+        }
+    }
+
+    posToIndex(min_pos, gvf_.local_bound_min_);
+    posToIndex(max_pos, gvf_.local_bound_max_);
+
+    boundIndex(gvf_.local_bound_min_);
+    boundIndex(gvf_.local_bound_max_);
+
+    gvf_.esdf_need_update_ = true;
+}
+
+// Eigen::Vector3d gvf::calcGuidingVectorField(const Eigen::Vector3d pos)
+// {
+//     /* ---------- 1. 距离 & 反向梯度 ---------- */
+//     Eigen::Vector3d grad_out;
+//     double dist = getDistWithGradTrilinear(pos, grad_out);  // grad_out 指向外部
+//     Eigen::Vector3d n(-grad_out.x(),-grad_out.y(),0.0);                          // 取反→向内法
+//     double n_norm = n.norm();
+
+//     ROS_INFO_STREAM("dist: " << dist 
+//                 << ", grad_out: [" << grad_out.x() << ", " 
+//                                    << grad_out.y() << ", " 
+//                                    << grad_out.z() << "]");
+
+//     if (n_norm < 1e-6)        // 数值退化保护
+//         return Eigen::Vector3d::Zero();
+//     n /= n_norm;              // 单位化
+
+//     /* ---------- 2. 2-D 扩充 90° 旋转：τ = Ẽ · n ---------- *
+//      * Ẽ = [[0, -1, 0],
+//      *       [1,  0, 0],
+//      *       [0,  0, 0]]   */
+//    Eigen::Vector3d tau(-n.y(), n.x(), 0.0);  // 顺时针旋转 90°          
+//     double tau_norm = tau.norm();
+//     if (tau_norm < 1e-6) return Eigen::Vector3d::Zero();
+//     tau /= tau_norm;    
+
+//     /* 3. Guiding Vector Field χ = τ - k d n */
+//     Eigen::Vector3d v = tau - gvf_.K_ * dist * n;
+//     // ROS_INFO_STREAM("grad_out: [" << tau.x() << ", " << tau.y() << ", " << tau.z()
+//     //              << "]  v: [" << v.x() << ", " << v.y() << ", " << v.z() << "]");
+
+//     return v; 
+// }
+
+Eigen::Vector3d gvf::calcGuidingVectorField(const Eigen::Vector3d pos)
+{
+    /* ---------- 1. 距离 & 反向梯度 ---------- */
+    Eigen::Vector3d grad_out_3d;
+    double dist = getDistWithGradTrilinear(pos, grad_out_3d);  // grad_out_3d 是三维梯度
+    Eigen::Vector2d grad_out(grad_out_3d.x(), grad_out_3d.y());
+
+    Eigen::Vector2d n = -grad_out;  // 取反 → 向内法
+    double n_norm = n.norm();
+
+    ROS_INFO_STREAM("dist: " << dist 
+        << ", grad_out: [" << grad_out_3d.x() << ", " 
+                           << grad_out_3d.y() << ", " 
+                           << grad_out_3d.z() << "]");
+
+    if (n_norm < 1e-6)
+        return Eigen::Vector3d::Zero();
+
+    n /= n_norm;  // 单位化
+
+    /* ---------- 2. 2D 旋转 90°：τ = Ẽ · n ---------- *
+     * Ẽ = [[0, -1],
+     *       [1,  0]]
+     * 即 τ = (-n_y, n_x)
+     */
+    Eigen::Vector2d tau(-n.y(), n.x());
+    double tau_norm = tau.norm();
+
+    if (tau_norm < 1e-6)
+        return Eigen::Vector3d::Zero();
+
+    tau /= tau_norm;
+
+    /* ---------- 3. Guiding Vector Field χ = τ - k d n ---------- */
+    Eigen::Vector2d v2d = tau - gvf_.K_ * dist * n;
+
+    return Eigen::Vector3d(v2d.x(), v2d.y(), 0.0);  // 保持 3D 输出
+}
+
 
 void gvf::resetBuffer() {
   Eigen::Vector3d min_pos = gvf_.map_min_boundary_;
@@ -262,7 +550,7 @@ void gvf::resetBuffer(Eigen::Vector3d min_pos, Eigen::Vector3d max_pos) {
 }
 
 void gvf::updateESDFCallback(const ros::TimerEvent& /*event*/) {
-  if (!gvf_.esdf_need_update_) return;
+//   if (!gvf_.esdf_need_update_) return;
 
   /* esdf */
   ros::Time t1, t2;
@@ -276,8 +564,9 @@ void gvf::updateESDFCallback(const ros::TimerEvent& /*event*/) {
   gvf_.max_esdf_time_ = max(gvf_.max_esdf_time_, (t2 - t1).toSec());
 
   if (gvf_.show_esdf_time_)
-    ROS_WARN("ESDF: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
-             gvf_.esdf_time_ / gvf_.update_num_, gvf_.max_esdf_time_);
+    // ROS_WARN("ESDF: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
+    //          gvf_.esdf_time_ / gvf_.update_num_, gvf_.max_esdf_time_);
+        // ROS_WARN("ESDF: cur t = %lf", (t2 - t1).toSec());
 
   gvf_.esdf_need_update_ = false;
 }

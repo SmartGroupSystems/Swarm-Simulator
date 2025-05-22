@@ -3,12 +3,15 @@
     <arg name="map_size_x_" value="30.0"/>
     <arg name="map_size_y_" value="30.0"/>
     <arg name="map_size_z_" value=" 3.0"/>
-    
 
+    <arg name="local_update_range_x" value="3.0"/>
+    <arg name="local_update_range_y" value="3.0"/>
+    <arg name="local_update_range_z" value="3.0"/>
+    
   <node name="formation_planning" pkg="bspline_race" type="formation_planning" output="screen">
         <!-- Plan Manager -->
-        <param name="gvf/cloud_topic"      type="string" value="/mock_map" />
-        <param name="gvf/odom_topic"       type="string" value="/sim/odom" />
+        <param name="gvf/cloud_topic"      type="string" value="/particle0/local_map" />
+        <param name="gvf/odom_topic"       type="string" value="/particle0/odom" />
         <param name="gvf/planInterval"     value="0.2" /> 
         <!-- SDF Map -->
         <param name="sdf_map/resolution"   value="0.1" /> 
@@ -16,9 +19,9 @@
         <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
         <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
 
-        <param name="sdf_map/local_update_range_x"  value="8.0" /> 
-        <param name="sdf_map/local_update_range_y"  value="8.0" /> 
-        <param name="sdf_map/local_update_range_z"  value="3.0" /> 
+        <param name="sdf_map/local_update_range_x"  value="$(arg local_update_range_x)" /> 
+        <param name="sdf_map/local_update_range_y"  value="$(arg local_update_range_y)" /> 
+        <param name="sdf_map/local_update_range_z"  value="$(arg local_update_range_z)" /> 
         
         <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
         <param name="sdf_map/local_bound_inflate"    value="0.0"/>
@@ -45,9 +48,12 @@
         <param name="sdf_map/visualization_truncate_height"   value="2.49"/>
         <param name="sdf_map/virtual_ceil_height"   value="2.5"/>
         <param name="sdf_map/show_occ_time"  value="false"/>
-        <param name="sdf_map/show_esdf_time" value="false"/>
+        <param name="sdf_map/show_esdf_time" value="true"/>
         <param name="sdf_map/pose_type"     value="2"/>  
         <param name="sdf_map/frame_id"      value="world"/>
+
+        <param name="sdf_map/gvf_gain"      value="-1.0"/>
+        <param name="sdf_map/gvf_inflation"     value="0.299" /> 
 
         <!-- geometric path searching -->
         <param name="astar/lambda_heu" value="10.0" type="double"/>
@@ -56,6 +62,16 @@
         <param name="astar/margin" value="0.1" type="double"/>
         <param name="astar/allocate_num" value="1000000" type="int"/>
 
+    </node>
+
+    <node pkg="map_generator" type="local_sensing" name="map_generator" output="screen">
+        <param name="sdf_map/resolution" value="0.1" />
+        <param name="sdf_map/map_size_x"   value="$(arg map_size_x_)" /> 
+        <param name="sdf_map/map_size_y"   value="$(arg map_size_y_)" /> 
+        <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
+        <param name="sdf_map/local_update_range_x"  value="$(arg local_update_range_x)" /> 
+        <param name="sdf_map/local_update_range_y"  value="$(arg local_update_range_y)" /> 
+        <param name="sdf_map/local_update_range_z"  value="$(arg local_update_range_z)" /> 
     </node>
 
 

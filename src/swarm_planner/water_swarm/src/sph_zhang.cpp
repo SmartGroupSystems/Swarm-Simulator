@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
     nh.param("sph/init_bias_x", init_bias_x, -1.0);  //
     nh.param("sph/init_bias_y", init_bias_y, -1.0);  //
     timer                 = nh.createTimer(ros::Duration(updateInterval),   timerCallback);
+    gvf_timer                 = nh.createTimer(ros::Duration(updateInterval),  gvf_timerCallback);
     particles_publisher   = nh.advertise<visualization_msgs::MarkerArray>("particles_vis", 10);
     virtual_particles_publisher = nh.advertise<visualization_msgs::MarkerArray>("virtual_particles_vis", 10);
     swarm_pub             = nh.advertise<common_msgs::Swarm_particles>("/swarm_particles", 10);
@@ -38,6 +39,7 @@ int main(int argc, char **argv) {
     force_sub             = nh.subscribe("/particle_force", 10,forceCallback);
     pos_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_position", 10);
     vel_pub               = nh.advertise<geometry_msgs::PoseStamped>("trajectory_velocity", 10);
+    position_cmd_sub      = nh.subscribe("/position_cmd", 10, positionCmdCallback);
     odom_publishers.resize(particleCount);
     for (int i = 0; i < particleCount; ++i) {
         std::stringstream ss;
@@ -55,6 +57,37 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+void positionCmdCallback(const quadrotor_msgs::PositionCommand::ConstPtr& msg)
+{
+    sph_planner->latest_position_cmd = *msg;
+}
+
+void gvf_timerCallback(const ros::TimerEvent&)
+{
+    for (size_t i = 0; i < sph_planner->particles.size(); i++) {
+        Particle* p = &sph_planner->particles[i];
+
+        // 更新速度
+        p->velocity.x = sph_planner->latest_position_cmd.velocity.x;
+        p->velocity.y = sph_planner->latest_position_cmd.velocity.y;
+        // p->velocity.z = sph_planner->latest_position_cmd.velocity.z;
+        p->velocity.z = 0.0;
+
+        p->velocity.x = sph_planner->clamp(p->velocity.x, v_max);
+        p->velocity.y = sph_planner->clamp(p->velocity.y, v_max);
+        p->velocity.z = sph_planner->clamp(p->velocity.z, v_max);
+
+        // 更新位置
+        p->position.x += p->velocity.x * 0.02;
+        p->position.y += p->velocity.y * 0.02;
+        p->position.z += p->velocity.z * 0.02;
+        ROS_INFO_STREAM("Particle " << i 
+            << " | Pos: [" << p->position.x << ", " << p->position.y << ", " << p->position.z << "]"
+            << " | Vel: [" << p->velocity.x << ", " << p->velocity.y << ", " << p->velocity.z << "]");
+    }
+    sph_planner-> pubroscmd();
+}
+
 void swarmTrajCallback(const common_msgs::Swarm_traj::ConstPtr& msg)
 {
     common_msgs::Swarm_traj swarmTrajBuffer = *msg;
@@ -70,7 +103,7 @@ void timerCallback(const ros::TimerEvent&) {
     {
         // 检查自上次打印后是否已经过去了1秒
         if ((current_time - last_print_time).toSec() >= 1.0) {
-            ROS_INFO("Do not receive the start command, return.");
+            // ROS_INFO("Do not receive the start command, return.");
             last_print_time = current_time;  // 更新上次打印时间
         }
         return;
@@ -898,7 +931,7 @@ SPHSystem::SPHSystem(
     , runOnGPU(runOnGPU)
 {
     /*---TEST-------*/ 
-    started = true;
+    started = false;
     /*--------------*/
 
     initParticles();

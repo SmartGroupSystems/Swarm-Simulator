@@ -16,11 +16,14 @@ namespace FLAG_Race
 
     void gvf_manager::initCallback(ros::NodeHandle &nh)
     {
-        exec_timer = nh.createTimer(ros::Duration(0.10), &gvf_manager::AstarExecCallback, this);
+        exec_timer = nh.createTimer(ros::Duration(0.2), &gvf_manager::AstarExecCallback, this);
         force_pub  = nh.advertise<common_msgs::Swarm_particles>("/gvf_force", 10);
         goal_sub = nh.subscribe("/move_base_simple/goal", 1000, &gvf_manager::goalCallback, this);
         path_vis = nh.advertise<visualization_msgs::Marker>("/path_vis", 10);
-        
+        odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic_, 10, &gvf_manager::odomCallback, this);
+        cmd_pub    = nh.advertise<quadrotor_msgs::PositionCommand>("/position_cmd", 10);
+        cmd_timer  = nh.createTimer(ros::Duration(0.02), &gvf_manager::cmdCallback, this);  // 50Hz
+        path_pub = nh.advertise<nav_msgs::Path>("/particle0/path", 1);
     } 
 
 void gvf_manager::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
@@ -30,22 +33,72 @@ void gvf_manager::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
              msg->pose.position.y,
              msg->pose.position.z);
 
+    Eigen::Vector3d start_pt(odom_.x()+0.000001, odom_.y()+0.000001,1.0);
     Eigen::Vector3d goal_pt(
         msg->pose.position.x,
         msg->pose.position.y,
-        msg->pose.position.z
+        msg->pose.position.z+1.0
     );
 
     for (auto& manager : swarmParticlesManager) {
+        manager.receive_startpt = true;
+        manager.start_pt = start_pt;
         manager.goal_pt = goal_pt;
     }
 }
 
+void gvf_manager::cmdCallback(const ros::TimerEvent& event)
+{
+    if (swarmParticlesManager.empty()) return;
+
+    // 使用第一个粒子的位置信息
+    const Eigen::Vector3d& pos = odom_;
+    
+    if (!swarmParticlesManager[0].receive_startpt) {
+        // ROS_WARN_THROTTLE(2.0, "[gvf_manager] GVF not initialized.");
+        return;
+    }
+
+    // 计算 GVF 速度
+    Eigen::Vector3d vel = swarmParticlesManager[0].gvf_->calcGuidingVectorField(pos);
+
+    // 构造 PositionCommand 消息
+    quadrotor_msgs::PositionCommand cmd;
+    cmd.header.stamp = ros::Time::now();
+    cmd.header.frame_id = "world";
+
+    // 禁用 position 控制
+    cmd.position.x = std::numeric_limits<float>::quiet_NaN();
+    cmd.position.y = std::numeric_limits<float>::quiet_NaN();
+    cmd.position.z = std::numeric_limits<float>::quiet_NaN();
+
+    // // 设置速度控制
+    cmd.velocity.x = vel.x();
+    cmd.velocity.y = vel.y();
+    cmd.velocity.z = 0.0;
+
+    // cmd.velocity.x = std::numeric_limits<float>::quiet_NaN();
+    // cmd.velocity.y = std::numeric_limits<float>::quiet_NaN();
+    // cmd.velocity.z = std::numeric_limits<float>::quiet_NaN();
+    // cmd.acceleration.x = vel.x();
+    // cmd.acceleration.y = vel.y();
+    // cmd.acceleration.z = 0.0;
+
+// ROS_INFO("[GVF] Velocity Command: x = %.3f, y = %.3f, z = %.3f",
+//          cmd.velocity.x, cmd.velocity.y, cmd.velocity.z);
+    // 发布控制指令
+    cmd_pub.publish(cmd);
+}
+
+
 void gvf_manager::AstarExecCallback(const ros::TimerEvent& event) 
 {   
-    auto& pm = swarmParticlesManager[0];        
+    auto& pm = swarmParticlesManager[0];  
+    if (!pm.receive_startpt) return;
+          
     /*----------- ① A* 搜索粗路径 -----------*/
-    Eigen::Vector3d start_pt( 0.00001, 0.00001, 1.0 );
+    // Eigen::Vector3d start_pt= odom_; start_pt(2) =1.0; 
+    Eigen::Vector3d start_pt= pm.start_pt; 
     Eigen::Vector3d goal_pt = pm.goal_pt;        
 
     pm.geo_path_finder_->reset();
@@ -65,7 +118,7 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
         pose.pose.position.z = pt.z();
         path_msg.poses.push_back(pose);
     }
-    pm.path_pub.publish(path_msg);
+    path_pub.publish(path_msg);
 
 }
 
@@ -92,8 +145,6 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
             auto gvf_ = std::make_shared<gvf>();
             gvf_->init(nh, particle_base, odom_topic_, cloud_topic_);
 
-            ros::Publisher path_pub = nh.advertise<nav_msgs::Path>( particle_base + "/path", 1);
-
             gvfManager pm {
                 particle_base,
                 sdf_map_,
@@ -104,7 +155,6 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
                 ros::Time::now(),     // curr_time
                 ros::Time(0),         // last_time
                 true, 
-                path_pub
             };
 
             swarmParticlesManager.push_back(pm);  // 将实例存入向量
@@ -114,6 +164,14 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
         } catch (const std::exception& e) {
             ROS_ERROR("Exception caught while initializing environments for %s", e.what());
         }  
+    }
+
+    void gvf_manager::odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+    {
+        this->odom_ = Eigen::Vector3d(
+        msg->pose.pose.position.x+0.000001,
+        msg->pose.pose.position.y+0.000001,
+        msg->pose.pose.position.z);
     }
 
     void gvf_manager::visualizePath(const std::vector<Eigen::Vector3d>& path_points, 
@@ -175,7 +233,7 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
 
     for (auto p : raw_path)
     {
-        for (int i = 0; i < 6; ++i)                      // 迭代 6 次 ≈ 3 格
+        for (int i = 0; i < 7; ++i)                      // 迭代 7 次 ≈ 3 格
         {
         Eigen::Vector3d g = esdfGrad(p);               // ∇d(p)
         if (g.squaredNorm() < 1e-6) break;             // 到脊线

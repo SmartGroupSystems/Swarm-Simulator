@@ -134,8 +134,8 @@ void SDFMap::initMap(ros::NodeHandle& nh,const std::string& particle, const std:
   indep_cloud_sub_ = nh.subscribe<sensor_msgs::PointCloud2>(cloud, 10, &SDFMap::cloudCallback, this);
   indep_odom_sub_ = nh.subscribe<nav_msgs::Odometry>(odom, 10, &SDFMap::odomCallback, this);
 
-  occ_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::updateOccupancyCallback, this);
-  esdf_timer_ = nh.createTimer(ros::Duration(0.05), &SDFMap::updateESDFCallback, this);
+  occ_timer_ = nh.createTimer(ros::Duration(0.10), &SDFMap::updateOccupancyCallback, this);
+  esdf_timer_ = nh.createTimer(ros::Duration(0.10), &SDFMap::updateESDFCallback, this);
   vis_timer_ = nh.createTimer(ros::Duration(0.10), &SDFMap::visCallback, this);
 
   map_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"sdf_map/occupancy", 10);
@@ -374,7 +374,7 @@ void SDFMap::fillESDF(F_get_val f_get_val, F_set_val f_set_val, int start, int e
 void SDFMap::updateESDF3d() {
   Eigen::Vector3i min_esdf = md_.local_bound_min_;
   Eigen::Vector3i max_esdf = md_.local_bound_max_;
-
+    // ROS_INFO_STREAM("min_esdf: " << min_esdf.transpose() << ", max_esdf: " << max_esdf.transpose());
   /* ========== compute positive DT ========== */
 
   for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
@@ -472,6 +472,124 @@ void SDFMap::updateESDF3d() {
           md_.distance_buffer_all_[idx] += (-md_.distance_buffer_neg_[idx] + mp_.resolution_);
       }
 }
+
+// void SDFMap::updateESDF3d() {
+//   Eigen::Vector3i min_esdf = md_.local_bound_min_;
+//   Eigen::Vector3i max_esdf = md_.local_bound_max_;
+
+//   ros::Time t_start = ros::Time::now();
+
+//   /* ========== compute positive DT ========== */
+//   ros::Time t_pos_start = ros::Time::now();
+
+//   for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
+//     for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
+//       fillESDF(
+//           [&](int z) {
+//             return md_.occupancy_buffer_inflate_[toAddress(x, y, z)] == 1 ?
+//                 0 : std::numeric_limits<double>::max();
+//           },
+//           [&](int z, double val) { md_.tmp_buffer1_[toAddress(x, y, z)] = val; }, 
+//           min_esdf[2], max_esdf[2], 2);
+//     }
+//   }
+
+//   for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
+//     for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
+//       fillESDF([&](int y) { return md_.tmp_buffer1_[toAddress(x, y, z)]; },
+//                [&](int y, double val) { md_.tmp_buffer2_[toAddress(x, y, z)] = val; }, 
+//                min_esdf[1], max_esdf[1], 1);
+//     }
+//   }
+
+//   for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
+//     for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
+//       fillESDF([&](int x) { return md_.tmp_buffer2_[toAddress(x, y, z)]; },
+//                [&](int x, double val) {
+//                  md_.distance_buffer_[toAddress(x, y, z)] = mp_.resolution_ * std::sqrt(val);
+//                },
+//                min_esdf[0], max_esdf[0], 0);
+//     }
+//   }
+
+//   ros::Duration pos_dt = ros::Time::now() - t_pos_start;
+//   ROS_INFO_STREAM("Positive DT time: " << pos_dt.toSec() << " s");
+
+//   /* ========== compute negative occupancy ========= */
+//   ros::Time t_neg_occ_start = ros::Time::now();
+
+//   for (int x = min_esdf(0); x <= max_esdf(0); ++x)
+//     for (int y = min_esdf(1); y <= max_esdf(1); ++y)
+//       for (int z = min_esdf(2); z <= max_esdf(2); ++z) {
+//         int idx = toAddress(x, y, z);
+//         if (md_.occupancy_buffer_inflate_[idx] == 0) {
+//           md_.occupancy_buffer_neg[idx] = 1;
+//         } else if (md_.occupancy_buffer_inflate_[idx] == 1) {
+//           md_.occupancy_buffer_neg[idx] = 0;
+//         } else {
+//           ROS_ERROR("what?");
+//         }
+//       }
+
+//   ros::Duration neg_occ_dt = ros::Time::now() - t_neg_occ_start;
+//   ROS_INFO_STREAM("Negative occupancy assignment time: " << neg_occ_dt.toSec() << " s");
+
+//   /* ========== compute negative DT ========== */
+//   ros::Time t_neg_dt_start = ros::Time::now();
+
+//   for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
+//     for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
+//       fillESDF(
+//           [&](int z) {
+//             return md_.occupancy_buffer_neg[
+//                 x * mp_.map_voxel_num_(1) * mp_.map_voxel_num_(2) +
+//                 y * mp_.map_voxel_num_(2) + z] == 1 ?
+//                 0 : std::numeric_limits<double>::max();
+//           },
+//           [&](int z, double val) { md_.tmp_buffer1_[toAddress(x, y, z)] = val; }, 
+//           min_esdf[2], max_esdf[2], 2);
+//     }
+//   }
+
+//   for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
+//     for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
+//       fillESDF([&](int y) { return md_.tmp_buffer1_[toAddress(x, y, z)]; },
+//                [&](int y, double val) { md_.tmp_buffer2_[toAddress(x, y, z)] = val; }, 
+//                min_esdf[1], max_esdf[1], 1);
+//     }
+//   }
+
+//   for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
+//     for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
+//       fillESDF([&](int x) { return md_.tmp_buffer2_[toAddress(x, y, z)]; },
+//                [&](int x, double val) {
+//                  md_.distance_buffer_neg_[toAddress(x, y, z)] = mp_.resolution_ * std::sqrt(val);
+//                },
+//                min_esdf[0], max_esdf[0], 0);
+//     }
+//   }
+
+//   ros::Duration neg_dt = ros::Time::now() - t_neg_dt_start;
+//   ROS_INFO_STREAM("Negative DT time: " << neg_dt.toSec() << " s");
+
+//   /* ========== combine positive and negative DT ========== */
+//   ros::Time t_combine_start = ros::Time::now();
+
+//   for (int x = min_esdf(0); x <= max_esdf(0); ++x)
+//     for (int y = min_esdf(1); y <= max_esdf(1); ++y)
+//       for (int z = min_esdf(2); z <= max_esdf(2); ++z) {
+//         int idx = toAddress(x, y, z);
+//         md_.distance_buffer_all_[idx] = md_.distance_buffer_[idx];
+//         if (md_.distance_buffer_neg_[idx] > 0.0)
+//           md_.distance_buffer_all_[idx] += (-md_.distance_buffer_neg_[idx] + mp_.resolution_);
+//       }
+
+//   ros::Duration combine_dt = ros::Time::now() - t_combine_start;
+//   ROS_INFO_STREAM("Combine DT time: " << combine_dt.toSec() << " s");
+
+//   ros::Duration total_dt = ros::Time::now() - t_start;
+//   ROS_INFO_STREAM("Total SDFMap::updateESDF3d time: " << total_dt.toSec() << " s");
+// }
 
 int SDFMap::setCacheOccupancy(Eigen::Vector3d pos, int occ) {
   if (occ != 1 && occ != 0) return INVALID_IDX;
@@ -898,29 +1016,29 @@ void SDFMap::visCallback(const ros::TimerEvent& /*event*/) {
 }
 
 void SDFMap::updateOccupancyCallback(const ros::TimerEvent& /*event*/) {
-  if (!md_.occ_need_update_) return;
+  // if (!md_.occ_need_update_) return;
 
-  /* update occupancy */
-  ros::Time t1, t2;
-  t1 = ros::Time::now();
+  // /* update occupancy */
+  // ros::Time t1, t2;
+  // t1 = ros::Time::now();
 
-  projectDepthImage();
-  raycastProcess();
+  // projectDepthImage();
+  // raycastProcess();
 
-  if (md_.local_updated_) clearAndInflateLocalMap();
+  // if (md_.local_updated_) clearAndInflateLocalMap();
 
-  t2 = ros::Time::now();
+  // t2 = ros::Time::now();
 
-  md_.fuse_time_ += (t2 - t1).toSec();
-  md_.max_fuse_time_ = max(md_.max_fuse_time_, (t2 - t1).toSec());
+  // md_.fuse_time_ += (t2 - t1).toSec();
+  // md_.max_fuse_time_ = max(md_.max_fuse_time_, (t2 - t1).toSec());
 
-  if (mp_.show_occ_time_)
-    ROS_WARN("Fusion: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
-             md_.fuse_time_ / md_.update_num_, md_.max_fuse_time_);
+  // if (mp_.show_occ_time_)
+  //   ROS_WARN("Fusion: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
+  //            md_.fuse_time_ / md_.update_num_, md_.max_fuse_time_);
 
-  md_.occ_need_update_ = false;
-  if (md_.local_updated_) md_.esdf_need_update_ = true;
-  md_.local_updated_ = false;
+  // md_.occ_need_update_ = false;
+  // if (md_.local_updated_) md_.esdf_need_update_ = true;
+  // md_.local_updated_ = false;
 }
 
 void SDFMap::updateESDFCallback(const ros::TimerEvent& /*event*/) {
@@ -938,8 +1056,8 @@ void SDFMap::updateESDFCallback(const ros::TimerEvent& /*event*/) {
   md_.max_esdf_time_ = max(md_.max_esdf_time_, (t2 - t1).toSec());
 
   if (mp_.show_esdf_time_)
-    ROS_WARN("ESDF: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
-             md_.esdf_time_ / md_.update_num_, md_.max_esdf_time_);
+    // ROS_WARN("ESDF: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
+    //          md_.esdf_time_ / md_.update_num_, md_.max_esdf_time_);
 
   md_.esdf_need_update_ = false;
 }

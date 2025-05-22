@@ -12,10 +12,9 @@ int main(int argc, char ** argv)
 
     gvf_manager manager(nh);
 
-    // ros::AsyncSpinner spinner(15); // Use 15 threads
-    // spinner.start();
-    // ros::waitForShutdown();
-    ros::spin();
+    ros::AsyncSpinner spinner(8); //
+    spinner.start();
+    ros::waitForShutdown();
     
     return 0;
 }
