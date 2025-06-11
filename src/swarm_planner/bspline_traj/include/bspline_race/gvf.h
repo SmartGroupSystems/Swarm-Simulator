@@ -14,6 +14,7 @@
 #include <mutex>
 #include <vector>
 #include <Eigen/Dense>
+#include <Eigen/Geometry>  
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -81,7 +82,7 @@ struct VectorFieldData {
   int update_num_;
   
   //GVF GAIN
-  double K_;
+  double K1_, K2_;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -91,7 +92,7 @@ class gvf
     public:
         VectorFieldData gvf_;
         ros::Subscriber indep_odom_sub_, indep_cloud_sub_, path_sub_, goal_sub_;
-        ros::Publisher map_pub_, esdf_pub_, map_inf_pub_, update_range_pub_;
+        ros::Publisher map_pub_, esdf_pub_, map_inf_pub_, update_range_pub_,gvf_vis_pub_;
         ros::Timer esdf_timer_, vis_timer_;
         nav_msgs::Path last_path_;
     
@@ -112,9 +113,11 @@ class gvf
         void publishMap();
         void publishMapInflate(bool all_info = false);
         void publishESDF();
+        void publishGVF();
         void publishUpdateRange();
-        Eigen::Vector3d calcGuidingVectorField(const Eigen::Vector3d pos);
-
+        Eigen::Vector3d calcGuidingVectorField2D(const Eigen::Vector3d pos);
+        Eigen::Vector3d calcGuidingVectorField3D(const Eigen::Vector3d pos);
+        
         inline void posToIndex(const Eigen::Vector3d& pos, Eigen::Vector3i& id);
         inline void indexToPos(const Eigen::Vector3i& id, Eigen::Vector3d& pos);
         inline int toAddress(const Eigen::Vector3i& id);

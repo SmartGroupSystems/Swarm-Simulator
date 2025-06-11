@@ -25,7 +25,8 @@ void gvf::init(ros::NodeHandle& nh, const std::string& particle, const std::stri
     nh.param("sdf_map/frame_id", gvf_.frame_id_, std::string("world"));
     nh.param("sdf_map/local_bound_inflate", gvf_.local_bound_inflate_, 1.0);
     nh.param("sdf_map/local_map_margin", gvf_.local_map_margin_, 1);
-    nh.param("sdf_map/gvf_gain", gvf_.K_, 0.0);
+    nh.param("sdf_map/gvf_gain1", gvf_.K1_, 0.0);
+    nh.param("sdf_map/gvf_gain2", gvf_.K2_, 0.0);
 
     gvf_.local_bound_inflate_ = std::max(gvf_.resolution_, gvf_.local_bound_inflate_);
     gvf_.resolution_inv_ = 1.0 / gvf_.resolution_;
@@ -84,7 +85,7 @@ void gvf::init(ros::NodeHandle& nh, const std::string& particle, const std::stri
     map_inf_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"/gvf/occupancy_inflate", 10);
     esdf_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"/gvf/esdf", 10);
     update_range_pub_ = nh.advertise<visualization_msgs::Marker>(particle +"/gvf/update_range", 10);
-
+    gvf_vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>(particle +"/gvf/vector_field", 10);
 }
 
 void gvf::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
@@ -234,134 +235,6 @@ void gvf::updateESDF3d()
 
 }
 
-// void gvf::updateESDF3d() 
-// {
-//     Eigen::Vector3i min_esdf = gvf_.local_bound_min_;
-//     Eigen::Vector3i max_esdf = gvf_.local_bound_max_;
-
-//     ros::Time t_start = ros::Time::now();
-
-//     // ========== compute positive DT ==========
-//     ros::Time t_pos_start = ros::Time::now();
-
-//     for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
-//         for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
-//             fillESDF(
-//                 [&](int z) {
-//                     return gvf_.occupancy_buffer_inflate_[toAddress(x, y, z)] == 1 ?
-//                         0 :
-//                         std::numeric_limits<double>::max();
-//                 },
-//                 [&](int z, double val) { gvf_.tmp_buffer1_[toAddress(x, y, z)] = val; }, 
-//                 min_esdf[2], max_esdf[2], 2);
-//         }
-//     }
-
-//     for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
-//         for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
-//             fillESDF(
-//                 [&](int y) { return gvf_.tmp_buffer1_[toAddress(x, y, z)]; },
-//                 [&](int y, double val) { gvf_.tmp_buffer2_[toAddress(x, y, z)] = val; }, 
-//                 min_esdf[1], max_esdf[1], 1);
-//         }
-//     }
-
-//     for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
-//         for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
-//             fillESDF(
-//                 [&](int x) { return gvf_.tmp_buffer2_[toAddress(x, y, z)]; },
-//                 [&](int x, double val) {
-//                     gvf_.distance_buffer_[toAddress(x, y, z)] = 
-//                         gvf_.resolution_ * std::sqrt(val);
-//                 },
-//                 min_esdf[0], max_esdf[0], 0);
-//         }
-//     }
-
-//     ros::Duration pos_dt = ros::Time::now() - t_pos_start;
-//     ROS_INFO_STREAM("Positive DT time: " << pos_dt.toSec() << " s");
-
-//     // ========== compute negative occupancy ==========
-//     ros::Time t_neg_occ_start = ros::Time::now();
-
-//     for (int x = min_esdf(0); x <= max_esdf(0); ++x)
-//         for (int y = min_esdf(1); y <= max_esdf(1); ++y)
-//             for (int z = min_esdf(2); z <= max_esdf(2); ++z) {
-//                 int idx = toAddress(x, y, z);
-//                 if (gvf_.occupancy_buffer_inflate_[idx] == 0) {
-//                     gvf_.occupancy_buffer_neg[idx] = 1;
-//                 } else if (gvf_.occupancy_buffer_inflate_[idx] == 1) {
-//                     gvf_.occupancy_buffer_neg[idx] = 0;
-//                 } else {
-//                     ROS_ERROR("what?");
-//                 }
-//             }
-
-//     ros::Duration neg_occ_dt = ros::Time::now() - t_neg_occ_start;
-//     ROS_INFO_STREAM("Negative occupancy assignment time: " << neg_occ_dt.toSec() << " s");
-
-//     // ========== compute negative DT ==========
-//     ros::Time t_neg_dt_start = ros::Time::now();
-
-//     for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
-//         for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
-//             fillESDF(
-//                 [&](int z) {
-//                     return gvf_.occupancy_buffer_neg[
-//                         x * gvf_.map_voxel_num_[1] * gvf_.map_voxel_num_[2] +
-//                         y * gvf_.map_voxel_num_[2] + z] == 1 ?
-//                         0 : std::numeric_limits<double>::max();
-//                 },
-//                 [&](int z, double val) { gvf_.tmp_buffer1_[toAddress(x, y, z)] = val; },
-//                 min_esdf[2], max_esdf[2], 2);
-//         }
-//     }
-
-//     for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
-//         for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
-//             fillESDF(
-//                 [&](int y) { return gvf_.tmp_buffer1_[toAddress(x, y, z)]; },
-//                 [&](int y, double val) { gvf_.tmp_buffer2_[toAddress(x, y, z)] = val; }, 
-//                 min_esdf[1], max_esdf[1], 1);
-//         }
-//     }
-
-//     for (int y = min_esdf[1]; y <= max_esdf[1]; y++) {
-//         for (int z = min_esdf[2]; z <= max_esdf[2]; z++) {
-//             fillESDF(
-//                 [&](int x) { return gvf_.tmp_buffer2_[toAddress(x, y, z)]; },
-//                 [&](int x, double val) {
-//                     gvf_.distance_buffer_neg_[toAddress(x, y, z)] = 
-//                         gvf_.resolution_ * std::sqrt(val);
-//                 },
-//                 min_esdf[0], max_esdf[0], 0);
-//         }
-//     }
-
-//     ros::Duration neg_dt = ros::Time::now() - t_neg_dt_start;
-//     ROS_INFO_STREAM("Negative DT time: " << neg_dt.toSec() << " s");
-
-//     // ========== combine distances ==========
-//     ros::Time t_combine_start = ros::Time::now();
-
-//     for (int x = min_esdf(0); x <= max_esdf(0); ++x)
-//         for (int y = min_esdf(1); y <= max_esdf(1); ++y)
-//             for (int z = min_esdf(2); z <= max_esdf(2); ++z) {
-//                 int idx = toAddress(x, y, z);
-//                 gvf_.distance_buffer_all_[idx] = gvf_.distance_buffer_[idx];
-//                 if (gvf_.distance_buffer_neg_[idx] > 0.0)
-//                     gvf_.distance_buffer_all_[idx] += 
-//                         (-gvf_.distance_buffer_neg_[idx] + gvf_.resolution_);
-//             }
-
-//     ros::Duration combine_dt = ros::Time::now() - t_combine_start;
-//     ROS_INFO_STREAM("Combine positive and negative DT time: " << combine_dt.toSec() << " s");
-
-//     ros::Duration total_dt = ros::Time::now() - t_start;
-//     ROS_INFO_STREAM("Total updateESDF3d time: " << total_dt.toSec() << " s");
-// }
-
-
 void gvf::odomCallback(const nav_msgs::OdometryConstPtr& odom) 
 {
   gvf_.camera_pos_(0) = odom->pose.pose.position.x;
@@ -379,25 +252,6 @@ void gvf::pathCallback(const nav_msgs::Path::ConstPtr& msg)
         std::isnan(gvf_.camera_pos_(1)) || 
         std::isnan(gvf_.camera_pos_(2))) return;
 
-    // // ====== 判断路径是否更新 ======
-    // if (msg->poses.size() == last_path_.poses.size()) {
-    //     bool is_same = true;
-    //     for (size_t i = 0; i < msg->poses.size(); ++i) {
-    //         const auto& a = msg->poses[i].pose.position;
-    //         const auto& b = last_path_.poses[i].pose.position;
-
-    //         if (std::fabs(a.x - b.x) > 1e-4 ||
-    //             std::fabs(a.y - b.y) > 1e-4 ||
-    //             std::fabs(a.z - b.z) > 1e-4) {
-    //             is_same = false;
-    //             break;
-    //         }
-    //     }
-    //     if (is_same && (gvf_.camera_pos_ - gvf_.last_camera_pos_).norm() < 1e-4) {
-    //         // ROS_INFO_THROTTLE(1.0, "[GVF] Received same path and unchanged camera, skip update.");
-    //         return;
-    //     }
-    // }
 
     last_path_ = *msg; 
     gvf_.last_camera_pos_ = gvf_.camera_pos_;
@@ -447,41 +301,8 @@ void gvf::pathCallback(const nav_msgs::Path::ConstPtr& msg)
     gvf_.esdf_need_update_ = true;
 }
 
-// Eigen::Vector3d gvf::calcGuidingVectorField(const Eigen::Vector3d pos)
-// {
-//     /* ---------- 1. 距离 & 反向梯度 ---------- */
-//     Eigen::Vector3d grad_out;
-//     double dist = getDistWithGradTrilinear(pos, grad_out);  // grad_out 指向外部
-//     Eigen::Vector3d n(-grad_out.x(),-grad_out.y(),0.0);                          // 取反→向内法
-//     double n_norm = n.norm();
 
-//     ROS_INFO_STREAM("dist: " << dist 
-//                 << ", grad_out: [" << grad_out.x() << ", " 
-//                                    << grad_out.y() << ", " 
-//                                    << grad_out.z() << "]");
-
-//     if (n_norm < 1e-6)        // 数值退化保护
-//         return Eigen::Vector3d::Zero();
-//     n /= n_norm;              // 单位化
-
-//     /* ---------- 2. 2-D 扩充 90° 旋转：τ = Ẽ · n ---------- *
-//      * Ẽ = [[0, -1, 0],
-//      *       [1,  0, 0],
-//      *       [0,  0, 0]]   */
-//    Eigen::Vector3d tau(-n.y(), n.x(), 0.0);  // 顺时针旋转 90°          
-//     double tau_norm = tau.norm();
-//     if (tau_norm < 1e-6) return Eigen::Vector3d::Zero();
-//     tau /= tau_norm;    
-
-//     /* 3. Guiding Vector Field χ = τ - k d n */
-//     Eigen::Vector3d v = tau - gvf_.K_ * dist * n;
-//     // ROS_INFO_STREAM("grad_out: [" << tau.x() << ", " << tau.y() << ", " << tau.z()
-//     //              << "]  v: [" << v.x() << ", " << v.y() << ", " << v.z() << "]");
-
-//     return v; 
-// }
-
-Eigen::Vector3d gvf::calcGuidingVectorField(const Eigen::Vector3d pos)
+Eigen::Vector3d gvf::calcGuidingVectorField2D(const Eigen::Vector3d pos)
 {
     /* ---------- 1. 距离 & 反向梯度 ---------- */
     Eigen::Vector3d grad_out_3d;
@@ -515,11 +336,74 @@ Eigen::Vector3d gvf::calcGuidingVectorField(const Eigen::Vector3d pos)
     tau /= tau_norm;
 
     /* ---------- 3. Guiding Vector Field χ = τ - k d n ---------- */
-    Eigen::Vector2d v2d = tau - gvf_.K_ * dist * n;
+    Eigen::Vector2d v2d = gvf_.K1_*tau - gvf_.K2_ * dist * n;
 
     return Eigen::Vector3d(v2d.x(), v2d.y(), 0.0);  // 保持 3D 输出
 }
 
+Eigen::Vector3d gvf::calcGuidingVectorField3D(const Eigen::Vector3d pos)
+{
+    /* ---------- 1. 距离 & 法向量 ---------- */
+    Eigen::Vector3d grad_out_3d;
+    double dist = getDistWithGradTrilinear(pos, grad_out_3d);  // grad_out_3d 是 ∇d
+
+    Eigen::Vector3d n = -grad_out_3d;  // 取反方向为"向内法向量"
+    double n_norm = n.norm();
+    if (n_norm < 1e-6)        
+    n.normalize();  // 单位化法向量
+
+    /* ---------- 2. 从路径中估计切向量 ---------- */
+    Eigen::Vector3d tau = Eigen::Vector3d::Zero();
+
+    if (!last_path_.poses.empty()) {
+        size_t closest_idx = 0;
+        double min_dist = std::numeric_limits<double>::max();
+
+        for (size_t i = 0; i < last_path_.poses.size(); ++i) {
+            Eigen::Vector3d path_pt(
+                last_path_.poses[i].pose.position.x,
+                last_path_.poses[i].pose.position.y,
+                last_path_.poses[i].pose.position.z
+            );
+            double d = (pos - path_pt).squaredNorm();
+            if (d < min_dist) {
+                min_dist = d;
+                closest_idx = i;
+            }
+        }
+
+        // 若不是最后一个点，计算与下一个点的方向作为切向量
+        if (closest_idx + 1 < last_path_.poses.size()) {
+            Eigen::Vector3d pt_curr(
+                last_path_.poses[closest_idx].pose.position.x,
+                last_path_.poses[closest_idx].pose.position.y,
+                last_path_.poses[closest_idx].pose.position.z
+            );
+            Eigen::Vector3d pt_next(
+                last_path_.poses[closest_idx + 1].pose.position.x,
+                last_path_.poses[closest_idx + 1].pose.position.y,
+                last_path_.poses[closest_idx + 1].pose.position.z
+            );
+
+            tau = (pt_next - pt_curr);
+            if (tau.norm() > 1e-6)
+                tau.normalize();  // 单位切向量
+            else
+                tau = Eigen::Vector3d::Zero();  // 防止数值问题
+        }
+    }
+
+    /* ---------- 3. Guiding Vector Field χ = τ - k d n ---------- */
+    Eigen::Vector3d guiding_vec = gvf_.K1_ * tau - gvf_.K2_ * dist * n;
+
+    // ROS_INFO_STREAM("pos: " << pos.transpose()
+    //     << ", dist: " << dist
+    //     << ", n: " << n.transpose()
+    //     << ", tau: " << tau.transpose()
+    //     << ", guiding_vec: " << guiding_vec.transpose());
+
+    return guiding_vec;
+}
 
 void gvf::resetBuffer() {
   Eigen::Vector3d min_pos = gvf_.map_min_boundary_;
@@ -571,12 +455,103 @@ void gvf::updateESDFCallback(const ros::TimerEvent& /*event*/) {
   gvf_.esdf_need_update_ = false;
 }
 
-void gvf::visCallback(const ros::TimerEvent& /*event*/) {
-  //publishMap();
-  publishMapInflate(false);
-  publishUpdateRange();
-  publishESDF();
+void gvf::publishGVF()
+{
+    if (!gvf_.has_odom_) return;
 
+    visualization_msgs::MarkerArray marker_array;
+    int id = 0;
+
+    // 首先添加一个删除所有标记的消息
+    visualization_msgs::Marker delete_marker;
+    delete_marker.header.frame_id = gvf_.frame_id_;
+    delete_marker.header.stamp = ros::Time::now();
+    delete_marker.ns = "gvf_vectors";
+    delete_marker.id = 0;
+    delete_marker.action = visualization_msgs::Marker::DELETEALL;
+    marker_array.markers.push_back(delete_marker);
+
+    // 计算采样点的范围
+    Eigen::Vector3d min_pos = gvf_.camera_pos_ - gvf_.local_update_range_ * 0.8;
+    Eigen::Vector3d max_pos = gvf_.camera_pos_ + gvf_.local_update_range_ * 0.8;
+
+    // 设置采样间隔（可以根据需要调整）
+    double sample_resolution = gvf_.resolution_ * 2.0;  // 使用2倍的分辨率作为采样间隔
+
+    // 在x-y平面上采样点
+    for (double x = min_pos(0); x <= max_pos(0); x += sample_resolution) {
+        for (double y = min_pos(1); y <= max_pos(1); y += sample_resolution) {
+            // 使用当前高度作为采样点的高度
+            Eigen::Vector3d sample_pos(x, y, gvf_.camera_pos_(2));
+            
+            // 计算该点的引导向量
+            Eigen::Vector3d guiding_vec = calcGuidingVectorField3D(sample_pos);
+            
+            // 如果向量太小，跳过
+            if (guiding_vec.norm() < 1e-3) continue;
+
+            // 限制向量大小
+            double max_vec_norm = 5.0;  // 设置最大向量长度
+            if (guiding_vec.norm() > max_vec_norm) {
+                guiding_vec = guiding_vec.normalized() * max_vec_norm;
+            }
+
+            // 创建箭头标记
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = gvf_.frame_id_;
+            marker.header.stamp = ros::Time::now();
+            marker.ns = "gvf_vectors";
+            marker.id = id++;
+            marker.type = visualization_msgs::Marker::ARROW;
+            marker.action = visualization_msgs::Marker::ADD;
+
+            // 设置箭头的起点和终点
+            geometry_msgs::Point start_point, end_point;
+            start_point.x = sample_pos(0);
+            start_point.y = sample_pos(1);
+            start_point.z = sample_pos(2);
+
+            // 计算箭头的终点（起点 + 向量）
+            double arrow_scale = 0.08;  // 可以调整箭头的大小
+            end_point.x = start_point.x + guiding_vec(0) * arrow_scale;
+            end_point.y = start_point.y + guiding_vec(1) * arrow_scale;
+            end_point.z = start_point.z + guiding_vec(2) * arrow_scale;
+
+            marker.points.push_back(start_point);
+            marker.points.push_back(end_point);
+
+            // 设置箭头的属性
+            marker.scale.x = 0.02;  // 箭头轴宽度
+            marker.scale.y = 0.04;   // 箭头头部宽度
+            marker.scale.z = 0.04;   // 箭头头部长度
+
+            // 设置箭头的颜色（根据向量大小渐变）
+            double vec_norm = guiding_vec.norm();
+            marker.color.r = std::min(1.0, vec_norm);
+            marker.color.g = 0.0;
+            marker.color.b = std::max(0.0, 1.0 - vec_norm);
+            marker.color.a = 0.8;  // 透明度
+
+            // 设置箭头的方向四元数（使用默认方向）
+            marker.pose.orientation.w = 1.0;
+            marker.pose.orientation.x = 0.0;
+            marker.pose.orientation.y = 0.0;
+            marker.pose.orientation.z = 0.0;
+
+            marker_array.markers.push_back(marker);
+        }
+    }
+
+    // 发布标记数组
+    gvf_vis_pub_.publish(marker_array);
+}
+
+void gvf::visCallback(const ros::TimerEvent& /*event*/) {
+    publishMap();
+    publishMapInflate(false);
+    publishUpdateRange();
+    publishESDF();
+    publishGVF();  // 添加GVF可视化
 }
 
 void gvf::publishMap() 

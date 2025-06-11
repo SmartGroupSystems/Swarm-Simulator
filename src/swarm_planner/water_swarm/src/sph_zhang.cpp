@@ -70,8 +70,8 @@ void gvf_timerCallback(const ros::TimerEvent&)
         // 更新速度
         p->velocity.x = sph_planner->latest_position_cmd.velocity.x;
         p->velocity.y = sph_planner->latest_position_cmd.velocity.y;
-        // p->velocity.z = sph_planner->latest_position_cmd.velocity.z;
-        p->velocity.z = 0.0;
+        p->velocity.z = sph_planner->latest_position_cmd.velocity.z;
+        // p->velocity.z = 0.0;
 
         p->velocity.x = sph_planner->clamp(p->velocity.x, v_max);
         p->velocity.y = sph_planner->clamp(p->velocity.y, v_max);

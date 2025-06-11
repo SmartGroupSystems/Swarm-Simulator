@@ -60,7 +60,7 @@ void gvf_manager::cmdCallback(const ros::TimerEvent& event)
     }
 
     // 计算 GVF 速度
-    Eigen::Vector3d vel = swarmParticlesManager[0].gvf_->calcGuidingVectorField(pos);
+    Eigen::Vector3d vel = swarmParticlesManager[0].gvf_->calcGuidingVectorField3D(pos);
 
     // 构造 PositionCommand 消息
     quadrotor_msgs::PositionCommand cmd;
@@ -75,14 +75,8 @@ void gvf_manager::cmdCallback(const ros::TimerEvent& event)
     // // 设置速度控制
     cmd.velocity.x = vel.x();
     cmd.velocity.y = vel.y();
-    cmd.velocity.z = 0.0;
+    cmd.velocity.z = vel.z();
 
-    // cmd.velocity.x = std::numeric_limits<float>::quiet_NaN();
-    // cmd.velocity.y = std::numeric_limits<float>::quiet_NaN();
-    // cmd.velocity.z = std::numeric_limits<float>::quiet_NaN();
-    // cmd.acceleration.x = vel.x();
-    // cmd.acceleration.y = vel.y();
-    // cmd.acceleration.z = 0.0;
 
 // ROS_INFO("[GVF] Velocity Command: x = %.3f, y = %.3f, z = %.3f",
 //          cmd.velocity.x, cmd.velocity.y, cmd.velocity.z);
@@ -96,7 +90,7 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
     auto& pm = swarmParticlesManager[0];  
     if (!pm.receive_startpt) return;
           
-    /*----------- ① A* 搜索粗路径 -----------*/
+    /*----------- ① A* 搜索路径 -----------*/
     // Eigen::Vector3d start_pt= odom_; start_pt(2) =1.0; 
     Eigen::Vector3d start_pt= pm.start_pt; 
     Eigen::Vector3d goal_pt = pm.goal_pt;        
@@ -104,7 +98,8 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
     pm.geo_path_finder_->reset();
     pm.geo_path_finder_->search(start_pt, goal_pt, false, -1.0);
     std::vector<Eigen::Vector3d> raw_path = pm.geo_path_finder_->getPath();         
-    std::vector<Eigen::Vector3d> center_pts = correctPathToCenter(raw_path);
+    // std::vector<Eigen::Vector3d> center_pts = correctPathToCenter(raw_path);
+    std::vector<Eigen::Vector3d> center_pts = raw_path;
     visualizePath(center_pts, path_vis, pm.index); 
     
     nav_msgs::Path path_msg;
@@ -133,7 +128,7 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
             edt_environment_->setMap(sdf_map_);
             
             //ASTAR
-            auto geo_path_finder_ = std::make_shared<Astar>();
+            auto geo_path_finder_ = std::make_shared<AstarTopo>();
             geo_path_finder_->setParam(nh);
             geo_path_finder_->setEnvironment(edt_environment_);
             geo_path_finder_->init();

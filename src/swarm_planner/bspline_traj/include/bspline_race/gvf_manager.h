@@ -40,7 +40,7 @@
 #include <bspline_race/bspline_opt.h>
 #include "common_msgs/common_msgs.h"
 #include <plan_env/edt_environment.h>
-#include <path_searching/astar.h>
+#include <path_searching/astar_topo.h>
 #include <path_searching/kinodynamic_astar.h>
 #include "bspline_race/gvf.h"
 
@@ -61,7 +61,7 @@ class gvf_manager
             std::string index;
             std::shared_ptr<SDFMap> sdf_map_;
             std::shared_ptr<EDTEnvironment> edt_environment_;
-            std::shared_ptr<Astar> geo_path_finder_;
+            std::shared_ptr<AstarTopo> geo_path_finder_;
             std::shared_ptr<KinodynamicAstar> kino_path_finder_;
             std::shared_ptr<gvf>  gvf_;
             ros::Time curr_time;  // 当前时间定时器

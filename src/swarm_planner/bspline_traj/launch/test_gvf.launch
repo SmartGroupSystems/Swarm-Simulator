@@ -12,6 +12,7 @@
         <!-- Plan Manager -->
         <param name="gvf/cloud_topic"      type="string" value="/particle0/local_map" />
         <param name="gvf/odom_topic"       type="string" value="/particle0/odom" />
+        <!-- <param name="gvf/odom_topic"       type="string" value="/sim/odom" /> -->
         <param name="gvf/planInterval"     value="0.2" /> 
         <!-- SDF Map -->
         <param name="sdf_map/resolution"   value="0.1" /> 
@@ -52,14 +53,15 @@
         <param name="sdf_map/pose_type"     value="2"/>  
         <param name="sdf_map/frame_id"      value="world"/>
 
-        <param name="sdf_map/gvf_gain"      value="-1.0"/>
-        <param name="sdf_map/gvf_inflation"     value="0.299" /> 
+        <param name="sdf_map/gvf_gain1"      value="2.0"/>
+        <param name="sdf_map/gvf_gain2"      value="-2.0"/>
+        <param name="sdf_map/gvf_inflation"     value="0.099" /> 
 
         <!-- geometric path searching -->
         <param name="astar/lambda_heu" value="10.0" type="double"/>
         <param name="astar/resolution_astar" value="0.1" type="double"/>
         <param name="astar/time_resolution" value="0.8" type="double"/>
-        <param name="astar/margin" value="0.1" type="double"/>
+        <param name="astar/margin" value="0.5" type="double"/>
         <param name="astar/allocate_num" value="1000000" type="int"/>
 
     </node>
