@@ -15,10 +15,14 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   message_generation
   message_runtime
+  common_msgs
+  visualization_msgs
 )
 find_package(PCL 1.7 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(octomap REQUIRED)
+
+# 确保消息生成在编译之前
 add_message_files(
   FILES
   dynamic_obs.msg
@@ -28,9 +32,13 @@ generate_messages(
   DEPENDENCIES
   std_msgs
   geometry_msgs
+  common_msgs
 )
 
-catkin_package()
+catkin_package(
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs common_msgs visualization_msgs
+)
 
 include_directories(
   include
@@ -70,20 +78,24 @@ add_executable(move_base_goal_pub src/move_base_goal_pub.cpp)
     ${catkin_LIBRARIES}
     ${PCL_LIBRARIES})
 
-add_executable(click_map_dynamic src/click_map_dynamic.cpp)
-target_link_libraries(click_map_dynamic
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES})
-
-add_executable(dyn_map src/dyn_map.cpp)
-target_link_libraries(dyn_map
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES})
-
-add_executable(static_dyn_map src/static_dyn_map.cpp)
-target_link_libraries(static_dyn_map
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES})
+    add_executable(click_map_dynamic src/click_map_dynamic.cpp)
+    add_dependencies(click_map_dynamic ${PROJECT_NAME}_generate_messages_cpp)
+    target_link_libraries(click_map_dynamic
+      ${catkin_LIBRARIES}
+      ${PCL_LIBRARIES})
+    
+    add_executable(dyn_map src/dyn_map.cpp)
+    add_dependencies(dyn_map ${PROJECT_NAME}_generate_messages_cpp)
+    target_link_libraries(dyn_map
+      ${catkin_LIBRARIES}
+      ${PCL_LIBRARIES})
+    
+    add_executable(static_dyn_map src/static_dyn_map.cpp)
+    add_dependencies(static_dyn_map ${PROJECT_NAME}_generate_messages_cpp)
+    target_link_libraries(static_dyn_map
+      ${catkin_LIBRARIES}
+      ${PCL_LIBRARIES})
+    
   
 add_executable (map_recorder src/map_recorder.cpp )
 target_link_libraries(map_recorder

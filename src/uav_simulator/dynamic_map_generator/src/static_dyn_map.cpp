@@ -30,6 +30,7 @@ ros::Publisher dynamic_obs_pub_;
 sensor_msgs::PointCloud2 map_msg_;
 pcl::PointCloud<pcl::PointXYZ> map_cloud_, _static_cloud_ ,_dyn_cloud_;
 
+ros::Subscriber click_sub_, dyn_sub_;
 vector<Eigen::Vector3d> points_,dyn_points_;
 
 std::vector<dynamic_map_objects::MovingCylinder> _dyn_cylinders;

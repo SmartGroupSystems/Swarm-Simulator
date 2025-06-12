@@ -382,7 +382,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 2.440000057220459
+        Max Value: 2.140000104904175
         Min Value: 0.03999999910593033
         Value: true
       Axis: Z
@@ -391,7 +391,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: AxisColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -406,7 +406,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -531,7 +531,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 26.8181095123291
+      Distance: 19.315101623535156
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -539,17 +539,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.564730167388916
-        Y: -2.134979486465454
-        Z: 3.791835752053885e-07
+        X: 0.3527524769306183
+        Y: -4.293719291687012
+        Z: 1.879345063571236e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4647963047027588
+      Pitch: 1.0797960758209229
       Target Frame: camera_frame
-      Yaw: 4.702213287353516
+      Yaw: 4.702213764190674
     Saved: ~
 Window Geometry:
   Displays:

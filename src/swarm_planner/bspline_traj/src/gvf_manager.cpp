@@ -44,6 +44,7 @@ void gvf_manager::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
         manager.receive_startpt = true;
         manager.start_pt = start_pt;
         manager.goal_pt = goal_pt;
+        manager.is_first_goal = true;  // 重置标志位
     }
 }
 
@@ -77,7 +78,13 @@ void gvf_manager::cmdCallback(const ros::TimerEvent& event)
     cmd.velocity.y = vel.y();
     cmd.velocity.z = vel.z();
 
+    double arg_    = atan2(-cmd.velocity.x,cmd.velocity.y) + (PI/2.0f);
+    double vel_len = sqrt(pow(cmd.velocity.x,2)+pow(cmd.velocity.y,2));
+    if(vel_len<=0.1) arg_ = last_yaw;
+    std::pair<double, double> yaw_all = calculate_yaw(last_yaw,arg_);
 
+    cmd.yaw = yaw_all.first;
+    cmd.yaw_dot = yaw_all.second;
 // ROS_INFO("[GVF] Velocity Command: x = %.3f, y = %.3f, z = %.3f",
 //          cmd.velocity.x, cmd.velocity.y, cmd.velocity.z);
     // 发布控制指令
@@ -91,8 +98,32 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
     if (!pm.receive_startpt) return;
           
     /*----------- ① A* 搜索路径 -----------*/
-    // Eigen::Vector3d start_pt= odom_; start_pt(2) =1.0; 
-    Eigen::Vector3d start_pt= pm.start_pt; 
+    Eigen::Vector3d start_pt;
+    
+    if (pm.is_first_goal) {
+        // 第一次接收到目标点时，使用当前位置作为起点
+        start_pt = Eigen::Vector3d(odom_.x()+0.000001, odom_.y()+0.000001, 1.0);
+        pm.is_first_goal = false;
+    } else {
+        // 不是第一次时，找到上一次路径上与当前位置最近的点作为起点
+        std::vector<Eigen::Vector3d> last_path = pm.geo_path_finder_->getPath();
+        if (!last_path.empty()) {
+            double min_dist = std::numeric_limits<double>::max();
+            Eigen::Vector3d current_pos(odom_.x(), odom_.y(), odom_.z());
+            
+            for (const auto& pt : last_path) {
+                double dist = (pt - current_pos).norm();
+                if (dist < min_dist) {
+                    min_dist = dist;
+                    start_pt = pt;
+                }
+            }
+        } else {
+            // 如果没有上一次路径，使用当前位置
+            start_pt = Eigen::Vector3d(odom_.x()+0.000001, odom_.y()+0.000001, 1.0);
+        }
+    }
+    
     Eigen::Vector3d goal_pt = pm.goal_pt;        
 
     pm.geo_path_finder_->reset();
@@ -114,7 +145,6 @@ void gvf_manager::AstarExecCallback(const ros::TimerEvent& event)
         path_msg.poses.push_back(pose);
     }
     path_pub.publish(path_msg);
-
 }
 
     void gvf_manager::InitGvf(ros::NodeHandle &nh)

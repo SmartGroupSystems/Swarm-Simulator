@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Axes1
         - /global_map1
         - /PointCloud21
         - /PointCloud22
@@ -45,7 +46,7 @@ Visualization Manager:
       Length: 1
       Name: Axes
       Radius: 0.10000000149011612
-      Reference Frame: world
+      Reference Frame: base
       Show Trail: false
       Value: true
     - Alpha: 0.5

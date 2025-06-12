@@ -55,7 +55,7 @@
 
         <param name="sdf_map/gvf_gain1"      value="2.0"/>
         <param name="sdf_map/gvf_gain2"      value="-2.0"/>
-        <param name="sdf_map/gvf_inflation"     value="0.099" /> 
+        <param name="sdf_map/gvf_inflation"  value="0.099" /> 
 
         <!-- geometric path searching -->
         <param name="astar/lambda_heu" value="10.0" type="double"/>

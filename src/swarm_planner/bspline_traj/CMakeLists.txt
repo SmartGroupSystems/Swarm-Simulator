@@ -27,7 +27,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES bspline_race
   CATKIN_DEPENDS roscpp rospy tf std_msgs visualization_msgs message_runtime common_msgs plan_env path_searching
-  #DEPENDS system_lib
+  DEPENDS message_generation
 )
 include_directories(
   SYSTEM

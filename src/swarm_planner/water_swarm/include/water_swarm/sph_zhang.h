@@ -146,6 +146,7 @@ public:
     bool runOnGPU;
     bool isInitialReceived = false;  // 用于检查是否已经接收到第一个消息
 
+
     std::unordered_map<int, common_msgs::BsplineTraj> swarmTrajBuffer_;
     std::unordered_map<int, common_msgs::Position> targetMap;
     std::unordered_map<int, common_msgs::Force> forceMap;
@@ -231,7 +232,6 @@ public:
         }
         return value;
     }
-
 };
 
 #endif

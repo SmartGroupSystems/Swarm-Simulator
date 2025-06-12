@@ -46,6 +46,17 @@
 
 using namespace std;
 
+#define PI acos(-1)
+#define INF 999.9
+double delta_T = 0.02;
+double last_yaw;
+double last_yaw_dot;
+double roll, pitch, yaw;//定义存储r\p\y的容器
+double D_YAW_MAX = PI/2;
+double output_yaw;
+double output_d_yaw;
+double YAW_MAX = D_YAW_MAX * delta_T;
+
 namespace FLAG_Race
 {
 
@@ -68,6 +79,7 @@ class gvf_manager
             ros::Time last_time;  // 上一次时间定时器
             bool is_initialized = false; 
             bool receive_startpt = false;
+            bool is_first_goal = true;  // 添加标志位
             // ros::Subscriber odom_sub;
             Eigen::Vector3d start_pt, goal_pt, odom;
         };
@@ -110,6 +122,114 @@ class gvf_manager
                 .sdf_map_->getDistWithGradTrilinear(p, grad);   // 距离返回值可忽略
             return grad;                                        // 单位: m
         }
+
+    inline std::pair<double, double> cal_yaw( double current_yaw,double aim_yaw)
+    {
+    std::pair<double, double> yaw_yawdot(0, 0);
+    if(current_yaw<0)                 current_yaw = current_yaw + 2*PI;
+    else if(current_yaw>2*PI)  current_yaw = current_yaw - 2*PI;
+        if(aim_yaw<0)                 aim_yaw = aim_yaw + 2*PI;
+    else if(aim_yaw>2*PI)    aim_yaw = aim_yaw - 2*PI;
+    double yaw_distance = aim_yaw - current_yaw;
+    double sign_        = yaw_distance / fabs(yaw_distance);
+    if(fabs(yaw_distance) < YAW_MAX )
+    {cout<<"ca1"<<endl;
+        output_yaw   = aim_yaw;
+        output_d_yaw = yaw_distance / delta_T;
+    }
+    else
+    {cout<<"ca2"<<endl;
+        output_yaw = current_yaw + sign_ * YAW_MAX;
+        output_d_yaw = sign_*D_YAW_MAX;
+    }
+    yaw_yawdot.first = output_yaw;
+    yaw_yawdot.second = output_d_yaw;
+    return yaw_yawdot;
+    }
+    
+    inline std::pair<double, double> calculate_yaw( double current_yaw,double aim_yaw)
+    {
+    std::pair<double, double> yaw_yawdot(0, 0);
+    double yaw_ = 0;
+    double yawdot = 0;
+    if (aim_yaw - current_yaw > PI)
+    {
+        
+        if (aim_yaw - current_yaw - 2 * PI < -YAW_MAX)
+        {
+        yaw_ = current_yaw - YAW_MAX;
+        if (yaw_ < -PI)
+            yaw_ += 2 * PI;
+
+        yawdot = -D_YAW_MAX;
+        }
+        else
+        {
+        yaw_ = aim_yaw;
+        if (yaw_ - current_yaw > PI)
+            yawdot = -D_YAW_MAX;
+        else
+            yawdot = (aim_yaw - current_yaw) /delta_T;
+        }
+    }
+    else if (aim_yaw - current_yaw < -PI)
+    {
+        if (aim_yaw - current_yaw + 2 * PI > YAW_MAX)
+        {
+        yaw_ = current_yaw + YAW_MAX;
+        if (yaw_ > PI)
+            yaw_ -= 2 * PI;
+
+        yawdot = D_YAW_MAX;
+        }
+        else
+        {
+        yaw_ = aim_yaw;
+        if (yaw_ - current_yaw < -PI)
+            yawdot = D_YAW_MAX;
+        else
+            yawdot = (aim_yaw - current_yaw) /delta_T;
+        }
+    }
+    else
+    {
+        if (aim_yaw - current_yaw < -YAW_MAX)
+        {
+        yaw_ = current_yaw - YAW_MAX;
+        if (yaw_ < -PI)
+            yaw_ += 2 * PI;
+
+        yawdot = -D_YAW_MAX;
+        }
+        else if (aim_yaw - current_yaw > YAW_MAX)
+        {
+        yaw_ = current_yaw + YAW_MAX;
+        if (yaw_ > PI)
+            yaw_ -= 2 * PI;
+
+        yawdot = D_YAW_MAX;
+        }
+        else
+        {
+        yaw_ = aim_yaw;
+        if (yaw_ - current_yaw > PI)
+            yawdot = -D_YAW_MAX;
+        else if (yaw_ - current_yaw < -PI)
+            yawdot = D_YAW_MAX;
+        else
+            yawdot = (aim_yaw - current_yaw) /delta_T;
+        }
+    }
+        if (fabs(yaw_ - last_yaw) <= YAW_MAX)
+        yaw = 0.5 * last_yaw + 0.5 * yaw; // nieve LPF
+    yawdot = 0.5 * last_yaw_dot + 0.5 * yawdot;
+    last_yaw = yaw_;  
+    last_yaw_dot = yawdot;
+    yaw_yawdot.first = yaw_;
+    yaw_yawdot.second = yawdot;
+
+    return yaw_yawdot;
+    }
 };
 
 }
