@@ -32,7 +32,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: global_map
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -95,7 +95,7 @@ Visualization Manager:
       Color: 114; 159; 207
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -110,7 +110,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -200,7 +200,7 @@ Visualization Manager:
       Marker Topic: /path_vis
       Name: particlepath
       Namespaces:
-        path_visualization: true
+        {}
       Queue Size: 1000
       Value: true
     - Class: rviz/Marker
@@ -324,7 +324,7 @@ Visualization Manager:
       Marker Topic: /particle0/gvf/vector_field
       Name: MarkerArray
       Namespaces:
-        gvf_vectors: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -375,17 +375,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -6.005737781524658
-        Y: -2.1917989253997803
+        X: -3.93224835395813
+        Y: -0.3613429665565491
         Z: -0.9999864101409912
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5497961044311523
+      Pitch: 1.349796175956726
       Target Frame: camera_frame
-      Yaw: 3.1449339389801025
+      Yaw: 3.1299338340759277
     Saved: ~
 Window Geometry:
   Displays:

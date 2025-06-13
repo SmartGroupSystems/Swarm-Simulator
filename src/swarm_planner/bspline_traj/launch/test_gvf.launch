@@ -53,7 +53,9 @@
         <param name="sdf_map/pose_type"     value="2"/>  
         <param name="sdf_map/frame_id"      value="world"/>
 
+        <!-- This param decide tracking vel -->
         <param name="sdf_map/gvf_gain1"      value="2.0"/>
+        <!-- This param decide backing vel -->
         <param name="sdf_map/gvf_gain2"      value="-2.0"/>
         <param name="sdf_map/gvf_inflation"  value="0.099" /> 
 
