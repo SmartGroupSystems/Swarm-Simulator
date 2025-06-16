@@ -27,6 +27,8 @@ void gvf::init(ros::NodeHandle& nh, const std::string& particle, const std::stri
     nh.param("sdf_map/local_map_margin", gvf_.local_map_margin_, 1);
     nh.param("sdf_map/gvf_gain1", gvf_.K1_, 0.0);
     nh.param("sdf_map/gvf_gain2", gvf_.K2_, 0.0);
+    nh.param("sdf_map/gvf_use_kinopath", use_kinopath_, true);
+    nh.param("sdf_map/gvf_use_quad_fit", use_quad_fit_, true);
 
     gvf_.local_bound_inflate_ = std::max(gvf_.resolution_, gvf_.local_bound_inflate_);
     gvf_.resolution_inv_ = 1.0 / gvf_.resolution_;
@@ -80,6 +82,7 @@ void gvf::init(ros::NodeHandle& nh, const std::string& particle, const std::stri
 
     indep_odom_sub_ = nh.subscribe<nav_msgs::Odometry>(odom, 10, &gvf::odomCallback, this);
     path_sub_ = nh.subscribe<nav_msgs::Path>(particle + "/path", 10, &gvf::pathCallback, this);
+    kino_path_sub_ = nh.subscribe<nav_msgs::Path>(particle + "/kinopath", 10, &gvf::kinoPathCallback, this);
     goal_sub_ = nh.subscribe("/move_base_simple/goal", 1000, &gvf::goalCallback, this);
     map_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"/gvf/occupancy", 10);
     map_inf_pub_ = nh.advertise<sensor_msgs::PointCloud2>(particle +"/gvf/occupancy_inflate", 10);
@@ -246,12 +249,11 @@ void gvf::odomCallback(const nav_msgs::OdometryConstPtr& odom)
 
 void gvf::pathCallback(const nav_msgs::Path::ConstPtr& msg)
 {
+    if (use_kinopath_) return;  // 如果使用动力学路径，则不处理A*路径
     if (msg->poses.empty()) return;
-
     if (std::isnan(gvf_.camera_pos_(0)) || 
         std::isnan(gvf_.camera_pos_(1)) || 
         std::isnan(gvf_.camera_pos_(2))) return;
-
 
     last_path_ = *msg; 
     gvf_.last_camera_pos_ = gvf_.camera_pos_;
@@ -263,7 +265,6 @@ void gvf::pathCallback(const nav_msgs::Path::ConstPtr& msg)
     Eigen::Vector3i inf_pt;
 
     int inf_step = std::ceil(gvf_.obstacles_inflation_ / gvf_.resolution_);
-    // int inf_step_z = 1;
     int inf_step_z = inf_step + 1;
 
     Eigen::Vector3d min_pos = gvf_.camera_pos_ - gvf_.local_update_range_;
@@ -301,12 +302,66 @@ void gvf::pathCallback(const nav_msgs::Path::ConstPtr& msg)
     gvf_.esdf_need_update_ = true;
 }
 
+void gvf::kinoPathCallback(const nav_msgs::Path::ConstPtr& msg)
+{
+    if (!use_kinopath_) return;  // 如果不使用动力学路径，则不处理
+    if (msg->poses.empty()) return;
+    if (std::isnan(gvf_.camera_pos_(0)) || 
+        std::isnan(gvf_.camera_pos_(1)) || 
+        std::isnan(gvf_.camera_pos_(2))) return;
+
+    last_path_ = *msg; 
+    gvf_.last_camera_pos_ = gvf_.camera_pos_;
+
+    this->resetBuffer(gvf_.camera_pos_ - gvf_.local_update_range_,
+                      gvf_.camera_pos_ + gvf_.local_update_range_);
+
+    Eigen::Vector3d p3d, p3d_inf;
+    Eigen::Vector3i inf_pt;
+
+    int inf_step = std::ceil(gvf_.obstacles_inflation_ / gvf_.resolution_);
+    int inf_step_z = inf_step + 1;
+
+    Eigen::Vector3d min_pos = gvf_.camera_pos_ - gvf_.local_update_range_;
+    Eigen::Vector3d max_pos = gvf_.camera_pos_ + gvf_.local_update_range_;
+
+    for (const auto& pose : msg->poses) {
+        p3d << pose.pose.position.x, pose.pose.position.y, pose.pose.position.z;
+
+        Eigen::Vector3d devi = p3d - gvf_.camera_pos_;
+
+        if (fabs(devi(0)) < gvf_.local_update_range_(0) &&
+            fabs(devi(1)) < gvf_.local_update_range_(1) &&
+            fabs(devi(2)) < gvf_.local_update_range_(2)) {
+
+            for (int x = -inf_step; x <= inf_step; ++x)
+                for (int y = -inf_step; y <= inf_step; ++y)
+                    for (int z = -inf_step_z; z <= inf_step_z; ++z) {
+
+                        p3d_inf = p3d + gvf_.resolution_ * Eigen::Vector3d(x, y, z);
+                        posToIndex(p3d_inf, inf_pt);
+                        if (!isInMap(inf_pt)) continue;
+
+                        int idx = toAddress(inf_pt);
+                        gvf_.occupancy_buffer_inflate_[idx] = 1;
+                    }
+        }
+    }
+
+    posToIndex(min_pos, gvf_.local_bound_min_);
+    posToIndex(max_pos, gvf_.local_bound_max_);
+
+    boundIndex(gvf_.local_bound_min_);
+    boundIndex(gvf_.local_bound_max_);
+
+    gvf_.esdf_need_update_ = true;
+}
 
 Eigen::Vector3d gvf::calcGuidingVectorField2D(const Eigen::Vector3d pos)
 {
     /* ---------- 1. 距离 & 反向梯度 ---------- */
     Eigen::Vector3d grad_out_3d;
-    double dist = getDistWithGradTrilinear(pos, grad_out_3d);  // grad_out_3d 是三维梯度
+    double dist = getDistWithGradQuadraticFit(pos, grad_out_3d);  // grad_out_3d 是三维梯度
     Eigen::Vector2d grad_out(grad_out_3d.x(), grad_out_3d.y());
 
     Eigen::Vector2d n = -grad_out;  // 取反 → 向内法
@@ -341,66 +396,109 @@ Eigen::Vector3d gvf::calcGuidingVectorField2D(const Eigen::Vector3d pos)
     return Eigen::Vector3d(v2d.x(), v2d.y(), 0.0);  // 保持 3D 输出
 }
 
+Eigen::Vector3d gvf::estimateTangentViaQuadraticFit(const Eigen::Vector3d& pos) {
+    Eigen::Vector3d tau = Eigen::Vector3d::Zero();
+
+    if (last_path_.poses.size() < 3)  // 至少要有3个点
+        return tau;
+
+    size_t closest_idx = 0;
+    double min_dist = std::numeric_limits<double>::max();
+
+    // 1. 找到最近的路径点索引
+    for (size_t i = 0; i < last_path_.poses.size(); ++i) {
+        Eigen::Vector3d path_pt(
+            last_path_.poses[i].pose.position.x,
+            last_path_.poses[i].pose.position.y,
+            last_path_.poses[i].pose.position.z
+        );
+        double d = (pos - path_pt).squaredNorm();
+        if (d < min_dist) {
+            min_dist = d;
+            closest_idx = i;
+        }
+    }
+
+    // 2. 提取路径点，处理边界情况
+    std::vector<Eigen::Vector3d> path_points;
+    if (closest_idx == 0) {
+        // 如果是起点，使用前三个点
+        for (size_t i = 0; i < 3 && i < last_path_.poses.size(); ++i) {
+            path_points.push_back(Eigen::Vector3d(
+                last_path_.poses[i].pose.position.x,
+                last_path_.poses[i].pose.position.y,
+                last_path_.poses[i].pose.position.z
+            ));
+        }
+    } else if (closest_idx >= last_path_.poses.size() - 1) {
+        // 如果是终点，使用最后三个点
+        for (size_t i = last_path_.poses.size() - 3; i < last_path_.poses.size(); ++i) {
+            path_points.push_back(Eigen::Vector3d(
+                last_path_.poses[i].pose.position.x,
+                last_path_.poses[i].pose.position.y,
+                last_path_.poses[i].pose.position.z
+            ));
+        }
+    } else {
+        // 正常情况，使用前后各一个点
+        for (size_t i = closest_idx - 1; i <= closest_idx + 1; ++i) {
+            path_points.push_back(Eigen::Vector3d(
+                last_path_.poses[i].pose.position.x,
+                last_path_.poses[i].pose.position.y,
+                last_path_.poses[i].pose.position.z
+            ));
+        }
+    }
+
+    // 3. 计算切向量
+    if (path_points.size() >= 2) {
+        // 使用相邻点的差分计算切向量
+        tau = path_points.back() - path_points.front();
+        
+        // 如果路径点数量大于2，使用加权平均
+        if (path_points.size() > 2) {
+            Eigen::Vector3d tau2 = path_points[2] - path_points[0];
+            tau = (tau + tau2) * 0.5;
+        }
+        
+        // 归一化
+        double tau_norm = tau.norm();
+        if (tau_norm > 1e-6) {
+            tau /= tau_norm;
+        }
+    }
+
+    return tau;
+}
+
+
 Eigen::Vector3d gvf::calcGuidingVectorField3D(const Eigen::Vector3d pos)
 {
     /* ---------- 1. 距离 & 法向量 ---------- */
     Eigen::Vector3d grad_out_3d;
-    double dist = getDistWithGradTrilinear(pos, grad_out_3d);  // grad_out_3d 是 ∇d
-
+    
+    double dist;
+    if (use_quad_fit_) {
+        dist = getDistWithGradQuadraticFit(pos, grad_out_3d);
+    } else {
+        dist = getDistWithGradTrilinear(pos, grad_out_3d);
+    }
+    
     Eigen::Vector3d n = -grad_out_3d;  // 取反方向为"向内法向量"
     double n_norm = n.norm();
     if (n_norm < 1e-6)        
     n.normalize();  // 单位化法向量
 
     /* ---------- 2. 从路径中估计切向量 ---------- */
-    Eigen::Vector3d tau = Eigen::Vector3d::Zero();
-
-    if (!last_path_.poses.empty()) {
-        size_t closest_idx = 0;
-        double min_dist = std::numeric_limits<double>::max();
-
-        for (size_t i = 0; i < last_path_.poses.size(); ++i) {
-            Eigen::Vector3d path_pt(
-                last_path_.poses[i].pose.position.x,
-                last_path_.poses[i].pose.position.y,
-                last_path_.poses[i].pose.position.z
-            );
-            double d = (pos - path_pt).squaredNorm();
-            if (d < min_dist) {
-                min_dist = d;
-                closest_idx = i;
-            }
-        }
-
-        // 若不是最后一个点，计算与下一个点的方向作为切向量
-        if (closest_idx + 1 < last_path_.poses.size()) {
-            Eigen::Vector3d pt_curr(
-                last_path_.poses[closest_idx].pose.position.x,
-                last_path_.poses[closest_idx].pose.position.y,
-                last_path_.poses[closest_idx].pose.position.z
-            );
-            Eigen::Vector3d pt_next(
-                last_path_.poses[closest_idx + 1].pose.position.x,
-                last_path_.poses[closest_idx + 1].pose.position.y,
-                last_path_.poses[closest_idx + 1].pose.position.z
-            );
-
-            tau = (pt_next - pt_curr);
-            if (tau.norm() > 1e-6)
-                tau.normalize();  // 单位切向量
-            else
-                tau = Eigen::Vector3d::Zero();  // 防止数值问题
-        }
-    }
+     Eigen::Vector3d tau = estimateTangentViaQuadraticFit(pos);
 
     /* ---------- 3. Guiding Vector Field χ = τ - k d n ---------- */
     Eigen::Vector3d guiding_vec = gvf_.K1_ * tau - gvf_.K2_ * dist * n;
 
-    // ROS_INFO_STREAM("pos: " << pos.transpose()
-    //     << ", dist: " << dist
-    //     << ", n: " << n.transpose()
-    //     << ", tau: " << tau.transpose()
-    //     << ", guiding_vec: " << guiding_vec.transpose());
+    // ROS_INFO_STREAM("guiding_vec: [" 
+    //     << guiding_vec(0) << ", " 
+    //     << guiding_vec(1) << ", " 
+    //     << guiding_vec(2) << "]");
 
     return guiding_vec;
 }
@@ -487,15 +585,16 @@ void gvf::publishGVF()
             // 计算该点的引导向量
             Eigen::Vector3d guiding_vec = calcGuidingVectorField3D(sample_pos);
             
-            // 如果向量太小，跳过
-            if (guiding_vec.norm() < 1e-3) continue;
-
-            // 限制向量大小
-            double max_vec_norm = 5.0;  // 设置最大向量长度
-            if (guiding_vec.norm() > max_vec_norm) {
-                guiding_vec = guiding_vec.normalized() * max_vec_norm;
+            // 检查是否在边界上且向量值过大
+            bool is_boundary = (std::abs(x - min_pos(0)) < sample_resolution || 
+                              std::abs(x - max_pos(0)) < sample_resolution ||
+                              std::abs(y - min_pos(1)) < sample_resolution || 
+                              std::abs(y - max_pos(1)) < sample_resolution);
+            
+            if ( guiding_vec.norm() > 50.0) {  
+                guiding_vec = Eigen::Vector3d::Zero();
             }
-
+            
             // 创建箭头标记
             visualization_msgs::Marker marker;
             marker.header.frame_id = gvf_.frame_id_;

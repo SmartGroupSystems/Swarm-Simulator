@@ -91,11 +91,13 @@ class gvf
 {
     public:
         VectorFieldData gvf_;
-        ros::Subscriber indep_odom_sub_, indep_cloud_sub_, path_sub_, goal_sub_;
+        ros::Subscriber indep_odom_sub_, indep_cloud_sub_, path_sub_, goal_sub_, kino_path_sub_;
         ros::Publisher map_pub_, esdf_pub_, map_inf_pub_, update_range_pub_,gvf_vis_pub_;
         ros::Timer esdf_timer_, vis_timer_;
         nav_msgs::Path last_path_;
-    
+        bool use_kinopath_;
+        bool use_quad_fit_;  // 添加新参数
+
     public:
         gvf(){};  
         ~gvf(){};
@@ -110,6 +112,7 @@ class gvf
         void visCallback(const ros::TimerEvent& /*event*/);
         void pathCallback(const nav_msgs::Path::ConstPtr& msg);
         void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
+        void kinoPathCallback(const nav_msgs::Path::ConstPtr& msg);
         void publishMap();
         void publishMapInflate(bool all_info = false);
         void publishESDF();
@@ -117,6 +120,7 @@ class gvf
         void publishUpdateRange();
         Eigen::Vector3d calcGuidingVectorField2D(const Eigen::Vector3d pos);
         Eigen::Vector3d calcGuidingVectorField3D(const Eigen::Vector3d pos);
+        Eigen::Vector3d estimateTangentViaQuadraticFit(const Eigen::Vector3d& pos);
         
         inline void posToIndex(const Eigen::Vector3d& pos, Eigen::Vector3i& id);
         inline void indexToPos(const Eigen::Vector3i& id, Eigen::Vector3d& pos);
@@ -140,6 +144,11 @@ class gvf
         inline double getDistance(const Eigen::Vector3d& pos);
         inline double getDistance(const Eigen::Vector3i& id);
         inline double getDistWithGradTrilinear(Eigen::Vector3d pos, Eigen::Vector3d& grad);
+        inline double getDistWithGradQuadraticFit(const Eigen::Vector3d& pos, Eigen::Vector3d& grad);
+        double getGain() const { return gain_; }  // 获取GVF增益
+        
+    private:
+        double gain_;  // GVF增益
 };
 
 /* ============================== definition of inline function
@@ -252,6 +261,121 @@ inline double gvf::getDistWithGradTrilinear(Eigen::Vector3d pos, Eigen::Vector3d
   grad[0] *= gvf_.resolution_inv_;
 
   if ( dist < 0) dist = 0.0;
+
+  return dist;
+}
+
+inline double gvf::getDistWithGradQuadraticFit(const Eigen::Vector3d& pos, Eigen::Vector3d& grad) {
+  if (!isInMap(pos)) {
+    grad.setZero();
+    return 0.0;
+  }
+
+  // 获取局部邻域点（如 5x5x5 网格），用于拟合
+  std::vector<Eigen::Vector3d> neighbor_pts;
+  std::vector<double> neighbor_vals;
+
+  const int N = 2;  // 拟合窗口半径，即使用 (2N+1)^3 个点
+  Eigen::Vector3i center_idx;
+  posToIndex(pos, center_idx);
+  Eigen::Vector3d center_pos;
+  indexToPos(center_idx, center_pos);
+
+  // 检查是否存在未初始化的点（距离值为10000）
+  bool has_uninitialized = false;
+  double max_valid_dist = 0.0;
+
+  for (int dx = -N; dx <= N; ++dx) {
+    for (int dy = -N; dy <= N; ++dy) {
+      for (int dz = -N; dz <= N; ++dz) {
+        Eigen::Vector3i idx = center_idx + Eigen::Vector3i(dx, dy, dz);
+        if (!isInMap(idx)) continue;
+
+        Eigen::Vector3d pt;
+        indexToPos(idx, pt);
+        double val = getDistance(idx);
+
+        // 检查是否为未初始化的点
+        if (val > 9999.0) {
+          has_uninitialized = true;
+          continue;
+        }
+
+        max_valid_dist = std::max(max_valid_dist, val);
+        neighbor_pts.push_back(pt);
+        neighbor_vals.push_back(val);
+      }
+    }
+  }
+
+  // 如果存在未初始化的点，使用更保守的梯度估计
+  if (has_uninitialized || neighbor_pts.size() < 10) {  // 至少需要10个点进行二阶拟合
+    // 使用中心差分计算梯度
+    const double eps = gvf_.resolution_;
+    Eigen::Vector3d pos_eps;
+    double dist_center = getDistance(pos);
+    
+    grad.setZero();
+    for (int i = 0; i < 3; ++i) {
+      pos_eps = pos;
+      pos_eps[i] += eps;
+      double dist_plus = getDistance(pos_eps);
+      
+      pos_eps = pos;
+      pos_eps[i] -= eps;
+      double dist_minus = getDistance(pos_eps);
+      
+      grad[i] = (dist_plus - dist_minus) / (2.0 * eps);
+    }
+    
+    // 如果梯度太大，进行归一化
+    double grad_norm = grad.norm();
+    if (grad_norm > 1.0) {
+      grad = grad / grad_norm;
+    }
+    
+    return dist_center;
+  }
+
+  // 如果所有点都已初始化，使用二阶拟合
+  int num_samples = neighbor_pts.size();
+  Eigen::MatrixXd Phi(num_samples, 10);
+  Eigen::VectorXd d(num_samples);
+
+  for (int i = 0; i < num_samples; ++i) {
+    Eigen::Vector3d delta = neighbor_pts[i] - center_pos;
+    double dx = delta[0], dy = delta[1], dz = delta[2];
+
+    Phi.row(i) << 1, dx, dy, dz,
+                  0.5 * dx * dx, dx * dy, dx * dz,
+                  0.5 * dy * dy, dy * dz,
+                  0.5 * dz * dz;
+
+    d(i) = neighbor_vals[i];
+  }
+
+  // 最小二乘拟合
+  Eigen::VectorXd theta = (Phi.transpose() * Phi).ldlt().solve(Phi.transpose() * d);
+
+  // 距离估计
+  Eigen::Vector3d local_delta = pos - center_pos;
+  double dx = local_delta[0], dy = local_delta[1], dz = local_delta[2];
+  double dist = theta(0) + theta(1)*dx + theta(2)*dy + theta(3)*dz
+                + 0.5*theta(4)*dx*dx + theta(5)*dx*dy + theta(6)*dx*dz
+                + 0.5*theta(7)*dy*dy + theta(8)*dy*dz + 0.5*theta(9)*dz*dz;
+
+  // 梯度估计（连续）
+  grad[0] = theta(1) + theta(4)*dx + theta(5)*dy + theta(6)*dz;
+  grad[1] = theta(2) + theta(5)*dx + theta(7)*dy + theta(8)*dz;
+  grad[2] = theta(3) + theta(6)*dx + theta(8)*dy + theta(9)*dz;
+
+  // 如果梯度太大，进行归一化
+  double grad_norm = grad.norm();
+  if (grad_norm > 1.0) {
+    grad = grad / grad_norm;
+  }
+
+  if (dist < 0.0) dist = 0.0;
 
   return dist;
 }

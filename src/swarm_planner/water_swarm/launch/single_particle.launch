@@ -63,8 +63,8 @@
     </node>
 
     <!-- RViz-->
-    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/> -->
-   
+    <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd"/>
+<!--    
     <node pkg="mockamap" type="mockamap_node" name="mockamap_node" output="screen">
         <param name="seed" type="int" value="511"/>
         <param name="update_freq" type="double" value="1.0"/>
@@ -80,7 +80,7 @@
         <param name="fill"          type="double" value="0.15"/>
         <param name="fractal"       type="int"    value="1"/>
         <param name="attenuation"   type="double" value="0.1"/>
-    </node> 
+    </node>  -->
    
     <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find so3_quadrotor_simulator)/config/experiment.rviz" />
     

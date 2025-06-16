@@ -16,7 +16,15 @@ struct ParticleData {
     Eigen::Vector3d position;
 };
 
+// 添加sim_odom相关的数据结构
+struct SimOdomData {
+    ros::Subscriber odom_sub;
+    ros::Publisher local_map_pub;
+    Eigen::Vector3d position;
+};
+
 std::map<int, ParticleData> particles_map;
+SimOdomData sim_odom_data;  // 添加sim_odom数据
 pcl::PointCloud<pcl::PointXYZ>::Ptr full_cloud(new pcl::PointCloud<pcl::PointXYZ>);
 pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
 bool has_map = false;
@@ -28,6 +36,15 @@ Eigen::Vector3d local_range;
 
 void odomCallback(const nav_msgs::Odometry::ConstPtr& msg, int particle_id) {
     particles_map[particle_id].position = Eigen::Vector3d(
+        msg->pose.pose.position.x,
+        msg->pose.pose.position.y,
+        msg->pose.pose.position.z
+    );
+}
+
+// 添加sim_odom的回调函数
+void simOdomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
+    sim_odom_data.position = Eigen::Vector3d(
         msg->pose.pose.position.x,
         msg->pose.pose.position.y,
         msg->pose.pose.position.z
@@ -73,6 +90,33 @@ void mockMapCallback(const sensor_msgs::PointCloud2ConstPtr& msg) {
 void pubLocalMaps() {
     if (!has_map) return;
 
+    // 发布sim_odom的局部地图
+    pcl::PointCloud<pcl::PointXYZ> simLocalMap;
+    pcl::PointXYZ simCenter(sim_odom_data.position.x(), sim_odom_data.position.y(), sim_odom_data.position.z());
+
+    std::vector<int> simPointIdxRadiusSearch;
+    std::vector<float> simPointRadiusSquaredDistance;
+
+    double sensing_radius = local_range.norm() / 2.0;
+
+    if (kdtree.radiusSearch(simCenter, sensing_radius, simPointIdxRadiusSearch, simPointRadiusSquaredDistance) > 0) {
+        for (size_t i = 0; i < simPointIdxRadiusSearch.size(); ++i) {
+            simLocalMap.points.push_back(full_cloud->points[simPointIdxRadiusSearch[i]]);
+        }
+
+        simLocalMap.width = simLocalMap.points.size();
+        simLocalMap.height = 1;
+        simLocalMap.is_dense = true;
+
+        sensor_msgs::PointCloud2 simLocalMapMsg;
+        pcl::toROSMsg(simLocalMap, simLocalMapMsg);
+        simLocalMapMsg.header.frame_id = "world";
+        simLocalMapMsg.header.stamp = ros::Time::now();
+
+        sim_odom_data.local_map_pub.publish(simLocalMapMsg);
+    }
+
+    // 保持原有的粒子局部地图发布逻辑
     for (auto& kv : particles_map) {
         int id = kv.first;
         auto& pdata = kv.second;
@@ -119,6 +163,10 @@ int main(int argc, char** argv) {
 
     // 订阅全局地图
     ros::Subscriber map_sub = nh.subscribe("/mock_map", 1, mockMapCallback);
+
+    // 添加sim_odom的订阅和发布
+    sim_odom_data.odom_sub = nh.subscribe("/sim/odom", 1, simOdomCallback);
+    sim_odom_data.local_map_pub = nh.advertise<sensor_msgs::PointCloud2>("/sim/local_map", 1);
 
     // 动态订阅所有 particle odom
     ros::master::V_TopicInfo topic_list;

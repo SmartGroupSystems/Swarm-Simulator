@@ -102,7 +102,7 @@ class NodeHashTable {
 };
 
 class KinodynamicAstar {
- private:
+ public:
   /* ---------- main data structure ---------- */
   vector<PathNodePtr> path_node_pool_;
   int use_node_num_, iter_num_;
@@ -126,6 +126,7 @@ class KinodynamicAstar {
   double max_tau_, init_max_tau_;
   double max_vel_, max_acc_;
   double w_time_, horizon_, lambda_heu_;
+  double margin_;  // 安全距离参数
   int allocate_num_, check_num_;
   double tie_breaker_;
   bool optimistic_;
@@ -157,7 +158,7 @@ class KinodynamicAstar {
   KinodynamicAstar(){};
   ~KinodynamicAstar();
 
-  enum { REACH_HORIZON = 1, REACH_END = 2, NO_PATH = 3, NEAR_END = 4 };
+  enum { REACH_HORIZON = 1, REACH_END = 2, NO_PATH = 3, NEAR_END = 4, NEAR_TARGET = 5 };
 
   /* main API */
   void setParam(ros::NodeHandle& nh);

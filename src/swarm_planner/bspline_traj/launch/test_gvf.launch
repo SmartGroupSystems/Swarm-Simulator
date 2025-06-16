@@ -1,4 +1,6 @@
 <launch>
+    <arg name="v_max" value="2.5"/>     
+    <arg name="a_max" value="3.5"/>            
     <!-- Planning  parameters-->
     <arg name="map_size_x_" value="30.0"/>
     <arg name="map_size_y_" value="30.0"/>
@@ -9,10 +11,12 @@
     <arg name="local_update_range_z" value="3.0"/>
     
   <node name="formation_planning" pkg="bspline_race" type="formation_planning" output="screen">
+
         <!-- Plan Manager -->
-        <param name="gvf/cloud_topic"      type="string" value="/particle0/local_map" />
-        <param name="gvf/odom_topic"       type="string" value="/particle0/odom" />
-        <!-- <param name="gvf/odom_topic"       type="string" value="/sim/odom" /> -->
+        <!-- <param name="gvf/cloud_topic"      type="string" value="/particle0/local_map" />
+        <param name="gvf/odom_topic"       type="string" value="/particle0/odom" /> -->
+        <param name="gvf/cloud_topic"      type="string" value="/sim/local_map" />
+        <param name="gvf/odom_topic"       type="string" value="/sim/odom" />
         <param name="gvf/planInterval"     value="0.2" /> 
         <!-- SDF Map -->
         <param name="sdf_map/resolution"   value="0.1" /> 
@@ -54,18 +58,46 @@
         <param name="sdf_map/frame_id"      value="world"/>
 
         <!-- This param decide tracking vel -->
-        <param name="sdf_map/gvf_gain1"      value="2.0"/>
+        <param name="sdf_map/gvf_gain1"      value="1.0"/>
         <!-- This param decide backing vel -->
         <param name="sdf_map/gvf_gain2"      value="-2.0"/>
         <param name="sdf_map/gvf_inflation"  value="0.099" /> 
+        <param name="sdf_map/gvf_use_kinopath" value="false" />
+        <param name="sdf_map/gvf_use_quad_fit" value="true"/>
 
         <!-- geometric path searching -->
         <param name="astar/lambda_heu" value="10.0" type="double"/>
         <param name="astar/resolution_astar" value="0.1" type="double"/>
         <param name="astar/time_resolution" value="0.8" type="double"/>
-        <param name="astar/margin" value="0.5" type="double"/>
+        <param name="astar/margin" value="0.4" type="double"/>
         <param name="astar/allocate_num" value="1000000" type="int"/>
 
+          <!-- kinodynamic path searching -->
+        <param name="search/max_tau" value="0.6" type="double"/>
+        <param name="search/init_max_tau" value="0.8" type="double"/>
+        <param name="search/max_vel" value="3.0" type="double"/>
+        <param name="search/max_acc" value="3.5" type="double"/>
+        <param name="search/w_time" value="10.0" type="double"/>
+        <param name="search/horizon" value="6.0" type="double"/>
+        <param name="search/lambda_heu" value="5.0" type="double"/>
+        <param name="search/resolution_astar" value="0.1" type="double"/>
+        <param name="search/time_resolution" value="0.8" type="double"/>
+        <param name="search/margin" value="0.1" type="double"/>
+        <param name="search/allocate_num" value="100000" type="int"/>
+        <param name="search/check_num" value="5" type="int"/>
+        <!-- bspline opt -->
+        <param name="planning/traj_order" value="3"/>
+        <param name="planning/dimension" value="3" />
+        <param name="planning/TrajSampleRate" value="50" />
+        <param name="planning/max_vel" value="$(arg v_max)" />
+        <param name="planning/max_acc" value="$(arg a_max)" />
+        <param name="planning/lambda1" value="10.0" />
+        <param name="planning/lambda2" value="0.0001" />
+        <param name="planning/lambda3" value="5.0" />
+        <param name="planning/dist_p" value="0.5" />
+        <param name="planning/safe_distance" value="0.6" />
+        <param name="planning/planning/opt_maxeval" value="200" />
+        <param name="planning/planning/opt_maxtime" value="0.02" />
     </node>
 
     <node pkg="map_generator" type="local_sensing" name="map_generator" output="screen">

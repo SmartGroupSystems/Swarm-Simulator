@@ -67,6 +67,7 @@ class gvf_manager
         double planInterval;
         std::string cloud_topic_, odom_topic_;
         Eigen::Vector3d odom_;
+        bool use_kinopath_ ;
 
         struct gvfManager {
             std::string index;
@@ -74,12 +75,17 @@ class gvf_manager
             std::shared_ptr<EDTEnvironment> edt_environment_;
             std::shared_ptr<AstarTopo> geo_path_finder_;
             std::shared_ptr<KinodynamicAstar> kino_path_finder_;
+            std::shared_ptr<bspline_optimizer> bspline_opt_;
+            std::shared_ptr<UniformBspline> spline_;
             std::shared_ptr<gvf>  gvf_;
             ros::Time curr_time;  // 当前时间定时器
             ros::Time last_time;  // 上一次时间定时器
             bool is_initialized = false; 
             bool receive_startpt = false;
             bool is_first_goal = true;  // 添加标志位
+            bool is_first_kinogoal = true;
+            std::vector<Eigen::Vector3d> last_path;  // 存储上一次的轨迹
+            Eigen::MatrixXd last_traj;  // 存储上一次的轨迹矩阵
             // ros::Subscriber odom_sub;
             Eigen::Vector3d start_pt, goal_pt, odom;
         };
@@ -96,6 +102,9 @@ class gvf_manager
         ros::Publisher  path_vis;
         ros::Subscriber odom_sub;
         ros::Publisher  path_pub; 
+        ros::Publisher  kino_path_pub;  // 新增发布者
+        ros::Timer      kino_timer;     // 新增定时器
+        ros::Publisher  goal_vis_pub;   // 新增目标点可视化发布者
 
     public:
         gvf_manager(){};  
@@ -107,6 +116,7 @@ class gvf_manager
         void odomCallback(const nav_msgs::Odometry::ConstPtr& msg); 
         void AstarExecCallback(const ros::TimerEvent& event);
         void cmdCallback(const ros::TimerEvent& event);
+        void KinoPathCallback(const ros::TimerEvent& event);  // 新增回调函数
         void publishCorridorMarker(double C_thresh = -1.0);
         void visualizePath(const std::vector<Eigen::Vector3d>& path_points, 
                             ros::Publisher& marker_pub, const std::string& particle_index);
