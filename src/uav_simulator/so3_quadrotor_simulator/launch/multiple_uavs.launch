@@ -24,5 +24,5 @@
 
     <!-- RVIZ -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find so3_quadrotor_simulator)/config/rviz.rviz"/>
-
+  <node name="plotjuggler" pkg="plotjuggler" type="plotjuggler" output="screen" args="--layout /home/uav/water_swarm/src/swarm_planner/water_swarm/config/pos_cmdlayout.xml" />
 </launch>

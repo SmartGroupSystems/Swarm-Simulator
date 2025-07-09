@@ -4,9 +4,7 @@ A simulator desigened for quadrotor swarm motion planning methods. If you have a
 # Description
 This repository mainly contains the following modules: 
 
-(1) ```water_swarm```:A planner designed for quadrotor swarm. 
-
-(2) ```uav_simulator```:Quadrotor swarm simulator. 
+(1) ```uav_simulator```:Quadrotor swarm simulator. 
 
 
 
@@ -18,7 +16,7 @@ __Tested environment__: Ubuntu 20.04 + ROS Noetic
 ```
 mkdir -p water_swarm_ws/src
 cd water_swarm_ws/src
-git clone https://github.com/SmartGroupSystems/water_swarm.git
+git clone https://github.com/SmartGroupSystems/Swarm-Simulator.git
 cd ..
 catkin_make
 ```

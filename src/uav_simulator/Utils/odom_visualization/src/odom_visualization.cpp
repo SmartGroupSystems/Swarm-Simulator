@@ -353,6 +353,7 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr& msg)
   meshROS.color.g = color_g;
   meshROS.color.b = color_b;
   meshROS.mesh_resource = mesh_resource;
+  meshROS.mesh_use_embedded_materials = false;
   meshPub.publish(meshROS);                                                  
 
   // TF for raw sensor visualization

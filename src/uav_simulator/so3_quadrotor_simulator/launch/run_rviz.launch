@@ -1,8 +1,0 @@
-<launch>  
-   <node name="rviz" pkg="rviz" type="rviz"
-      args="-d $(find so3_quadrotor_simulator)/config/swarm_rviz.rviz"
-      />
- </launch>
-
-
-

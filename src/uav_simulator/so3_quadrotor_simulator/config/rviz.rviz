@@ -25,7 +25,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -61,205 +61,205 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav1/odom_visualization/robot
       Name: UAV1
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav2/odom_visualization/robot
       Name: UAV2
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav3/odom_visualization/robot
       Name: UAV3
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav4/odom_visualization/robot
       Name: UAV4
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav5/odom_visualization/robot
       Name: UAV5
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav6/odom_visualization/robot
       Name: UAV6
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav7/odom_visualization/robot
       Name: UAV7
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav8/odom_visualization/robot
       Name: UAV8
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav9/odom_visualization/robot
       Name: UAV9
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav10/odom_visualization/robot
       Name: UAV10
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav11/odom_visualization/robot
       Name: UAV11
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav12/odom_visualization/robot
       Name: UAV12
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav13/odom_visualization/robot
       Name: UAV13
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav14/odom_visualization/robot
       Name: UAV14
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav15/odom_visualization/robot
       Name: UAV15
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav16/odom_visualization/robot
       Name: UAV16
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav17/odom_visualization/robot
       Name: UAV17
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav18/odom_visualization/robot
       Name: UAV18
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav19/odom_visualization/robot
       Name: UAV19
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav20/odom_visualization/robot
       Name: UAV20
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav21/odom_visualization/robot
       Name: UAV21
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav22/odom_visualization/robot
       Name: UAV22
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav23/odom_visualization/robot
       Name: UAV23
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav24/odom_visualization/robot
       Name: UAV24
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /uav25/odom_visualization/robot
       Name: UAV25
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /uav27/odom_visualization/robot
@@ -955,16 +955,6 @@ Visualization Manager:
     - Class: rviz/PublishPoint
       Single click: true
       Topic: /clicked_point
-    - Class: rviz_plugins/GameLikeInput
-      RangeX_max: 4
-      RangeX_min: -4
-      RangeY_max: 2.5
-      RangeY_min: -2.5
-      RangeZ_max: 1.70000005
-      RangeZ_min: 0.800000012
-      TopicPoint: point_list
-      TopicSelect: select_list
-      TopicSwarm: swarm
     - Class: rviz_plugins/Goal3DTool
       Topic: goal
     - Class: rviz/MoveCamera
@@ -981,10 +971,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 27.33146858215332
+      Scale: 49.45101547241211
       Target Frame: world
-      X: -1.6660194396972656
-      Y: -0.6155855655670166
+      X: 1.8719940185546875
+      Y: 1.8399014472961426
     Saved: ~
 Window Geometry:
   Displays:
