@@ -24,9 +24,9 @@ catkin_make
 2.Test
 
 ```
-cd water_swarm_ws
+cd water_swarm_ws/
 source devel/setup.bash
-cd src/water_swarm/sh
+cd src/Swarm-Simulator
 ./multi_quadrotor_simulator.sh 16
 ```
 
